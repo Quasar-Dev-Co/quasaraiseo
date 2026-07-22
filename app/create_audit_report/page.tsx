@@ -9,6 +9,7 @@ import { AuditForm } from "@/components/audit/audit-form";
 import { ReportPreview } from "@/components/audit/report-preview";
 import { AuditFooter } from "@/components/audit/audit-footer";
 import { PipelineLoader } from "@/components/audit/pipeline-loader";
+import { RequireAuth } from "@/components/auth/require-auth";
 import { useAuditJob } from "@/hooks/use-audit-job";
 
 export default function CreateAuditReportPage() {
@@ -21,6 +22,7 @@ export default function CreateAuditReportPage() {
   };
 
   return (
+    <RequireAuth>
     <div className="min-h-screen bg-[radial-gradient(circle_at_8%_9%,rgba(16,185,129,0.14),transparent_27%),radial-gradient(circle_at_91%_14%,rgba(245,158,11,0.11),transparent_24%),linear-gradient(180deg,#fbfefd_0%,#f8fafc_45%,#fff_100%)] text-slate-900 antialiased">
       <AuditNavbar />
       <main className="mx-auto w-full max-w-[1240px] px-4 py-18">
@@ -62,5 +64,6 @@ export default function CreateAuditReportPage() {
         </div>
       )}
     </div>
+    </RequireAuth>
   );
 }
