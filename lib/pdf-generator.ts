@@ -122,7 +122,7 @@ export async function generateAuditPDF(audit: AuditJobRecord): Promise<void> {
     month: "long",
     day: "numeric",
   });
-  const logoData = await loadImageData("/mainlogos/mainlogo.png");
+  const logoData = (await loadImageData("/mainlogos/pdfimage.png")) ?? (await loadImageData("/mainlogos/mainlogo.png"));
   let y = 66;
 
   const ensureSpace = (needed: number) => {
@@ -228,9 +228,14 @@ export async function generateAuditPDF(audit: AuditJobRecord): Promise<void> {
   const drawFindings = (findings: Finding[]) => {
     if (!findings || findings.length === 0) return;
     findings.forEach((f) => {
-      const titleLines = doc.splitTextToSize(normalizeText(f.title), contentWidth - 72) as string[];
-      const detailLines = doc.splitTextToSize(normalizeText(f.detail), contentWidth - 44) as string[];
-      const actionLines = doc.splitTextToSize(normalizeText(f.action), contentWidth - 44) as string[];
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      const titleLines = doc.splitTextToSize(normalizeText(f.title), contentWidth - 52) as string[];
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      const detailLines = doc.splitTextToSize(normalizeText(f.detail), contentWidth - 48) as string[];
+      const actionLines = doc.splitTextToSize(normalizeText(f.action), contentWidth - 48) as string[];
       const rowHeight =
         20 +
         titleLines.length * 11.5 +
@@ -304,6 +309,8 @@ export async function generateAuditPDF(audit: AuditJobRecord): Promise<void> {
       const col = idx % columns;
       const x = margin + col * (cardWidth + gap);
       const cardY = y + row * (cardHeight + gap);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
       const valueLines = (doc.splitTextToSize(m.value, cardWidth - 16) as string[]).slice(0, 2);
       const stColor = statusColorMap[m.status] ?? COLORS.amber;
       doc.setFillColor(...COLORS.white);
@@ -414,9 +421,13 @@ export async function generateAuditPDF(audit: AuditJobRecord): Promise<void> {
   if (audit.report?.summary) {
     addSectionHeader("Executive Summary");
 
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(...COLORS.slate);
+
     const summaryText = rich?.executiveSummary ?? audit.report.summary;
     const paragraphs = toParagraphs(summaryText);
-    const textWidth = contentWidth;
+    const textWidth = contentWidth - 16;
     const lineSpacing = 14;
     const paragraphGap = 10;
     const startX = margin;
@@ -426,10 +437,6 @@ export async function generateAuditPDF(audit: AuditJobRecord): Promise<void> {
       const isLastParagraph = pIdx === paragraphs.length - 1;
       const pHeight = lines.length * lineSpacing + (isLastParagraph ? 0 : paragraphGap);
       ensureSpace(pHeight + 8);
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.setTextColor(...COLORS.slate);
 
       lines.forEach((line) => {
         doc.text(line, startX, y, { align: "left" });
@@ -496,7 +503,7 @@ export async function generateAuditPDF(audit: AuditJobRecord): Promise<void> {
       doc.setTextColor(...COLORS.muted);
       doc.text("STRATEGY", margin, y);
       y += 14;
-      const stratLines = doc.splitTextToSize(rich.backlinkProfile.strategy, contentWidth) as string[];
+      const stratLines = doc.splitTextToSize(rich.backlinkProfile.strategy, contentWidth - 20) as string[];
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9.5);
       doc.setTextColor(...COLORS.slate);
@@ -601,6 +608,8 @@ export async function generateAuditPDF(audit: AuditJobRecord): Promise<void> {
 
       if (phase.items) {
         phase.items.forEach((item) => {
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(9);
           const actionLines = doc.splitTextToSize(normalizeText(item.action), contentWidth - 44) as string[];
           const impactLines = doc.splitTextToSize(`Impact: ${normalizeText(item.impact)}`, contentWidth - 44) as string[];
           const rowHeight = Math.max(40, actionLines.length * 12 + impactLines.length * 11 + 22);
@@ -640,6 +649,8 @@ export async function generateAuditPDF(audit: AuditJobRecord): Promise<void> {
       .slice(0, 18);
 
     recommendations.forEach((item, idx) => {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
       const rowLines = doc.splitTextToSize(item.replace(/^[-•]\s*/, ""), contentWidth - 58) as string[];
       const rowHeight = Math.max(30, rowLines.length * 11 + 12);
       ensureSpace(rowHeight + 8);
@@ -672,6 +683,8 @@ export async function generateAuditPDF(audit: AuditJobRecord): Promise<void> {
   if (rich?.quickWins && rich.quickWins.length > 0) {
     addSectionHeader("Quick Wins", "Fast, high-impact fixes you can implement today");
     rich.quickWins.forEach((qw) => {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
       const actionLines = doc.splitTextToSize(normalizeText(qw.action), contentWidth - 54) as string[];
       const impactLine = `Impact: ${truncate(normalizeText(qw.impact), 52)}`;
       const rowHeight = Math.max(42, actionLines.length * 12 + 28);
@@ -710,6 +723,8 @@ export async function generateAuditPDF(audit: AuditJobRecord): Promise<void> {
   // === Projected Outcomes ===
   if (rich?.projectedOutcomes) {
     addSectionHeader("Projected Outcomes", "Expected results if recommendations are implemented");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
     const paragraphs = toParagraphs(rich.projectedOutcomes);
     const outcomeLines = paragraphs.flatMap((p, idx) => {
       const chunk = doc.splitTextToSize(p, contentWidth - 44) as string[];

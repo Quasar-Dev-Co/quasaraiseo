@@ -93,10 +93,10 @@ function FindingsList({ findings }: { findings: Finding[] }) {
                 <SeverityBadge severity={f.severity} />
               </div>
             </div>
-            <p className="text-[12px] leading-relaxed text-slate-600 dark:text-slate-400">{f.detail}</p>
+            <p className="text-[12px] leading-relaxed text-slate-600 dark:text-slate-400 break-words">{f.detail}</p>
             <div className="md:max-w-[200px]">
               <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Action</p>
-              <p className="text-[12px] leading-relaxed text-emerald-700 dark:text-emerald-400">{f.action}</p>
+              <p className="text-[12px] leading-relaxed text-emerald-700 dark:text-emerald-400 break-words">{f.action}</p>
             </div>
           </div>
         )
