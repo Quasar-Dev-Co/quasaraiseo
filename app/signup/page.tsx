@@ -25,7 +25,7 @@ export default function SignupPage() {
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      router.replace("/create_audit_report")
+      router.replace("/dashboard")
     }
   }, [authLoading, isAuthenticated, router])
 
@@ -42,7 +42,7 @@ export default function SignupPage() {
 
     try {
       await signup(name, email, password, company || undefined)
-      router.push("/create_audit_report")
+      router.push("/dashboard")
     } catch (err) {
       const message = authApi.isAuthApiError(err) ? err.message : "Something went wrong. Please try again."
       setError(message)

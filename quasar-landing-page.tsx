@@ -25,7 +25,7 @@ import {
   KeyRound,
   Landmark,
   LayoutDashboard,
-  Linkedin,
+  Share2,
   LockKeyhole,
   Map,
   MapPinned,
@@ -42,11 +42,9 @@ import {
   Settings,
   ShieldCheck,
   Sparkles,
-  Twitter,
   UsersRound,
   Workflow,
   X,
-  Youtube,
 } from "lucide-react";
 
 type Billing = "monthly" | "yearly";
@@ -851,9 +849,8 @@ export default function QuasarAISEOLandingPage() {
         <div className="container footerBottom">
           <span>© 2026 QuasarAISEO. All rights reserved.</span>
           <div>
-            <a href="#"><Linkedin size={15} /></a>
-            <a href="#"><Twitter size={15} /></a>
-            <a href="#"><Youtube size={15} /></a>
+            <a href="#"><Share2 size={15} /></a>
+            <a href="#"><Globe2 size={15} /></a>
           </div>
         </div>
       </footer>

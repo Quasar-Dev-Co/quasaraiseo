@@ -4,12 +4,12 @@ import {
   CheckCircle2,
   FileSearch2,
   Gauge,
-  Orbit,
   Radar,
   Search,
   ShieldCheck,
   Sparkles,
 } from "lucide-react"
+import Image from "next/image"
 
 const features = [
   { icon: FileSearch2, title: "Full SEO audits", text: "Crawl, score, and report on any website in minutes." },
@@ -35,8 +35,8 @@ export function AuthBrandPanel() {
       {/* Top: Logo + badge */}
       <div className="relative flex flex-col gap-6">
         <div className="flex items-center gap-3">
-          <span className="grid size-11 place-items-center rounded-[15px] bg-gradient-to-br from-emerald-400 to-emerald-700 text-white shadow-[0_12px_25px_rgba(16,185,129,0.28)]">
-            <Orbit className="size-[22px]" />
+          <span className="grid size-11 place-items-center overflow-hidden rounded-[15px] border border-emerald-300/30 bg-white shadow-[0_12px_25px_rgba(16,185,129,0.28)]">
+            <Image src="/mainlogos/mainlogo.png" alt="QuasarAISEO" width={26} height={26} className="h-[26px] w-[26px] object-contain" />
           </span>
           <span className="text-[22px] font-black tracking-[-0.035em] text-white">
             Quasar<span className="text-emerald-400">AISEO</span>

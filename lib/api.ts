@@ -1,5 +1,17 @@
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+  process.env.NEXT_PUBLIC_API_URL ?? "";
+
+const TOKEN_KEY = "quasar_auth_token";
+
+function getAuthToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+function authHeaders(): Record<string, string> {
+  const token = getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 export type AuditStatus =
   | "queued"
@@ -159,15 +171,27 @@ export const api = {
     return request<CreateAuditResponse>("/api/audits", {
       method: "POST",
       body: JSON.stringify(payload),
+      headers: authHeaders(),
     });
   },
 
   getAudit(id: string) {
-    return request<GetAuditResponse>(`/api/audits/${id}`);
+    return request<GetAuditResponse>(`/api/audits/${id}`, {
+      headers: authHeaders(),
+    });
   },
 
   listAudits() {
-    return request<ListAuditsResponse>("/api/audits");
+    return request<ListAuditsResponse>("/api/audits", {
+      headers: authHeaders(),
+    });
+  },
+
+  deleteAudit(id: string) {
+    return request<{ success: boolean }>(`/api/audits/${id}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
   },
 
   isApiError(error: unknown): error is ApiError {

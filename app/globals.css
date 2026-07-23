@@ -129,3 +129,81 @@
     scroll-behavior: smooth;
   }
 }
+
+@media print {
+  /* Hide everything outside the report */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Show only the report preview section */
+  #report-preview,
+  #report-preview * {
+    visibility: visible;
+  }
+
+  /* Position report at top of page */
+  #report-preview {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+
+  /* Remove outer rounded container padding for print */
+  #report-preview > div:last-child {
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  /* Force light theme for print */
+  .dark {
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+  }
+
+  /* Ensure colors print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Page setup */
+  @page {
+    margin: 1.5cm 2cm;
+    size: A4;
+  }
+
+  /* Avoid breaking inside cards */
+  article {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Score cards should not break */
+  .grid {
+    break-inside: avoid;
+  }
+
+  /* Table rows should not break */
+  tr {
+    break-inside: avoid;
+  }
+
+  /* Hide download buttons in print */
+  button {
+    display: none !important;
+  }
+
+  /* Hide the status badge row in print */
+  #report-preview > div:first-child > span {
+    display: none !important;
+  }
+}

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 
 import { AuthProvider } from "@/hooks/use-auth";
+import { Providers } from "@/components/Providers";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -13,6 +14,11 @@ export const metadata: Metadata = {
   title: "QuasarAISEO — Win visibility across search and AI answers",
   description:
     "QuasarAISEO turns one website into a scalable growth system with technical audits, programmatic landing pages, semantic content, schema, keyword intelligence, and AI search visibility optimization.",
+  icons: {
+    icon: "/mainlogos/mainlogo.png",
+    shortcut: "/mainlogos/mainlogo.png",
+    apple: "/mainlogos/mainlogo.png",
+  },
 };
 
 export default function RootLayout({
@@ -23,7 +29,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.className} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <Providers>{children}</Providers>
+        </AuthProvider>
       </body>
     </html>
   );

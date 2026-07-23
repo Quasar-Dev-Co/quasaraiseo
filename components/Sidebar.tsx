@@ -17,6 +17,7 @@ import {
   Moon,
   X
 } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -44,7 +45,9 @@ export default function Sidebar() {
     <aside className="flex h-full w-[238px] flex-col border-r border-slate-200/90 bg-white/76 px-4 py-7 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/80">
       {/* Brand logo */}
       <div className="flex items-center gap-3 px-3 pb-8">
-        <div className="brand-logo-custom shrink-0" />
+        <div className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-[12px] border border-emerald-100 bg-white shadow-sm dark:border-emerald-400/20 dark:bg-slate-900">
+          <Image src="/mainlogos/mainlogo.png" alt="QuasarAISEO" width={26} height={26} className="h-[26px] w-[26px] object-contain" />
+        </div>
         <div>
           <div className="text-sm font-extrabold tracking-[0.11em] text-slate-950 dark:text-white uppercase leading-none">
             QuasarAISEO

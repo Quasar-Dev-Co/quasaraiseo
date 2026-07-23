@@ -3,17 +3,20 @@
 import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 
-import { AuditNavbar } from "@/components/audit/audit-navbar";
 import { AuditHero } from "@/components/audit/audit-hero";
 import { AuditForm } from "@/components/audit/audit-form";
 import { ReportPreview } from "@/components/audit/report-preview";
-import { AuditFooter } from "@/components/audit/audit-footer";
 import { PipelineLoader } from "@/components/audit/pipeline-loader";
+import { PastAudits } from "@/components/audit/past-audits";
 import { RequireAuth } from "@/components/auth/require-auth";
+import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useAuditJob } from "@/hooks/use-audit-job";
+import type { AuditJobRecord } from "@/lib/api";
 
 export default function CreateAuditReportPage() {
   const [toast, setToast] = useState<string | null>(null);
+  const [auditRefreshKey, setAuditRefreshKey] = useState(0);
+  const [viewedAudit, setViewedAudit] = useState<AuditJobRecord | null>(null);
   const { phase, audit, error, submitAudit } = useAuditJob();
 
   const showToast = (message: string) => {
@@ -21,26 +24,39 @@ export default function CreateAuditReportPage() {
     window.setTimeout(() => setToast(null), 3200);
   };
 
+  const handleSelectAudit = (selected: AuditJobRecord) => {
+    setViewedAudit(selected);
+    showToast(`Loaded audit report for ${selected.websiteHost}`);
+    const el = document.getElementById("report-preview");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const handleSubmitAudit = async (payload: Parameters<typeof submitAudit>[0]) => {
+    setViewedAudit(null);
+    await submitAudit(payload);
+  };
+
   return (
     <RequireAuth>
-    <div className="min-h-screen bg-[radial-gradient(circle_at_8%_9%,rgba(16,185,129,0.14),transparent_27%),radial-gradient(circle_at_91%_14%,rgba(245,158,11,0.11),transparent_24%),linear-gradient(180deg,#fbfefd_0%,#f8fafc_45%,#fff_100%)] text-slate-900 antialiased">
-      <AuditNavbar />
-      <main className="mx-auto w-full max-w-[1240px] px-4 py-18">
-        <AuditHero />
-        <AuditForm
-          showToast={showToast}
-          phase={phase}
-          audit={audit}
-          error={error}
-          submitAudit={submitAudit}
-        />
-        <ReportPreview
-          showToast={showToast}
-          audit={audit}
-          phase={phase}
-        />
-      </main>
-      <AuditFooter />
+    <DashboardLayout>
+      <AuditHero />
+      <AuditForm
+        showToast={showToast}
+        phase={phase}
+        audit={audit}
+        error={error}
+        submitAudit={handleSubmitAudit}
+      />
+      <ReportPreview
+        showToast={showToast}
+        audit={viewedAudit ?? audit}
+        phase={viewedAudit ? "completed" : phase}
+      />
+
+      <PastAudits
+        refreshKey={auditRefreshKey + (phase === "completed" ? 1 : 0)}
+        onSelectAudit={handleSelectAudit}
+      />
 
       <PipelineLoader phase={phase} audit={audit} error={error} />
 
@@ -63,7 +79,7 @@ export default function CreateAuditReportPage() {
           </div>
         </div>
       )}
-    </div>
+    </DashboardLayout>
     </RequireAuth>
   );
 }

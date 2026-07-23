@@ -6,21 +6,18 @@ import {
   Bot,
   BriefcaseBusiness,
   Check,
-  CheckCircle2,
   ChevronDown,
   Globe2,
   Languages,
-  Layers3,
   MapPinned,
   ShieldCheck,
   Sparkles,
   TerminalSquare,
-  Workflow,
 } from "lucide-react"
 
 import type { AuditJobRecord } from "@/lib/api"
 import type { AuditPhase } from "@/hooks/use-audit-job"
-import { auditModules, countries, coverageContent, coverageTechnical, languages, workflowPreview } from "./audit-data"
+import { auditModules, countries, languages } from "./audit-data"
 
 type ShowToast = (message: string) => void
 
@@ -72,11 +69,11 @@ export function AuditForm({ showToast, phase, audit, error, submitAudit }: Audit
   const isBusy = phase === "submitting" || phase === "polling"
 
   return (
-    <section className="grid grid-cols-1 items-start gap-5.5 lg:grid-cols-[1.55fr_0.65fr]">
+    <section className="grid grid-cols-1 items-start gap-5.5">
       {/* Audit form card */}
       <article
         id="audit-form"
-        className="relative overflow-hidden rounded-[30px] bg-[radial-gradient(circle_at_88%_5%,rgba(16,185,129,0.22),transparent_26%),linear-gradient(145deg,#0b1220,#07101e_40%,#020617)] p-10.5 text-white shadow-[0_32px_100px_rgba(2,6,23,0.35)]"
+        className="relative overflow-hidden rounded-[30px] bg-[radial-gradient(circle_at_88%_5%,rgba(16,185,129,0.22),transparent_26%),linear-gradient(145deg,#0b1220,#07101e_40%,#020617)] p-10.5 text-white shadow-[0_32px_100px_rgba(2,6,23,0.35)] ring-1 ring-white/10"
       >
         <span className="absolute right-7.5 top-7.5 grid size-14 place-items-center rounded-[19px] border border-emerald-300/18 bg-emerald-500/9 text-emerald-300">
           <Bot className="size-5.25" />
@@ -182,43 +179,6 @@ export function AuditForm({ showToast, phase, audit, error, submitAudit }: Audit
           </div>
         </form>
       </article>
-
-      {/* Sidebar */}
-      <aside className="grid gap-4.5">
-        <SideCard icon={Layers3} title="Audit coverage" subtitle="Everything included in the report">
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Technical</p>
-          {coverageTechnical.map((item) => (
-            <div key={item} className="flex items-center gap-2.5 rounded-[12px] px-2.5 py-2.75 text-[13px] font-semibold text-slate-700">
-              <CheckCircle2 className="size-[15px] text-emerald-500" /> {item}
-            </div>
-          ))}
-          <p className="mb-2 mt-5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Content & strategy</p>
-          {coverageContent.map((item) => (
-            <div key={item} className="flex items-center gap-2.5 rounded-[12px] px-2.5 py-2.75 text-[13px] font-semibold text-slate-700">
-              <CheckCircle2 className="size-[15px] text-emerald-500" /> {item}
-            </div>
-          ))}
-        </SideCard>
-
-        <SideCard icon={Workflow} title="Workflow preview" subtitle="From URL to ready-to-use report">
-          <div className="grid gap-5">
-            {workflowPreview.map(([number, title, duration, text]) => (
-              <div key={number} className="grid grid-cols-[42px_1fr] gap-3.25">
-                <span className="grid size-10.5 place-items-center rounded-full border border-emerald-100 bg-white text-xs font-bold text-emerald-700">
-                  {number}
-                </span>
-                <div>
-                  <div className="flex items-center justify-between gap-2.5">
-                    <strong className="text-sm">{title}</strong>
-                    <small className="rounded-full bg-slate-100 px-1.75 py-1 text-[10px] text-slate-500">{duration}</small>
-                  </div>
-                  <p className="mt-1.25 text-xs leading-relaxed text-slate-500">{text}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </SideCard>
-      </aside>
     </section>
   )
 }
@@ -295,32 +255,5 @@ function SelectField({
       </div>
       <small className="mt-2 block text-[11px] leading-relaxed text-slate-500">{help}</small>
     </label>
-  )
-}
-
-function SideCard({
-  icon: Icon,
-  title,
-  subtitle,
-  children,
-}: {
-  icon: typeof Layers3
-  title: string
-  subtitle: string
-  children: React.ReactNode
-}) {
-  return (
-    <article className="rounded-3xl border border-slate-200 bg-white/88 p-6 shadow-[0_14px_42px_rgba(15,23,42,0.07)]">
-      <div className="mb-5 flex gap-3.25">
-        <span className="grid size-10.5 place-items-center rounded-[14px] bg-emerald-50 text-emerald-700">
-          <Icon className="size-[19px]" />
-        </span>
-        <div>
-          <h3 className="m-0 text-[17px]">{title}</h3>
-          <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>
-        </div>
-      </div>
-      {children}
-    </article>
   )
 }
