@@ -15,6 +15,9 @@ import {
   Zap,
   ClipboardList,
   LogOut,
+  BarChart3,
+  Globe2,
+  FileSpreadsheet,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -32,8 +35,14 @@ const navItems = [
   { label: "Task Management", href: "/task-management", icon: ClipboardList },
 ];
 
+const googleItems = [
+  { label: "Search Console", href: "/google/search-console", icon: Globe2 },
+  { label: "Analytics", href: "/google/analytics", icon: BarChart3 },
+  { label: "Sheets", href: "/google/sheets", icon: FileSpreadsheet },
+];
+
 const bottomItems = [
-  { label: "Settings", href: "#", icon: Settings },
+  { label: "Settings", href: "/setting", icon: Settings },
 ];
 
 export function DashboardSidebar({ mobileOpen = false, onMobileClose }: { mobileOpen?: boolean; onMobileClose?: () => void }) {
@@ -94,6 +103,39 @@ export function DashboardSidebar({ mobileOpen = false, onMobileClose }: { mobile
               <Icon className={cn("size-[18px] shrink-0", active ? "text-emerald-600 dark:text-emerald-400" : "")} />
               <span>{item.label}</span>
               {active && <ChevronRight className="ml-auto size-4 text-emerald-500" />}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <Separator className="mx-4 mt-4" />
+
+      {/* Google integrations */}
+      <div className="px-4 pt-3 pb-1">
+        <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">Google</span>
+      </div>
+      <nav className="flex flex-col gap-1 px-3">
+        {googleItems.map((item) => {
+          const Icon = item.icon;
+          const active = isActive(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => onMobileClose?.()}
+              className={cn(
+                "group flex min-h-[40px] items-center gap-3 rounded-xl px-3.5 text-[13px] font-semibold transition-all duration-200",
+                active
+                  ? "bg-gradient-to-r from-emerald-400/15 to-emerald-400/5 text-emerald-800 dark:text-emerald-300"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
+              )}
+            >
+              {active && (
+                <span className="absolute -ml-3.5 h-[24px] w-1 rounded-r-full bg-emerald-400 shadow-[0_0_12px_rgba(40,217,177,0.5)]" />
+              )}
+              <Icon className={cn("size-[17px] shrink-0", active ? "text-emerald-600 dark:text-emerald-400" : "")} />
+              <span>{item.label}</span>
+              {active && <ChevronRight className="ml-auto size-3.5 text-emerald-500" />}
             </Link>
           );
         })}
