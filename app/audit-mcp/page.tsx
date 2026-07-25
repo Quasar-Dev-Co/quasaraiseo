@@ -144,13 +144,18 @@ export default function AuditMcpPage() {
 
   const handleDownloadPdf = async (html: string, jobPrompt: string) => {
     try {
+      // Sanitize unsupported CSS color functions that break html2canvas
+      const sanitized = html
+        .replace(/\b(?:lab|lch|oklab|oklch|color-mix|color)\([^)]*\)/gi, "#000000")
+        .replace(/<!--[\s\S]*?-->/g, "");
+
       const container = document.createElement("div");
       container.style.position = "fixed";
       container.style.left = "-9999px";
       container.style.top = "0";
       container.style.width = "794px";
       container.style.background = "#ffffff";
-      container.innerHTML = html;
+      container.innerHTML = sanitized;
       document.body.appendChild(container);
 
       const pdf = new jsPDF("p", "pt", "a4");
@@ -162,6 +167,7 @@ export default function AuditMcpPage() {
         autoPaging: "text",
         width: 794,
         windowWidth: 794,
+        margin: 20,
       });
 
       document.body.removeChild(container);
