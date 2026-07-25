@@ -105,7 +105,16 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
+export interface ModelRecord {
+  id: string;
+  label?: string;
+}
+
 export const agentApi = {
+  async listModels(): Promise<{ models: ModelRecord[] }> {
+    return agentRequest<{ models: ModelRecord[] }>("/api/agent/models");
+  },
+
   async listSkills(): Promise<{ skills: SkillRecord[] }> {
     return agentRequest<{ skills: SkillRecord[] }>("/api/agent/skills");
   },
@@ -124,10 +133,10 @@ export const agentApi = {
     });
   },
 
-  async createJob(prompt: string, skillId?: string): Promise<{ job: AgentJobRecord }> {
+  async createJob(prompt: string, skillId?: string, model?: string): Promise<{ job: AgentJobRecord }> {
     return agentRequest<{ job: AgentJobRecord }>("/api/agent/jobs", {
       method: "POST",
-      body: JSON.stringify({ prompt, skillId }),
+      body: JSON.stringify({ prompt, skillId, model }),
     });
   },
 

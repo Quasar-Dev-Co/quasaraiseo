@@ -12,11 +12,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   agentApi,
   type AgentJobRecord,
   type AgentJobStatus,
   type GeneratedFileRecord,
+  type ModelRecord,
   type SkillRecord,
 } from "@/lib/agent-api";
 
@@ -50,6 +52,8 @@ function formatDate(dateStr: string): string {
 export default function AuditMcpPage() {
   const [skills, setSkills] = useState<SkillRecord[]>([]);
   const [jobs, setJobs] = useState<AgentJobRecord[]>([]);
+  const [models, setModels] = useState<ModelRecord[]>([]);
+  const [selectedModel, setSelectedModel] = useState<string>("glm-5.2");
   const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -73,6 +77,10 @@ export default function AuditMcpPage() {
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  useEffect(() => {
+    agentApi.listModels().then((res) => setModels(res.models)).catch(() => {});
+  }, []);
 
   const hasRunningJobs = jobs.some((j) => j.status === "pending" || j.status === "running");
 
@@ -104,7 +112,7 @@ export default function AuditMcpPage() {
   const handleSubmitJob = async () => {
     if (!prompt.trim()) return;
     setSubmitting(true); setError(null);
-    try { await agentApi.createJob(prompt, selectedSkillId || undefined); setPrompt(""); await loadData(); }
+    try { await agentApi.createJob(prompt, selectedSkillId || undefined, selectedModel); setPrompt(""); await loadData(); }
     catch (err) { setError(err instanceof Error ? err.message : "Failed to submit task"); }
     finally { setSubmitting(false); }
   };
@@ -205,6 +213,24 @@ export default function AuditMcpPage() {
                     onChange={(e) => setPrompt(e.target.value)}
                     disabled={submitting}
                   />
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 whitespace-nowrap">AI Model</label>
+                  <Select value={selectedModel} onValueChange={(v) => setSelectedModel(v ?? "glm-5.2")}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select model" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      {models.length === 0 && (
+                        <SelectItem value={selectedModel}>{selectedModel}</SelectItem>
+                      )}
+                      {models.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.label || m.id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-xs text-slate-500 dark:text-slate-400">
