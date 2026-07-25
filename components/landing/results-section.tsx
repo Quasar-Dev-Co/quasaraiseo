@@ -31,39 +31,39 @@ export function ResultsSection() {
 
         <div className="mt-8.5 grid grid-cols-1 gap-5.5 lg:grid-cols-[1.15fr_0.85fr]">
           {/* Dark card - High Contrast & Premium Aesthetics */}
-          <article className="relative overflow-hidden rounded-3xl border border-fuchsia-500/30 bg-slate-950 p-7.5 text-white shadow-[0_20px_50px_rgba(217,70,239,0.15)]">
+          <article className="relative overflow-hidden rounded-3xl border border-fuchsia-500/30 bg-slate-950 p-5 sm:p-7.5 text-white shadow-[0_20px_50px_rgba(217,70,239,0.15)]">
             <div className="pointer-events-none absolute -right-16 -top-16 size-60 rounded-full bg-fuchsia-600/20 blur-3xl" />
             
             <small className="text-xs font-bold uppercase tracking-wider text-fuchsia-400">Search visibility growth</small>
-            <strong className="mt-4 flex items-baseline text-6xl font-black tracking-tight text-white">
+            <strong className="mt-4 flex items-baseline text-5xl sm:text-6xl font-black tracking-tight text-white">
               +38<span className="ml-1 text-xl font-bold text-fuchsia-400">%</span>
             </strong>
             <p className="mt-2 mb-6 text-xs font-semibold text-slate-300">Combined organic and AI discovery score</p>
             
             <div className="space-y-3.5 border-t border-white/10 pt-5">
               {darkMetrics.map((m) => (
-                <div key={m.label} className="grid grid-cols-[130px_1fr_42px] items-center gap-3">
-                  <span className="text-xs font-bold text-slate-200">{m.label}</span>
+                <div key={m.label} className="grid grid-cols-[105px_1fr_36px] sm:grid-cols-[130px_1fr_42px] items-center gap-2.5 sm:gap-3">
+                  <span className="text-[11px] sm:text-xs font-bold text-slate-200 truncate">{m.label}</span>
                   <div className="h-2.5 overflow-hidden rounded-full border border-white/10 bg-slate-900">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-500 to-pink-500 shadow-[0_0_12px_rgba(217,70,239,0.6)]"
                       style={{ width: `${m.value}%` }}
                     />
                   </div>
-                  <b className="rounded border border-white/10 bg-slate-900 px-2 py-0.5 text-right font-mono text-xs font-extrabold text-white">{m.value}</b>
+                  <b className="rounded border border-white/10 bg-slate-900 px-1.5 sm:px-2 py-0.5 text-right font-mono text-[10px] sm:text-xs font-extrabold text-white">{m.value}</b>
                 </div>
               ))}
             </div>
           </article>
 
           {/* Light card */}
-          <article className="rounded-3xl border border-slate-200 bg-white p-7 shadow-[0_14px_42px_rgba(15,23,42,0.07)]">
+          <article className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-7 shadow-[0_14px_42px_rgba(15,23,42,0.07)]">
             <small className="text-xs text-slate-500">New ranking opportunities</small>
-            <strong className="mt-6.5 block text-[54px] font-black tracking-[-0.06em]">126</strong>
+            <strong className="mt-6.5 block text-5xl sm:text-[54px] font-black tracking-[-0.06em]">126</strong>
             <p className="mt-1.5 mb-5.5 text-xs text-slate-500">31 high-intent opportunities prioritized for launch</p>
             {lightMetrics.map((m) => (
-              <div key={m.label} className="mt-3 grid grid-cols-[120px_1fr_40px] items-center gap-2.5 text-[10px] text-slate-500">
-                <span>{m.label}</span>
+              <div key={m.label} className="mt-3 grid grid-cols-[105px_1fr_36px] sm:grid-cols-[120px_1fr_40px] items-center gap-2.5 text-[10px] text-slate-500">
+                <span className="truncate">{m.label}</span>
                 <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-fuchsia-500 to-purple-600"

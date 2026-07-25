@@ -50,29 +50,29 @@ export function ProblemSection() {
         </div>
 
         {/* Visibility panel */}
-        <div className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-[0_28px_80px_rgba(15,23,42,0.11)]">
-          <div className="flex items-center justify-between gap-3.5">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-4.5 sm:p-7 shadow-[0_28px_80px_rgba(15,23,42,0.11)]">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5">
             <div>
-              <h3 className="m-0 text-lg">Multi-platform visibility</h3>
+              <h3 className="m-0 text-base sm:text-lg font-bold">Multi-platform visibility</h3>
               <p className="mt-1 text-xs text-slate-500">Discoverability across modern search surfaces</p>
             </div>
-            <div className="min-w-[88px] rounded-[14px] bg-fuchsia-50 px-2.75 py-2.75 text-center text-fuchsia-700">
-              <strong className="block text-2xl">74</strong>
-              <span className="text-[9px] uppercase font-bold">Overall</span>
+            <div className="min-w-[88px] rounded-[14px] bg-fuchsia-50 px-3 py-2 text-center text-fuchsia-700">
+              <strong className="block text-2xl font-black">74</strong>
+              <span className="text-[9px] uppercase font-bold tracking-wider">Overall</span>
             </div>
           </div>
 
-          <div className="mt-6 grid gap-3">
+          <div className="mt-6 grid gap-2.5 sm:gap-3">
             {platformVisibility.map(({ icon: Icon, label, value }) => (
               <div
                 key={label}
-                className="grid grid-cols-[150px_1fr_45px] items-center gap-3.5 rounded-[14px] border border-slate-100 bg-slate-50 px-3.5 py-3.25"
+                className="grid grid-cols-[110px_1fr_36px] sm:grid-cols-[150px_1fr_45px] items-center gap-2.5 sm:gap-3.5 rounded-[14px] border border-slate-100 bg-slate-50 px-3 sm:px-3.5 py-3"
               >
-                <div className="flex items-center gap-2.25 text-xs font-bold">
-                  <span className="grid size-7.5 place-items-center rounded-[10px] border border-slate-200 bg-white">
-                    <Icon className="size-3.5 text-fuchsia-600" />
+                <div className="flex items-center gap-2 text-[11px] sm:text-xs font-bold truncate">
+                  <span className="grid size-6.5 sm:size-7.5 shrink-0 place-items-center rounded-[9px] border border-slate-200 bg-white">
+                    <Icon className="size-3 sm:size-3.5 text-fuchsia-600" />
                   </span>
-                  {label}
+                  <span className="truncate">{label}</span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                   <div
@@ -80,7 +80,7 @@ export function ProblemSection() {
                     style={{ width: `${value}%` }}
                   />
                 </div>
-                <strong className="text-right text-sm">{value}%</strong>
+                <strong className="text-right text-xs sm:text-sm font-bold">{value}%</strong>
               </div>
             ))}
           </div>

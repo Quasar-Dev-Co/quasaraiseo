@@ -60,8 +60,42 @@ export function WorkflowSection() {
           </div>
         </div>
 
-        {/* Canvas */}
-        <div className="relative min-h-[560px] rounded-[30px] border border-slate-200 bg-white p-6.5 shadow-[0_28px_80px_rgba(15,23,42,0.11)]">
+        {/* Mobile View Card List */}
+        <div className="grid grid-cols-1 gap-3.5 sm:hidden">
+          {nodes.map((node, i) => {
+            const Icon = node.icon
+            const isDark = node.className.includes("text-white")
+            return (
+              <div
+                key={i}
+                className={`rounded-2xl border p-4 shadow-sm ${
+                  isDark
+                    ? "border-slate-800 bg-slate-950 text-white"
+                    : "border-slate-200 bg-white text-slate-900"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`grid size-9 place-items-center rounded-xl ${
+                      isDark ? "bg-fuchsia-500/15 text-fuchsia-400" : "bg-fuchsia-50 text-fuchsia-700"
+                    }`}
+                  >
+                    <Icon className="size-4.5" />
+                  </span>
+                  <div>
+                    <h4 className="text-sm font-bold">{node.title}</h4>
+                    <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                      {node.text}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Desktop Canvas Graph */}
+        <div className="relative hidden min-h-[560px] rounded-[30px] border border-slate-200 bg-white p-6.5 shadow-[0_28px_80px_rgba(15,23,42,0.11)] sm:block">
           {nodes.map((node, i) => {
             const Icon = node.icon
             const isDark = node.className.includes("text-white")
@@ -96,7 +130,7 @@ export function WorkflowSection() {
             <path
               d="M300 120 V190 M300 190 H145 M300 190 H455 M145 190 V280 M455 190 V280 M145 360 H455 M300 360 V420"
               fill="none"
-              stroke="rgba(16,185,129,0.45)"
+              stroke="rgba(217,70,239,0.45)"
               strokeWidth="2"
             />
           </svg>

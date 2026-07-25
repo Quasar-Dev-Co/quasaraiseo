@@ -24,9 +24,9 @@ export function DiscoverySection() {
           answers, and entity-based discovery.
         </p>
 
-        <div className="mt-8.5 rounded-[28px] border border-slate-200 bg-white p-3.5 shadow-[0_28px_80px_rgba(15,23,42,0.11)]">
+        <div className="mt-8.5 rounded-[28px] border border-slate-200 bg-white p-2.5 sm:p-3.5 shadow-[0_28px_80px_rgba(15,23,42,0.11)]">
           {/* Tabs */}
-          <div className="flex gap-1.75 rounded-2xl bg-slate-100 p-1.5">
+          <div className="flex flex-col sm:flex-row gap-1.5 rounded-2xl bg-slate-100 p-1.5">
             {[
               { value: "google" as const, label: "Google Search" },
               { value: "overview" as const, label: "AI Overview" },
@@ -35,7 +35,7 @@ export function DiscoverySection() {
               <button
                 key={value}
                 onClick={() => setTab(value)}
-                className={`flex-1 rounded-xl border py-3 text-xs font-bold transition-all ${
+                className={`flex-1 rounded-xl border py-2.5 px-3 text-xs font-bold transition-all ${
                   tab === value
                     ? "border-slate-200 bg-white text-slate-900 shadow-[0_8px_18px_rgba(15,23,42,0.08)]"
                     : "border-transparent text-slate-500"
@@ -47,7 +47,7 @@ export function DiscoverySection() {
           </div>
 
           {/* Panel */}
-          <div className="grid grid-cols-1 items-center gap-10.5 px-5.5 pb-5.5 pt-7 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="grid grid-cols-1 items-center gap-8.5 px-3.5 sm:px-5.5 pb-5.5 pt-6 lg:grid-cols-[0.9fr_1.1fr]">
             <div>
               <span className="inline-flex items-center gap-1.75 rounded-full bg-fuchsia-50 px-2.75 py-2 text-[11px] font-bold text-fuchsia-700">
                 <DiscoveryIcon className="size-3.5" /> {discovery.badge}
