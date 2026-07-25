@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { jsPDF } from "jspdf";
 import {
   Upload, FileArchive, Sparkles, Loader2, FileText, Download,
   Trash2, Zap, CheckCircle2, XCircle, Clock, Package, Brain,
@@ -41,6 +42,31 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function extractHtmlFromResult(result: string): string | null {
+  if (!result) return null;
+  // Check for tool-call JSON containing HTML content
+  const toolCallMatch = result.match(/"content"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+  if (toolCallMatch) {
+    const unescaped = toolCallMatch[1]
+      .replace(/\\n/g, "\n")
+      .replace(/\\"/g, '"')
+      .replace(/\\\//g, "/");
+    if (unescaped.includes("<html") || unescaped.includes("<!DOCTYPE")) {
+      return unescaped;
+    }
+  }
+  // Check for raw HTML in the result
+  if (result.includes("<!DOCTYPE html") || result.includes("<html")) {
+    return result;
+  }
+  // Check for substantial HTML content (multiple tags)
+  const htmlTagCount = (result.match(/<(?:html|head|body|div|table|h[1-6]|p|section|article|header|footer|tr|td|th|ul|ol|li)\b/g) || []).length;
+  if (htmlTagCount >= 5) {
+    return result.startsWith("<") ? result : `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:sans-serif;padding:40px;}</style></head><body>${result}</body></html>`;
+  }
+  return null;
 }
 
 function formatDate(dateStr: string): string {
@@ -114,6 +140,34 @@ export default function AuditMcpPage() {
     try { await agentApi.createJob(prompt, selectedSkillId || undefined, selectedModel); setPrompt(""); await loadData(); }
     catch (err) { setError(err instanceof Error ? err.message : "Failed to submit task"); }
     finally { setSubmitting(false); }
+  };
+
+  const handleDownloadPdf = async (html: string, jobPrompt: string) => {
+    try {
+      const container = document.createElement("div");
+      container.style.position = "fixed";
+      container.style.left = "-9999px";
+      container.style.top = "0";
+      container.style.width = "794px";
+      container.style.background = "#ffffff";
+      container.innerHTML = html;
+      document.body.appendChild(container);
+
+      const pdf = new jsPDF("p", "pt", "a4");
+      await pdf.html(container, {
+        callback: (doc) => {
+          const filename = jobPrompt.slice(0, 40).replace(/[^a-zA-Z0-9]/g, "_") || "report";
+          doc.save(`${filename}.pdf`);
+        },
+        autoPaging: "text",
+        width: 794,
+        windowWidth: 794,
+      });
+
+      document.body.removeChild(container);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "PDF generation failed");
+    }
   };
 
   const handleDownload = async (file: GeneratedFileRecord) => {
@@ -318,11 +372,25 @@ export default function AuditMcpPage() {
                                 {job.errorMessage}
                               </div>
                             )}
-                            {job.status === "completed" && job.result && (
-                              <div className="mt-3 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600 dark:bg-slate-800/50 dark:text-slate-300">
-                                <p className="line-clamp-4 whitespace-pre-wrap">{job.result}</p>
-                              </div>
-                            )}
+                            {job.status === "completed" && job.result && (() => {
+                              const html = extractHtmlFromResult(job.result);
+                              return (
+                                <div className="mt-3 space-y-3">
+                                  <div className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600 dark:bg-slate-800/50 dark:text-slate-300">
+                                    <p className="line-clamp-4 whitespace-pre-wrap">{job.result}</p>
+                                  </div>
+                                  {html && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleDownloadPdf(html, job.prompt)}
+                                    >
+                                      <FileText className="size-3.5" /> Download PDF
+                                    </Button>
+                                  )}
+                                </div>
+                              );
+                            })()}
                             {job.outputFiles && job.outputFiles.length > 0 && (
                               <div className="mt-4 space-y-2">
                                 <div className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Generated Files</div>
