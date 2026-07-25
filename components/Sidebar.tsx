@@ -42,7 +42,7 @@ export default function Sidebar() {
   const progressPercentage = (creditsUsed / creditsMax) * 100;
 
   const sidebarContent = (
-    <aside className="flex h-full w-[238px] flex-col border-r border-slate-200/90 bg-white/76 px-4 py-7 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/80">
+    <aside className="relative overflow-hidden flex h-full w-[238px] flex-col border-r border-slate-200/90 bg-white/76 px-4 py-7 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/80">
       {/* Brand logo */}
       <div className="flex items-center gap-3 px-3 pb-8">
         <div className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-[12px] border border-fuchsia-500/30 bg-slate-950 p-1.5 shadow-[0_8px_20px_rgba(217,70,239,0.3)]">
@@ -81,7 +81,7 @@ export default function Sidebar() {
               {isActive && (
                 <motion.div
                   layoutId="activeTabIndicator"
-                  className="absolute -left-4 top-[9px] h-[30px] w-1.5 rounded-r-lg bg-gradient-to-b from-fuchsia-500 via-purple-600 to-pink-500 shadow-[0_0_14px_rgba(217,70,239,0.7)]"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 h-[26px] w-1.5 rounded-r-lg bg-gradient-to-b from-fuchsia-500 via-purple-600 to-pink-500 shadow-[0_0_14px_rgba(217,70,239,0.7)]"
                   transition={{ type: "spring", stiffness: 380, damping: 30 }}
                 />
               )}

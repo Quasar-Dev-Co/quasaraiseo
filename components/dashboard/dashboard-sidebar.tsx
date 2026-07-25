@@ -62,7 +62,7 @@ export function DashboardSidebar({ mobileOpen = false, onMobileClose }: { mobile
   };
 
   const sidebarContent = (
-    <aside className="flex h-full w-[260px] flex-col border-r border-slate-200/80 bg-white/80 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/80">
+    <aside className="relative overflow-hidden flex h-full w-[260px] flex-col border-r border-slate-200/80 bg-white/80 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/80">
       {/* Brand */}
       <div className="flex items-center gap-3 px-5 pt-6 pb-7">
         <span className="grid size-9.5 place-items-center overflow-hidden rounded-[13px] border border-fuchsia-500/30 bg-slate-950 p-1.5 shadow-[0_8px_20px_rgba(217,70,239,0.3)]">
@@ -78,7 +78,7 @@ export function DashboardSidebar({ mobileOpen = false, onMobileClose }: { mobile
         </div>
       </div>
 
-      <Separator className="mx-4" />
+      <div className="mx-4 h-px bg-slate-200/80 dark:bg-white/10 shrink-0" />
 
       {/* Nav items */}
       <nav className="flex flex-col gap-1 px-3 pt-4">
@@ -91,14 +91,14 @@ export function DashboardSidebar({ mobileOpen = false, onMobileClose }: { mobile
               href={item.href}
               onClick={() => onMobileClose?.()}
               className={cn(
-                "group flex min-h-[44px] items-center gap-3 rounded-xl px-3.5 text-[13px] font-semibold transition-all duration-200",
+                "relative group flex min-h-[44px] items-center gap-3 rounded-xl px-3.5 text-[13px] font-semibold transition-all duration-200",
                 active
                   ? "bg-gradient-to-r from-fuchsia-500/15 via-purple-500/10 to-transparent text-fuchsia-950 dark:text-fuchsia-300 font-bold"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
               )}
             >
               {active && (
-                <span className="absolute -ml-3.5 h-[26px] w-1 rounded-r-full bg-gradient-to-b from-fuchsia-500 via-purple-600 to-pink-500 shadow-[0_0_12px_rgba(217,70,239,0.5)]" />
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 h-[24px] w-1 rounded-r-full bg-gradient-to-b from-fuchsia-600 via-purple-600 to-pink-500 shadow-[0_0_12px_rgba(217,70,239,0.6)]" />
               )}
               <Icon className={cn("size-[18px] shrink-0", active ? "text-fuchsia-600 dark:text-fuchsia-400" : "")} />
               <span>{item.label}</span>
@@ -108,7 +108,7 @@ export function DashboardSidebar({ mobileOpen = false, onMobileClose }: { mobile
         })}
       </nav>
 
-      <Separator className="mx-4 mt-4" />
+      <div className="mx-4 mt-4 h-px bg-slate-200/80 dark:bg-white/10 shrink-0" />
 
       {/* Google integrations */}
       <div className="px-4 pt-3 pb-1">
@@ -124,14 +124,14 @@ export function DashboardSidebar({ mobileOpen = false, onMobileClose }: { mobile
               href={item.href}
               onClick={() => onMobileClose?.()}
               className={cn(
-                "group flex min-h-[40px] items-center gap-3 rounded-xl px-3.5 text-[13px] font-semibold transition-all duration-200",
+                "relative group flex min-h-[40px] items-center gap-3 rounded-xl px-3.5 text-[13px] font-semibold transition-all duration-200",
                 active
                   ? "bg-gradient-to-r from-fuchsia-500/15 via-purple-500/10 to-transparent text-fuchsia-950 dark:text-fuchsia-300 font-bold"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
               )}
             >
               {active && (
-                <span className="absolute -ml-3.5 h-[24px] w-1 rounded-r-full bg-gradient-to-b from-fuchsia-500 via-purple-600 to-pink-500 shadow-[0_0_12px_rgba(217,70,239,0.5)]" />
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 h-[22px] w-1 rounded-r-full bg-gradient-to-b from-fuchsia-600 via-purple-600 to-pink-500 shadow-[0_0_12px_rgba(217,70,239,0.6)]" />
               )}
               <Icon className={cn("size-[17px] shrink-0", active ? "text-fuchsia-600 dark:text-fuchsia-400" : "")} />
               <span>{item.label}</span>
@@ -142,7 +142,7 @@ export function DashboardSidebar({ mobileOpen = false, onMobileClose }: { mobile
       </nav>
 
       <div className="mt-auto">
-        <Separator className="mx-4 mb-4" />
+        <div className="mx-4 mb-4 h-px bg-slate-200/80 dark:bg-white/10 shrink-0" />
 
         {/* Credits card */}
         <div className="mx-3 mb-4 rounded-2xl border border-slate-200/90 bg-white/65 p-4 dark:border-white/10 dark:bg-slate-900/50">
