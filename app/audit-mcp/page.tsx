@@ -188,7 +188,7 @@ export default function AuditMcpPage() {
           {/* Left: Task creation + results */}
           <div className="space-y-6">
             {/* Task creation card */}
-            <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
+            <article className="rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
               <header className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5 dark:border-white/5">
                 <div className="flex gap-2.75">
                   <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Brain className="size-[18px]" /></span>
@@ -303,7 +303,7 @@ export default function AuditMcpPage() {
                       const status = STATUS_CONFIG[job.status];
                       const StatusIcon = status.icon;
                       return (
-                        <article key={job.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
+                        <article key={job.id} className="rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
                           <header className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4 dark:border-white/5">
                             <div className="flex items-center gap-2.5">
                               <StatusIcon className={`size-4 ${job.status === "completed" ? "text-emerald-600" : "text-red-500"}`} />
@@ -392,7 +392,7 @@ export default function AuditMcpPage() {
 
           {/* Right sidebar: Skills library */}
           <aside className="space-y-4">
-            <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
+            <article className="rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
               <header className="border-b border-slate-100 px-5 py-4 dark:border-white/5">
                 <div className="flex gap-2.5">
                   <span className="grid size-8 place-items-center rounded-[10px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Package className="size-4" /></span>
