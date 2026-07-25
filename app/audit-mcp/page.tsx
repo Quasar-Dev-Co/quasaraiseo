@@ -239,13 +239,13 @@ export default function AuditMcpPage() {
                         <button className="ml-1 text-fuchsia-600 hover:underline" onClick={() => setSelectedSkillId(null)}>remove</button>
                       </span>
                     ) : (
-                      <span>No skill selected (optional)</span>
+                      <span className="text-amber-600 dark:text-amber-400">Select a skill to enable task creation</span>
                     )}
                   </div>
                   <Button
                     size="lg"
                     onClick={handleSubmitJob}
-                    disabled={!prompt.trim() || submitting}
+                    disabled={!prompt.trim() || !selectedSkillId || submitting}
                   >
                     {submitting ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
                     {submitting ? "Starting..." : "Run AI Task"}
