@@ -12,7 +12,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   agentApi,
   type AgentJobRecord,
@@ -216,21 +215,20 @@ export default function AuditMcpPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 whitespace-nowrap">AI Model</label>
-                  <Select value={selectedModel} onValueChange={(v) => setSelectedModel(v ?? "glm-5.2")}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select model" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
-                      {models.length === 0 && (
-                        <SelectItem value={selectedModel}>{selectedModel}</SelectItem>
-                      )}
-                      {models.map((m) => (
-                        <SelectItem key={m.id} value={m.id}>
-                          {m.label || m.id}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <select
+                    value={selectedModel}
+                    onChange={(e) => setSelectedModel(e.target.value)}
+                    className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30 dark:hover:bg-input/50"
+                  >
+                    {models.length === 0 && (
+                      <option value={selectedModel}>{selectedModel}</option>
+                    )}
+                    {models.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.label || m.id}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-xs text-slate-500 dark:text-slate-400">
