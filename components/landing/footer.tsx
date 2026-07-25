@@ -1,5 +1,6 @@
 import Link from "next/link"
-import { AtSign, Globe, Orbit, PlayCircle } from "lucide-react"
+import Image from "next/image"
+import { AtSign, Globe, PlayCircle } from "lucide-react"
 
 import { footerSections } from "./data"
 
@@ -10,11 +11,11 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-8.5 sm:grid-cols-2 lg:grid-cols-[1.35fr_repeat(4,0.65fr)]">
           <div>
             <Link href="#top" className="flex items-center gap-2.5 text-[19px] font-black tracking-[-0.035em]">
-              <span className="grid size-9.5 place-items-center rounded-[13px] bg-gradient-to-br from-emerald-400 to-emerald-700 text-white shadow-[0_12px_25px_rgba(16,185,129,0.28)]">
-                <Orbit className="size-[19px]" />
+              <span className="grid size-9.5 place-items-center rounded-[13px] border border-fuchsia-500/30 bg-slate-950 p-1.5 shadow-[0_8px_20px_rgba(217,70,239,0.35)]">
+                <Image src="/mainlogos/mainlogo.png" alt="QuasarAISEO" width={26} height={26} className="size-full object-contain" />
               </span>
               <span>
-                Quasar<span className="text-emerald-600">AISEO</span>
+                Quasar<span className="bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">AISEO</span>
               </span>
             </Link>
             <p className="mt-4 max-w-[340px] text-xs leading-relaxed text-slate-500">

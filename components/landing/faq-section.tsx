@@ -13,7 +13,7 @@ export function FaqSection() {
     <section id="faq" className="px-4 py-26">
       <div className="mx-auto grid w-full max-w-[1240px] grid-cols-1 items-start gap-13.5 lg:grid-cols-[0.7fr_1.3fr]">
         <div>
-          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">
+          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-fuchsia-700">
             <CircleHelp className="size-3.5" /> Frequently asked
           </div>
           <h2 className="mt-3.5 max-w-[850px] text-[clamp(34px,4.5vw,60px)] font-black leading-[1.02] tracking-[-0.052em]">
@@ -25,7 +25,7 @@ export function FaqSection() {
           </p>
           <Link
             href="/create_audit_report"
-            className="mt-6 inline-flex min-h-13 items-center gap-2 rounded-[15px] bg-slate-950 px-5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(2,6,23,0.18)] transition-transform hover:-translate-y-px"
+            className="mt-6 inline-flex min-h-13 items-center gap-2 rounded-[15px] bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 px-5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(217,70,239,0.3)] transition-transform hover:-translate-y-px"
           >
             Create free audit <ArrowUpRight className="size-4" />
           </Link>

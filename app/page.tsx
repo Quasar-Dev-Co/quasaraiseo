@@ -27,7 +27,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_7%_6%,rgba(16,185,129,0.14),transparent_28%),radial-gradient(circle_at_94%_10%,rgba(245,158,11,0.11),transparent_23%),linear-gradient(180deg,#fbfefd_0%,#f8fafc_42%,#fff_100%)] text-slate-900 antialiased">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_7%_6%,rgba(217,70,239,0.14),transparent_28%),radial-gradient(circle_at_94%_10%,rgba(147,51,234,0.11),transparent_23%),linear-gradient(180deg,#fdf4ff_0%,#f8fafc_42%,#fff_100%)] text-slate-900 antialiased">
       <Navbar />
       <main>
         <Hero />
@@ -47,7 +47,7 @@ export default function Home() {
 
       {toast && (
         <div className="fixed bottom-6 right-6 z-100 flex w-[min(380px,calc(100%-32px))] gap-3 rounded-[15px] border border-slate-200 bg-white/96 p-3.75 shadow-[0_24px_65px_rgba(15,23,42,0.18)]">
-          <CheckCircle2 className="size-5 text-emerald-600" />
+          <CheckCircle2 className="size-5 text-fuchsia-600" />
           <div>
             <strong className="text-[13px]">Action ready</strong>
             <p className="mt-0.75 text-[11px] text-slate-500">{toast}</p>

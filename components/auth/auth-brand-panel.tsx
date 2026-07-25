@@ -26,24 +26,24 @@ const stats = [
 
 export function AuthBrandPanel() {
   return (
-    <div className="relative hidden overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-black lg:flex lg:flex-col lg:justify-between lg:p-12">
+    <div className="relative hidden overflow-hidden bg-gradient-to-br from-slate-950 via-purple-950/40 to-slate-950 lg:flex lg:flex-col lg:justify-between lg:p-12">
       {/* Glow effects */}
-      <div className="pointer-events-none absolute -top-24 -right-24 size-80 rounded-full bg-emerald-500/12 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 -left-24 size-80 rounded-full bg-amber-500/8 blur-3xl" />
-      <div className="pointer-events-none absolute top-1/3 left-1/2 size-64 rounded-full bg-emerald-400/6 blur-3xl" />
+      <div className="pointer-events-none absolute -top-24 -right-24 size-80 rounded-full bg-fuchsia-600/18 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 -left-24 size-80 rounded-full bg-pink-500/12 blur-3xl" />
+      <div className="pointer-events-none absolute top-1/3 left-1/2 size-64 rounded-full bg-purple-500/10 blur-3xl" />
 
       {/* Top: Logo + badge */}
       <div className="relative flex flex-col gap-6">
         <div className="flex items-center gap-3">
-          <span className="grid size-11 place-items-center overflow-hidden rounded-[15px] border border-emerald-300/30 bg-white shadow-[0_12px_25px_rgba(16,185,129,0.28)]">
+          <span className="grid size-11 place-items-center overflow-hidden rounded-[15px] border border-fuchsia-300/30 bg-white shadow-[0_12px_25px_rgba(217,70,239,0.28)]">
             <Image src="/mainlogos/mainlogo.png" alt="QuasarAISEO" width={26} height={26} className="h-[26px] w-[26px] object-contain" />
           </span>
           <span className="text-[22px] font-black tracking-[-0.035em] text-white">
-            Quasar<span className="text-emerald-400">AISEO</span>
+            Quasar<span className="bg-gradient-to-r from-fuchsia-400 to-pink-400 bg-clip-text text-transparent">AISEO</span>
           </span>
         </div>
-        <div className="inline-flex w-max items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3.5 py-2 text-xs font-bold uppercase tracking-[0.16em] text-emerald-300">
-          <span className="size-2 rounded-full bg-emerald-400 shadow-[0_0_0_5px_rgba(16,185,129,0.12)]" />
+        <div className="inline-flex w-max items-center gap-2 rounded-full border border-fuchsia-400/30 bg-fuchsia-500/15 px-3.5 py-2 text-xs font-bold uppercase tracking-[0.16em] text-fuchsia-300">
+          <span className="size-2 rounded-full bg-fuchsia-400 shadow-[0_0_0_5px_rgba(217,70,239,0.18)]" />
           SEO + GEO automation platform
         </div>
       </div>
@@ -53,7 +53,7 @@ export function AuthBrandPanel() {
         <div>
           <h2 className="max-w-[440px] text-[clamp(32px,3.5vw,46px)] font-black leading-[1.05] tracking-[-0.05em] text-white">
             Win visibility across search and{" "}
-            <em className="not-italic bg-gradient-to-r from-emerald-400 via-emerald-300 to-amber-400 bg-clip-text text-transparent">
+            <em className="not-italic bg-gradient-to-r from-fuchsia-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
               AI answers.
             </em>
           </h2>
@@ -69,7 +69,7 @@ export function AuthBrandPanel() {
               key={f.title}
               className="flex items-start gap-3.5 rounded-[16px] border border-white/8 bg-white/[0.03] p-4 backdrop-blur-sm"
             >
-              <span className="grid size-10 shrink-0 place-items-center rounded-[12px] bg-emerald-500/10 text-emerald-300">
+              <span className="grid size-10 shrink-0 place-items-center rounded-[12px] bg-fuchsia-500/15 text-fuchsia-300">
                 <f.icon className="size-[18px]" />
               </span>
               <div>
@@ -94,7 +94,7 @@ export function AuthBrandPanel() {
           ))}
         </div>
         <div className="flex items-center gap-2 text-[12px] text-slate-500">
-          <ShieldCheck className="size-4 text-emerald-400/70" />
+          <ShieldCheck className="size-4 text-fuchsia-400/70" />
           SOC 2-ready · GDPR compliant · Public website data only
         </div>
       </div>

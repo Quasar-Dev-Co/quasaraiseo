@@ -1,17 +1,18 @@
 "use client"
 
 import Link from "next/link"
-import { Orbit, ArrowLeft } from "lucide-react"
+import Image from "next/image"
+import { ArrowLeft } from "lucide-react"
 
 export function AuthHeader({ backHref = "/" }: { backHref?: string }) {
   return (
     <header className="absolute left-0 right-0 top-0 z-10 flex items-center justify-between px-6 py-5">
       <Link href="/" className="flex items-center gap-2.5 text-[17px] font-black tracking-[-0.035em]">
-        <span className="grid size-9 place-items-center rounded-[12px] bg-gradient-to-br from-emerald-400 to-emerald-700 text-white shadow-[0_12px_25px_rgba(16,185,129,0.28)]">
-          <Orbit className="size-[18px]" />
+        <span className="grid size-9 place-items-center rounded-[12px] border border-fuchsia-500/30 bg-slate-950 p-1.5 shadow-[0_8px_20px_rgba(217,70,239,0.35)]">
+          <Image src="/mainlogos/mainlogo.png" alt="QuasarAISEO" width={24} height={24} className="size-full object-contain" priority />
         </span>
         <span className="text-white">
-          Quasar<span className="text-emerald-400">AISEO</span>
+          Quasar<span className="bg-gradient-to-r from-fuchsia-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">AISEO</span>
         </span>
       </Link>
       <Link

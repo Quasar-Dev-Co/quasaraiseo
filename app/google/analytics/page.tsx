@@ -85,7 +85,7 @@ export default function AnalyticsPage() {
       <RequireAuth>
         <DashboardLayout>
           <div className="flex h-[60vh] items-center justify-center">
-            <Loader2 className="size-8 animate-spin text-emerald-500" />
+            <Loader2 className="size-8 animate-spin text-fuchsia-500" />
           </div>
         </DashboardLayout>
       </RequireAuth>
@@ -158,7 +158,7 @@ export default function AnalyticsPage() {
               <select
                 value={selectedProperty}
                 onChange={(e) => setSelectedProperty(e.target.value)}
-                className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
               >
                 {properties.map((p) => (
                   <option key={p.propertyId} value={p.propertyId}>
@@ -172,10 +172,10 @@ export default function AnalyticsPage() {
           {/* Stats cards */}
           <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
             {[
-              { label: "Sessions", value: (totalsMap.sessions ?? 0).toLocaleString(), icon: Activity, color: "text-emerald-600 dark:text-emerald-400" },
-              { label: "Total Users", value: (totalsMap.totalUsers ?? 0).toLocaleString(), icon: Users, color: "text-blue-600 dark:text-blue-400" },
-              { label: "Page Views", value: (totalsMap.pageViews ?? 0).toLocaleString(), icon: Eye, color: "text-purple-600 dark:text-purple-400" },
-              { label: "Avg Session", value: formatDuration(totalsMap.avgSessionDuration ?? 0), icon: Clock, color: "text-orange-600 dark:text-orange-400" },
+              { label: "Sessions", value: (totalsMap.sessions ?? 0).toLocaleString(), icon: Activity, color: "text-fuchsia-600 dark:text-fuchsia-400" },
+              { label: "Total Users", value: (totalsMap.totalUsers ?? 0).toLocaleString(), icon: Users, color: "text-fuchsia-600 dark:text-fuchsia-400" },
+              { label: "Page Views", value: (totalsMap.pageViews ?? 0).toLocaleString(), icon: Eye, color: "text-fuchsia-600 dark:text-fuchsia-400" },
+              { label: "Avg Session", value: formatDuration(totalsMap.avgSessionDuration ?? 0), icon: Clock, color: "text-fuchsia-600 dark:text-fuchsia-400" },
             ].map((stat) => {
               const Icon = stat.icon;
               return (
@@ -212,7 +212,7 @@ export default function AnalyticsPage() {
             </div>
             {fetching ? (
               <div className="flex h-40 items-center justify-center">
-                <Loader2 className="size-6 animate-spin text-emerald-500" />
+                <Loader2 className="size-6 animate-spin text-fuchsia-500" />
               </div>
             ) : data && data.rows.length > 0 ? (
               <div className="px-6 py-6">
@@ -226,7 +226,7 @@ export default function AnalyticsPage() {
                         title={`${row.date}: ${row.sessions} sessions`}
                       >
                         <div
-                          className="w-full rounded-t bg-gradient-to-t from-emerald-500 to-emerald-400 transition-all hover:from-emerald-600 hover:to-emerald-500"
+                          className="w-full rounded-t bg-gradient-to-t from-fuchsia-600 to-fuchsia-400 transition-all hover:from-fuchsia-700 hover:to-fuchsia-500"
                           style={{ height: `${Math.max(height, 2)}%` }}
                         />
                       </div>
@@ -254,7 +254,7 @@ export default function AnalyticsPage() {
             </div>
             {fetching ? (
               <div className="flex h-40 items-center justify-center">
-                <Loader2 className="size-6 animate-spin text-emerald-500" />
+                <Loader2 className="size-6 animate-spin text-fuchsia-500" />
               </div>
             ) : data && data.rows.length > 0 ? (
               <div className="overflow-x-auto">
@@ -278,7 +278,7 @@ export default function AnalyticsPage() {
                         <td className="px-6 py-3 font-semibold text-slate-900 dark:text-white">
                           {row.date}
                         </td>
-                        <td className="px-6 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                        <td className="px-6 py-3 text-right font-bold text-fuchsia-600 dark:text-fuchsia-400">
                           {row.sessions.toLocaleString()}
                         </td>
                         <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">

@@ -31,8 +31,8 @@ import { parseRichReport, type RichReport, type Finding } from "@/lib/report-typ
 type ShowToast = (message: string) => void
 
 const scoreStyles: Record<string, { bar: string; grade: string }> = {
-  "": { bar: "bg-emerald-500", grade: "text-emerald-600" },
-  overall: { bar: "bg-emerald-500", grade: "text-emerald-300" },
+  "": { bar: "bg-fuchsia-500", grade: "text-fuchsia-600 dark:text-fuchsia-400" },
+  overall: { bar: "bg-gradient-to-r from-fuchsia-600 to-purple-600", grade: "text-fuchsia-300" },
   yellow: { bar: "bg-amber-400", grade: "text-amber-600" },
   orange: { bar: "bg-orange-500", grade: "text-orange-600" },
 }
@@ -54,7 +54,7 @@ const severityConfig: Record<string, { label: string; cls: string; dot: string }
   critical: { label: "Critical", cls: "bg-red-50 text-red-600 dark:bg-red-400/15 dark:text-red-400", dot: "bg-red-500" },
   high: { label: "High", cls: "bg-orange-50 text-orange-600 dark:bg-orange-400/15 dark:text-orange-400", dot: "bg-orange-500" },
   medium: { label: "Medium", cls: "bg-amber-50 text-amber-600 dark:bg-amber-400/15 dark:text-amber-400", dot: "bg-amber-400" },
-  pass: { label: "Passed", cls: "bg-emerald-50 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-400", dot: "bg-emerald-500" },
+  pass: { label: "Passed", cls: "bg-fuchsia-50 text-fuchsia-600 dark:bg-fuchsia-400/15 dark:text-fuchsia-400", dot: "bg-fuchsia-500" },
 }
 
 function SeverityBadge({ severity }: { severity: string }) {
@@ -68,7 +68,7 @@ function SeverityBadge({ severity }: { severity: string }) {
 }
 
 const statusConfig: Record<string, string> = {
-  good: "bg-emerald-50 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400",
+  good: "bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-400",
   warning: "bg-amber-50 text-amber-700 dark:bg-amber-400/15 dark:text-amber-400",
   critical: "bg-red-50 text-red-700 dark:bg-red-400/15 dark:text-red-400",
 }
@@ -96,7 +96,7 @@ function FindingsList({ findings }: { findings: Finding[] }) {
             <p className="text-[12px] leading-relaxed text-slate-600 dark:text-slate-400 break-words">{f.detail}</p>
             <div className="md:max-w-[200px]">
               <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Action</p>
-              <p className="text-[12px] leading-relaxed text-emerald-700 dark:text-emerald-400 break-words">{f.action}</p>
+              <p className="text-[12px] leading-relaxed text-fuchsia-700 dark:text-fuchsia-400 break-words">{f.action}</p>
             </div>
           </div>
         )
@@ -190,7 +190,7 @@ export function ReportPreview({ showToast, audit, phase }: ReportPreviewProps) {
       <section id="report-preview" className="mt-18">
         <div className="mb-6 flex flex-col items-start justify-between gap-7 lg:flex-row lg:items-end">
           <div>
-            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-400">
+            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-fuchsia-700 dark:text-fuchsia-400">
               <BarChart3 className="size-[15px]" /> Report preview
             </div>
             <h2 className="mt-3.5 max-w-[760px] text-[clamp(34px,4.5vw,60px)] font-black leading-[1.02] tracking-[-0.052em] text-slate-900 dark:text-white">
@@ -203,7 +203,7 @@ export function ReportPreview({ showToast, audit, phase }: ReportPreviewProps) {
         </div>
 
         <div className="rounded-[30px] border border-slate-200 bg-white/80 p-12 text-center shadow-[0_28px_80px_rgba(15,23,42,0.11)] dark:border-white/10 dark:bg-slate-900/60">
-          <span className="mx-auto grid size-20 place-items-center rounded-[22px] bg-emerald-50 text-emerald-600 dark:bg-emerald-400/10 dark:text-emerald-400">
+          <span className="mx-auto grid size-20 place-items-center rounded-[22px] bg-fuchsia-50 text-fuchsia-600 dark:bg-fuchsia-400/10 dark:text-fuchsia-400">
             <FileSearch className="size-9" />
           </span>
           <h3 className="mt-6 text-xl font-bold text-slate-900 dark:text-white">No audit data yet</h3>
@@ -219,7 +219,7 @@ export function ReportPreview({ showToast, audit, phase }: ReportPreviewProps) {
     <section id="report-preview" className="mt-18">
       <div className="mb-6 flex flex-col items-start justify-between gap-7 lg:flex-row lg:items-end">
         <div>
-          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-400">
+          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-fuchsia-700 dark:text-fuchsia-400">
             <BarChart3 className="size-[15px]" /> Report preview
           </div>
           <h2 className="mt-3.5 max-w-[760px] text-[clamp(34px,4.5vw,60px)] font-black leading-[1.02] tracking-[-0.052em] text-slate-900 dark:text-white">
@@ -232,7 +232,7 @@ export function ReportPreview({ showToast, audit, phase }: ReportPreviewProps) {
         </div>
         <span className={`flex items-center gap-2 rounded-full border px-3 py-2.25 text-xs font-bold ${
           hasRealData
-            ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-400"
+            ? "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700 dark:border-fuchsia-400/20 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"
             : "border-slate-200 bg-white text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-400"
         }`}>
           {isRunning ? (
@@ -247,7 +247,7 @@ export function ReportPreview({ showToast, audit, phase }: ReportPreviewProps) {
 
       <div className="rounded-[30px] border border-slate-200 bg-white/80 p-5 shadow-[0_28px_80px_rgba(15,23,42,0.11)] dark:border-white/10 dark:bg-slate-900/60">
         {/* Print-only professional header */}
-        <div className="hidden print:block mb-8 border-b-2 border-emerald-500 pb-4">
+        <div className="hidden print:block mb-8 border-b-2 border-fuchsia-500 pb-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-black tracking-tight text-slate-950">QuasarAISEO</h1>
@@ -280,7 +280,7 @@ export function ReportPreview({ showToast, audit, phase }: ReportPreviewProps) {
               <TriangleAlert className="size-[15px]" /> Audit failed
             </span>
           ) : (
-            <span className="flex items-center gap-1.75 rounded-full bg-emerald-50 px-2.5 py-2 text-[11px] font-bold text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400">
+            <span className="flex items-center gap-1.75 rounded-full bg-fuchsia-50 px-2.5 py-2 text-[11px] font-bold text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-400">
               <CircleCheckBig className="size-[15px]" /> Audit complete
             </span>
           )}
@@ -347,7 +347,7 @@ export function ReportPreview({ showToast, audit, phase }: ReportPreviewProps) {
                     <tr key={row.factor}>
                       <td className="border-b border-slate-100 px-5 py-4 text-xs font-bold text-slate-900 dark:border-white/5 dark:text-white">{row.factor}</td>
                       <td className="border-b border-slate-100 px-5 py-4 dark:border-white/5">
-                        <span className={`text-lg font-black ${row.score >= 70 ? "text-emerald-600 dark:text-emerald-400" : row.score >= 50 ? "text-amber-600 dark:text-amber-400" : "text-red-600 dark:text-red-400"}`}>{row.score}</span>
+                        <span className={`text-lg font-black ${row.score >= 70 ? "text-fuchsia-600 dark:text-fuchsia-400" : row.score >= 50 ? "text-amber-600 dark:text-amber-400" : "text-red-600 dark:text-red-400"}`}>{row.score}</span>
                         <span className="text-[10px] text-slate-400">/100</span>
                       </td>
                       <td className="border-b border-slate-100 px-5 py-4 text-xs text-slate-600 dark:border-white/5 dark:text-slate-400">{row.signals}</td>
@@ -383,7 +383,7 @@ export function ReportPreview({ showToast, audit, phase }: ReportPreviewProps) {
                       <td className="border-b border-slate-100 px-5 py-4 text-xs text-slate-700 dark:border-white/5 dark:text-slate-300">{kw.searchVolume.toLocaleString()}</td>
                       <td className="border-b border-slate-100 px-5 py-4 dark:border-white/5">
                         <b className={`rounded-full px-2.25 py-1.5 text-[10px] font-bold capitalize ${
-                          kw.difficulty === "low" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400"
+                          kw.difficulty === "low" ? "bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-400"
                           : kw.difficulty === "medium" ? "bg-amber-50 text-amber-700 dark:bg-amber-400/15 dark:text-amber-400"
                           : "bg-red-50 text-red-700 dark:bg-red-400/15 dark:text-red-400"
                         }`}>{kw.difficulty}</b>
@@ -391,7 +391,7 @@ export function ReportPreview({ showToast, audit, phase }: ReportPreviewProps) {
                       <td className="border-b border-slate-100 px-5 py-4 dark:border-white/5">
                         <b className={`rounded-full px-2.25 py-1.5 text-[10px] font-bold capitalize ${
                           kw.priority === "high" ? "bg-red-50 text-red-700 dark:bg-red-400/15 dark:text-red-400"
-                          : kw.priority === "quick win" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400"
+                          : kw.priority === "quick win" ? "bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-400"
                           : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                         }`}>{kw.priority}</b>
                       </td>
@@ -426,7 +426,7 @@ export function ReportPreview({ showToast, audit, phase }: ReportPreviewProps) {
                       <td className="border-b border-slate-100 px-5 py-4 text-xs text-slate-700 dark:border-white/5 dark:text-slate-300">{d.spamScore}%</td>
                       <td className="border-b border-slate-100 px-5 py-4 dark:border-white/5">
                         <b className={`rounded-full px-2.25 py-1.5 text-[10px] font-bold capitalize ${
-                          d.assessment === "healthy" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400"
+                          d.assessment === "healthy" ? "bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-400"
                           : d.assessment === "suspicious" ? "bg-amber-50 text-amber-700 dark:bg-amber-400/15 dark:text-amber-400"
                           : "bg-red-50 text-red-700 dark:bg-red-400/15 dark:text-red-400"
                         }`}>{d.assessment}</b>
@@ -469,7 +469,7 @@ export function ReportPreview({ showToast, audit, phase }: ReportPreviewProps) {
                       <td className="border-b border-slate-100 px-5 py-4 text-xs text-slate-700 dark:border-white/5 dark:text-slate-300">{c.purpose}</td>
                       <td className="border-b border-slate-100 px-5 py-4 dark:border-white/5">
                         <b className={`rounded-full px-2.25 py-1.5 text-[10px] font-bold ${
-                          c.status === "Allowed" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400"
+                          c.status === "Allowed" ? "bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-400"
                           : c.status === "Blocked" ? "bg-red-50 text-red-700 dark:bg-red-400/15 dark:text-red-400"
                           : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                         }`}>{c.status}</b>
@@ -539,15 +539,15 @@ export function ReportPreview({ showToast, audit, phase }: ReportPreviewProps) {
                     <td className="border-b border-slate-100 px-5 py-4 text-xs text-slate-700 dark:border-white/5 dark:text-slate-300">{row.weight}</td>
                     <td className="border-b border-slate-100 px-5 py-4 dark:border-white/5">
                       <div className="flex items-center gap-2">
-                        <span className={`text-sm font-black ${row.score >= 70 ? "text-emerald-600 dark:text-emerald-400" : row.score >= 50 ? "text-amber-600 dark:text-amber-400" : "text-red-600 dark:text-red-400"}`}>{row.score}</span>
+                        <span className={`text-sm font-black ${row.score >= 70 ? "text-fuchsia-600 dark:text-fuchsia-400" : row.score >= 50 ? "text-amber-600 dark:text-amber-400" : "text-red-600 dark:text-red-400"}`}>{row.score}</span>
                         <i className="h-1.25 w-16 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                          <b className="block h-full rounded-full bg-emerald-400" style={{ width: `${row.score}%` }} />
+                          <b className="block h-full rounded-full bg-fuchsia-500" style={{ width: `${row.score}%` }} />
                         </i>
                       </div>
                     </td>
                     <td className="border-b border-slate-100 px-5 py-4 dark:border-white/5">
                       <b className={`rounded-full px-2.25 py-1.5 text-[10px] font-bold ${
-                        row.status === "Good" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400"
+                        row.status === "Good" ? "bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-400"
                         : row.status === "Needs Work" ? "bg-amber-50 text-amber-700 dark:bg-amber-400/15 dark:text-amber-400"
                         : "bg-red-50 text-red-700 dark:bg-red-400/15 dark:text-red-400"
                       }`}>{row.status}</b>
@@ -603,7 +603,7 @@ export function ReportPreview({ showToast, audit, phase }: ReportPreviewProps) {
                           )}
                         </span>
                       </td>
-                      <td className="border-b border-slate-100 px-5 py-4 text-xs font-bold text-emerald-600 dark:border-white/5 dark:text-emerald-400">
+                      <td className="border-b border-slate-100 px-5 py-4 text-xs font-bold text-fuchsia-600 dark:border-white/5 dark:text-fuchsia-400">
                         {kw.position ?? "Not ranked"}
                       </td>
                     </tr>
@@ -632,7 +632,7 @@ export function ReportPreview({ showToast, audit, phase }: ReportPreviewProps) {
                 "border-l-red-500",
                 "border-l-orange-500",
                 "border-l-amber-400",
-                "border-l-emerald-500",
+                "border-l-fuchsia-500",
               ]
               return (
                 <div key={phaseKey} className={`mb-5 border-l-4 ${phaseColors[pIdx]} pl-5 last:mb-0`}>
@@ -641,7 +641,7 @@ export function ReportPreview({ showToast, audit, phase }: ReportPreviewProps) {
                       pIdx === 0 ? "bg-red-50 text-red-600 dark:bg-red-400/15 dark:text-red-400"
                       : pIdx === 1 ? "bg-orange-50 text-orange-600 dark:bg-orange-400/15 dark:text-orange-400"
                       : pIdx === 2 ? "bg-amber-50 text-amber-600 dark:bg-amber-400/15 dark:text-amber-400"
-                      : "bg-emerald-50 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-400"
+                      : "bg-fuchsia-50 text-fuchsia-600 dark:bg-fuchsia-400/15 dark:text-fuchsia-400"
                     }`}>{pIdx + 1}</span>
                     <h4 className="m-0 text-sm font-bold text-slate-900 dark:text-white">{phase.title}</h4>
                   </div>
@@ -669,7 +669,7 @@ export function ReportPreview({ showToast, audit, phase }: ReportPreviewProps) {
                 >
                   <span
                     className={`grid size-10.5 place-items-center rounded-[14px] text-[13px] font-black ${
-                      index === 0 ? "bg-emerald-100 dark:bg-emerald-400/15 dark:text-emerald-400" : "bg-slate-100 dark:bg-slate-800 dark:text-slate-300"
+                      index === 0 ? "bg-fuchsia-100 dark:bg-fuchsia-400/15 dark:text-fuchsia-400" : "bg-slate-100 dark:bg-slate-800 dark:text-slate-300"
                     }`}
                   >
                     {String(index + 1).padStart(2, "0")}
@@ -678,7 +678,7 @@ export function ReportPreview({ showToast, audit, phase }: ReportPreviewProps) {
                     <strong className="text-[13px] text-slate-900 dark:text-white">{text}</strong>
                   </div>
                   <aside className="flex gap-1.75">
-                    <b className="rounded-full bg-emerald-50 px-2.25 py-1.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400">
+                    <b className="rounded-full bg-fuchsia-50 px-2.25 py-1.5 text-[10px] font-bold text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-400">
                       {index < 2 ? "High impact" : "Medium impact"}
                     </b>
                   </aside>
@@ -700,7 +700,7 @@ export function ReportPreview({ showToast, audit, phase }: ReportPreviewProps) {
                   <p className="m-0 text-[13px] text-slate-700 dark:text-slate-300">{qw.action}</p>
                 </div>
                 <b className="w-max rounded-full bg-amber-50 px-2.25 py-1.5 text-[10px] font-bold text-amber-700 dark:bg-amber-400/15 dark:text-amber-400">{qw.timeEstimate}</b>
-                <b className="w-max rounded-full bg-emerald-50 px-2.25 py-1.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400">{qw.impact}</b>
+                <b className="w-max rounded-full bg-fuchsia-50 px-2.25 py-1.5 text-[10px] font-bold text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-400">{qw.impact}</b>
               </div>
             ))}
           </div>
@@ -745,7 +745,7 @@ export function ReportPreview({ showToast, audit, phase }: ReportPreviewProps) {
                         {comp.relevance != null && (
                           <i className="h-1.25 w-12 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                             <b
-                              className="block h-full rounded-full bg-emerald-400"
+                              className="block h-full rounded-full bg-fuchsia-500"
                               style={{ width: `${comp.relevance}%` }}
                             />
                           </i>
@@ -790,7 +790,7 @@ export function ReportPreview({ showToast, audit, phase }: ReportPreviewProps) {
         {/* Download card */}
         {hasRealData && (
           <>
-          <div className="mt-4.5 flex flex-col items-start justify-between gap-7 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-950 p-7 text-white lg:flex-row lg:items-center">
+          <div className="mt-4.5 flex flex-col items-start justify-between gap-7 rounded-3xl bg-gradient-to-br from-slate-900 via-purple-950/50 to-slate-950 p-7 text-white lg:flex-row lg:items-center">
             <div>
               <h3 className="m-0 text-[22px]">Your audit report is ready for export.</h3>
               <p className="mt-1.75 max-w-[620px] text-[13px] text-slate-400">
@@ -800,7 +800,7 @@ export function ReportPreview({ showToast, audit, phase }: ReportPreviewProps) {
             <div className="flex gap-2.5">
               <button
                 onClick={downloadPdf}
-                className="flex h-11 items-center gap-2 rounded-[12px] bg-emerald-400 px-3.5 text-xs font-bold text-[#022c22]"
+                className="flex h-11 items-center gap-2 rounded-[12px] bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 px-4 text-xs font-bold text-white shadow-[0_8px_20px_rgba(217,70,239,0.3)] transition-transform hover:-translate-y-px"
               >
                 <FileDown className="size-[15px]" /> Download PDF
               </button>
@@ -841,7 +841,7 @@ function ReportCard({
     <article className="mt-4.5 overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
       <header className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5.5 dark:border-white/5">
         <div className="flex gap-2.75">
-          <span className="grid size-9 place-items-center rounded-[12px] bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400">
+          <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400">
             <Icon className="size-[18px]" />
           </span>
           <div>

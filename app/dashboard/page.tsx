@@ -20,12 +20,12 @@ const scoreTrend = [58, 62, 65, 68, 70, 72, 75, 76, 78, 80, 79, 82];
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const recentActivity = [
-  { icon: FileSearch, text: "Audit completed for client-a.com", time: "2 min ago", color: "text-emerald-600 dark:text-emerald-400" },
+  { icon: FileSearch, text: "Audit completed for client-a.com", time: "2 min ago", color: "text-fuchsia-600 dark:text-fuchsia-400" },
   { icon: ClipboardList, text: "Arjun Patel started task: Fix robots.txt blocking", time: "15 min ago", color: "text-blue-600 dark:text-blue-400" },
   { icon: PenLine, text: "New post generated: 'ai seo audit tool'", time: "1 hour ago", color: "text-amber-600 dark:text-amber-400" },
-  { icon: Plug, text: "MCP server 'quasar-audit-engine' reconnected", time: "2 hours ago", color: "text-emerald-600 dark:text-emerald-400" },
+  { icon: Plug, text: "MCP server 'quasar-audit-engine' reconnected", time: "text-fuchsia-600 dark:text-fuchsia-400" },
   { icon: AlertTriangle, text: "5xx errors detected on client-a.com/products/*", time: "3 hours ago", color: "text-red-600 dark:text-red-400" },
-  { icon: CheckCircle2, text: "Sarah Chen completed keyword gap analysis", time: "5 hours ago", color: "text-emerald-600 dark:text-emerald-400" },
+  { icon: CheckCircle2, text: "Sarah Chen completed keyword gap analysis", time: "5 hours ago", color: "text-fuchsia-600 dark:text-fuchsia-400" },
 ];
 
 export default function DashboardPage() {
@@ -46,13 +46,13 @@ export default function DashboardPage() {
     <DashboardLayout>
       {/* Hero */}
       <section className="mb-8">
-        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/60 bg-emerald-50/86 px-3 py-2 text-xs font-bold uppercase tracking-[0.19em] text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-400">
+        <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200/80 bg-fuchsia-50/86 px-3 py-2 text-xs font-bold uppercase tracking-[0.19em] text-fuchsia-700 dark:border-fuchsia-400/20 dark:bg-fuchsia-400/10 dark:text-fuchsia-300">
           <Activity className="size-3.5" />
           Overview
         </div>
         <h1 className="mt-5 text-[clamp(34px,5vw,52px)] font-black leading-[1.02] tracking-[-0.052em] text-slate-900 dark:text-white">
           Dashboard{" "}
-          <em className="not-italic bg-gradient-to-r from-emerald-600 via-emerald-500 to-amber-500 bg-clip-text text-transparent">
+          <em className="not-italic bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">
             Overview
           </em>
         </h1>
@@ -66,7 +66,7 @@ export default function DashboardPage() {
         <article className="rounded-[18px] border border-slate-200 bg-white/80 p-5.5 shadow-[0_14px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-slate-900/60">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400"><FileSearch className="size-4" /> Audits</div>
-            <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400"><TrendingUp className="size-3" /> +12.8%</span>
+            <span className="flex items-center gap-1 text-[10px] font-bold text-fuchsia-600 dark:text-fuchsia-400"><TrendingUp className="size-3" /> +12.8%</span>
           </div>
           <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">1,284</div>
           <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">Total generated</div>
@@ -82,7 +82,7 @@ export default function DashboardPage() {
         <article className="rounded-[18px] border border-slate-200 bg-white/80 p-5.5 shadow-[0_14px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-slate-900/60">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400"><Users className="size-4" /> Team</div>
-            <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400"><span className="size-1.5 rounded-full bg-emerald-500" /> {onlineMembers} online</span>
+            <span className="flex items-center gap-1 text-[10px] font-bold text-fuchsia-600 dark:text-fuchsia-400"><span className="size-1.5 rounded-full bg-fuchsia-500" /> {onlineMembers} online</span>
           </div>
           <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{task.teamMembers.length}</div>
           <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">SEO engineers</div>
@@ -94,7 +94,7 @@ export default function DashboardPage() {
           </div>
           <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">14</div>
           <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-            <div className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400" style={{ width: "72%" }} />
+            <div className="h-full rounded-full bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500" style={{ width: "72%" }} />
           </div>
         </article>
       </div>
@@ -106,13 +106,13 @@ export default function DashboardPage() {
           <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
             <header className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5.5 dark:border-white/5">
               <div className="flex gap-2.75">
-                <span className="grid size-9 place-items-center rounded-[12px] bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400"><BarChart3 className="size-[18px]" /></span>
+                <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><BarChart3 className="size-[18px]" /></span>
                 <div>
                   <h3 className="m-0 text-base text-slate-900 dark:text-white">Audit Performance</h3>
                   <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Monthly audits generated over the past year</p>
                 </div>
               </div>
-              <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-400/15 dark:text-emerald-400 dark:border-transparent">+18% YoY</Badge>
+              <Badge className="bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200 dark:bg-fuchsia-400/15 dark:text-fuchsia-400 dark:border-transparent">+18% YoY</Badge>
             </header>
             <div className="p-6">
               <div className="flex items-end justify-between gap-2 h-[200px]">
@@ -120,7 +120,7 @@ export default function DashboardPage() {
                   <div key={i} className="flex flex-1 flex-col items-center gap-2">
                     <div className="flex w-full items-end justify-center" style={{ height: "160px" }}>
                       <div
-                        className="w-full max-w-[28px] rounded-t-md bg-gradient-to-t from-emerald-600/30 to-emerald-500 transition-all hover:from-emerald-600/50 hover:to-emerald-400"
+                        className="w-full max-w-[28px] rounded-t-md bg-gradient-to-t from-fuchsia-600/40 via-purple-600 to-fuchsia-500 transition-all hover:from-fuchsia-600 hover:to-pink-500 shadow-sm"
                         style={{ height: `${(val / maxAudit) * 100}%` }}
                         title={`${val} audits`}
                       />
@@ -138,7 +138,7 @@ export default function DashboardPage() {
             <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
               <header className="border-b border-slate-100 px-6 py-5.5 dark:border-white/5">
                 <div className="flex gap-2.75">
-                  <span className="grid size-9 place-items-center rounded-[12px] bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400"><TrendingUp className="size-[18px]" /></span>
+                  <span className="grid size-9 place-items-center rounded-[12px] bg-purple-50 text-purple-700 dark:bg-purple-400/10 dark:text-purple-400"><TrendingUp className="size-[18px]" /></span>
                   <div>
                     <h3 className="m-0 text-base text-slate-900 dark:text-white">Avg. Score Lift</h3>
                     <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">After recommendations</p>
@@ -150,7 +150,7 @@ export default function DashboardPage() {
                   {scoreTrend.map((val, i) => (
                     <div key={i} className="flex-1 flex flex-col items-center justify-end gap-1">
                       <div
-                        className="w-full rounded-t bg-gradient-to-t from-amber-400/30 to-amber-400"
+                        className="w-full rounded-t bg-gradient-to-t from-purple-500/30 via-fuchsia-500 to-pink-500"
                         style={{ height: `${(val / maxScore) * 100}%` }}
                         title={`${val}/100`}
                       />
@@ -159,7 +159,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="mt-3 flex items-center justify-between">
                   <span className="text-2xl font-black text-slate-900 dark:text-white">82<span className="text-sm text-slate-400">/100</span></span>
-                  <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400"><TrendingUp className="size-3" /> +24 pts</span>
+                  <span className="flex items-center gap-1 text-xs font-bold text-fuchsia-600 dark:text-fuchsia-400"><TrendingUp className="size-3" /> +24 pts</span>
                 </div>
               </div>
             </article>
@@ -168,7 +168,7 @@ export default function DashboardPage() {
             <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
               <header className="border-b border-slate-100 px-6 py-5.5 dark:border-white/5">
                 <div className="flex gap-2.75">
-                  <span className="grid size-9 place-items-center rounded-[12px] bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400"><ClipboardList className="size-[18px]" /></span>
+                  <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><ClipboardList className="size-[18px]" /></span>
                   <div>
                     <h3 className="m-0 text-base text-slate-900 dark:text-white">Task Status</h3>
                     <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Current sprint</p>
@@ -180,7 +180,7 @@ export default function DashboardPage() {
                   { label: "To Do", count: task.tasks.filter(t => t.status === "todo").length, color: "from-slate-400 to-slate-500" },
                   { label: "In Progress", count: task.tasks.filter(t => t.status === "in_progress").length, color: "from-blue-400 to-blue-500" },
                   { label: "In Review", count: task.tasks.filter(t => t.status === "review").length, color: "from-amber-400 to-amber-500" },
-                  { label: "Done", count: task.tasks.filter(t => t.status === "done").length, color: "from-emerald-400 to-emerald-500" },
+                  { label: "Done", count: task.tasks.filter(t => t.status === "done").length, color: "from-fuchsia-500 to-purple-600" },
                 ].map(s => {
                   const pct = task.tasks.length > 0 ? (s.count / task.tasks.length) * 100 : 0;
                   return (
@@ -203,7 +203,7 @@ export default function DashboardPage() {
           <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
             <header className="border-b border-slate-100 px-6 py-5.5 dark:border-white/5">
               <div className="flex gap-2.75">
-                <span className="grid size-9 place-items-center rounded-[12px] bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400"><Globe2 className="size-[18px]" /></span>
+                <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Globe2 className="size-[18px]" /></span>
                 <div>
                   <h3 className="m-0 text-base text-slate-900 dark:text-white">Quick Actions</h3>
                   <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Jump to any workspace</p>
@@ -217,13 +217,13 @@ export default function DashboardPage() {
                 { href: "/post-create", icon: PenLine, label: "Post Create", desc: `${post.contentHistory.length} posts generated` },
                 { href: "/task-management", icon: ClipboardList, label: "Tasks", desc: `${activeTasks} active tasks` },
               ].map(link => (
-                <Link key={link.href} href={link.href} className="group rounded-2xl border border-slate-200 bg-white/65 p-4 transition-all hover:border-emerald-200 hover:shadow-[0_8px_24px_rgba(16,185,129,0.08)] dark:border-white/10 dark:bg-slate-900/40 dark:hover:border-emerald-400/20">
-                  <span className="grid size-9 place-items-center rounded-[12px] bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400">
+                <Link key={link.href} href={link.href} className="group rounded-2xl border border-slate-200 bg-white/65 p-4 transition-all hover:border-fuchsia-300 hover:shadow-[0_8px_24px_rgba(217,70,239,0.12)] dark:border-white/10 dark:bg-slate-900/40 dark:hover:border-fuchsia-400/30">
+                  <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400">
                     <link.icon className="size-[18px]" />
                   </span>
                   <strong className="mt-3 block text-sm text-slate-900 dark:text-white">{link.label}</strong>
                   <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{link.desc}</p>
-                  <span className="mt-2 flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 opacity-0 transition-opacity group-hover:opacity-100">
+                  <span className="mt-2 flex items-center gap-1 text-[11px] font-bold text-fuchsia-600 dark:text-fuchsia-400 opacity-0 transition-opacity group-hover:opacity-100">
                     Open <ArrowUpRight className="size-3" />
                   </span>
                 </Link>
@@ -238,7 +238,7 @@ export default function DashboardPage() {
           <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
             <header className="border-b border-slate-100 px-6 py-5.5 dark:border-white/5">
               <div className="flex gap-2.75">
-                <span className="grid size-9 place-items-center rounded-[12px] bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400"><Activity className="size-[18px]" /></span>
+                <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Activity className="size-[18px]" /></span>
                 <div>
                   <h3 className="m-0 text-base text-slate-900 dark:text-white">Recent Activity</h3>
                   <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Latest events across projects</p>
@@ -262,7 +262,7 @@ export default function DashboardPage() {
           <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
             <header className="border-b border-slate-100 px-6 py-5.5 dark:border-white/5">
               <div className="flex gap-2.75">
-                <span className="grid size-9 place-items-center rounded-[12px] bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400"><Users className="size-[18px]" /></span>
+                <span className="grid size-9 place-items-center rounded-[12px] bg-purple-50 text-purple-700 dark:bg-purple-400/10 dark:text-purple-400"><Users className="size-[18px]" /></span>
                 <div>
                   <h3 className="m-0 text-base text-slate-900 dark:text-white">Team Performance</h3>
                   <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Efficiency this month</p>
@@ -274,15 +274,15 @@ export default function DashboardPage() {
                 <div key={m.id} className="flex items-center gap-3">
                   <span className="relative grid size-9 place-items-center rounded-full bg-slate-100 text-[10px] font-extrabold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                     {m.avatar}
-                    {m.online && <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-white bg-emerald-400 dark:border-slate-900" />}
+                    {m.online && <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-white bg-fuchsia-500 dark:border-slate-900" />}
                   </span>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <strong className="text-xs font-bold text-slate-800 dark:text-slate-200">{m.name}</strong>
-                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">{m.efficiency}%</span>
+                      <span className="text-[10px] font-bold text-fuchsia-600 dark:text-fuchsia-400">{m.efficiency}%</span>
                     </div>
                     <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                      <div className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400" style={{ width: `${m.efficiency}%` }} />
+                      <div className="h-full rounded-full bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500" style={{ width: `${m.efficiency}%` }} />
                     </div>
                   </div>
                 </div>
@@ -294,7 +294,7 @@ export default function DashboardPage() {
           <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
             <header className="border-b border-slate-100 px-6 py-5.5 dark:border-white/5">
               <div className="flex gap-2.75">
-                <span className="grid size-9 place-items-center rounded-[12px] bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400"><Plug className="size-[18px]" /></span>
+                <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Plug className="size-[18px]" /></span>
                 <div>
                   <h3 className="m-0 text-base text-slate-900 dark:text-white">MCP Status</h3>
                   <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Server & tools</p>
@@ -306,8 +306,8 @@ export default function DashboardPage() {
                 <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Servers</span>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-black text-slate-900 dark:text-white">{mcp.servers.length}</span>
-                  <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                    <span className="size-1.5 rounded-full bg-emerald-500" /> {mcp.servers.filter(s => s.status === "connected").length} live
+                  <span className="flex items-center gap-1 text-[10px] font-bold text-fuchsia-600 dark:text-fuchsia-400">
+                    <span className="size-1.5 rounded-full bg-fuchsia-500" /> {mcp.servers.filter(s => s.status === "connected").length} live
                   </span>
                 </div>
               </div>
@@ -321,11 +321,11 @@ export default function DashboardPage() {
                 <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Port</span>
                 <span className="flex items-center gap-2">
                   <code className="text-sm font-mono font-bold text-slate-800 dark:text-slate-200">:{mcp.port}</code>
-                  <Badge className={mcp.isRunning ? "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-400/15 dark:text-emerald-400 dark:border-transparent" : ""}>{mcp.isRunning ? "Running" : "Stopped"}</Badge>
+                  <Badge className={mcp.isRunning ? "bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200 dark:bg-fuchsia-400/15 dark:text-fuchsia-400 dark:border-transparent" : ""}>{mcp.isRunning ? "Running" : "Stopped"}</Badge>
                 </span>
               </div>
               <Link href="/audit-mcp">
-                <Button variant="outline" size="sm" className="mt-2 w-full">Manage MCP servers <ArrowUpRight className="size-3.5" /></Button>
+                <Button variant="outline" size="sm" className="mt-2 w-full hover:bg-fuchsia-50 hover:text-fuchsia-700 dark:hover:bg-fuchsia-400/10">Manage MCP servers <ArrowUpRight className="size-3.5" /></Button>
               </Link>
             </div>
           </article>

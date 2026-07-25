@@ -65,12 +65,12 @@ export function DashboardSidebar({ mobileOpen = false, onMobileClose }: { mobile
     <aside className="flex h-full w-[260px] flex-col border-r border-slate-200/80 bg-white/80 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/80">
       {/* Brand */}
       <div className="flex items-center gap-3 px-5 pt-6 pb-7">
-        <span className="grid size-9.5 place-items-center overflow-hidden rounded-[13px] border border-emerald-100 bg-white shadow-[0_12px_25px_rgba(16,185,129,0.2)] dark:border-emerald-400/20 dark:bg-slate-900">
+        <span className="grid size-9.5 place-items-center overflow-hidden rounded-[13px] border border-fuchsia-500/30 bg-slate-950 p-1.5 shadow-[0_8px_20px_rgba(217,70,239,0.3)]">
           <Image src="/mainlogos/mainlogo.png" alt="QuasarAISEO" width={24} height={24} className="h-6 w-6 object-contain" />
         </span>
         <div>
           <div className="text-sm font-extrabold tracking-[0.08em] text-slate-950 dark:text-white uppercase leading-none">
-            Quasar<span className="text-emerald-600 dark:text-emerald-400">AISEO</span>
+            Quasar<span className="bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">AISEO</span>
           </div>
           <div className="mt-1 text-[10px] font-bold tracking-[0.12em] text-slate-500 dark:text-slate-400 uppercase leading-none">
             Audit Studio
@@ -93,16 +93,16 @@ export function DashboardSidebar({ mobileOpen = false, onMobileClose }: { mobile
               className={cn(
                 "group flex min-h-[44px] items-center gap-3 rounded-xl px-3.5 text-[13px] font-semibold transition-all duration-200",
                 active
-                  ? "bg-gradient-to-r from-emerald-400/15 to-emerald-400/5 text-emerald-800 dark:text-emerald-300"
+                  ? "bg-gradient-to-r from-fuchsia-500/15 via-purple-500/10 to-transparent text-fuchsia-950 dark:text-fuchsia-300 font-bold"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
               )}
             >
               {active && (
-                <span className="absolute -ml-3.5 h-[26px] w-1 rounded-r-full bg-emerald-400 shadow-[0_0_12px_rgba(40,217,177,0.5)]" />
+                <span className="absolute -ml-3.5 h-[26px] w-1 rounded-r-full bg-gradient-to-b from-fuchsia-500 via-purple-600 to-pink-500 shadow-[0_0_12px_rgba(217,70,239,0.5)]" />
               )}
-              <Icon className={cn("size-[18px] shrink-0", active ? "text-emerald-600 dark:text-emerald-400" : "")} />
+              <Icon className={cn("size-[18px] shrink-0", active ? "text-fuchsia-600 dark:text-fuchsia-400" : "")} />
               <span>{item.label}</span>
-              {active && <ChevronRight className="ml-auto size-4 text-emerald-500" />}
+              {active && <ChevronRight className="ml-auto size-4 text-fuchsia-500" />}
             </Link>
           );
         })}
@@ -126,16 +126,16 @@ export function DashboardSidebar({ mobileOpen = false, onMobileClose }: { mobile
               className={cn(
                 "group flex min-h-[40px] items-center gap-3 rounded-xl px-3.5 text-[13px] font-semibold transition-all duration-200",
                 active
-                  ? "bg-gradient-to-r from-emerald-400/15 to-emerald-400/5 text-emerald-800 dark:text-emerald-300"
+                  ? "bg-gradient-to-r from-fuchsia-500/15 via-purple-500/10 to-transparent text-fuchsia-950 dark:text-fuchsia-300 font-bold"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
               )}
             >
               {active && (
-                <span className="absolute -ml-3.5 h-[24px] w-1 rounded-r-full bg-emerald-400 shadow-[0_0_12px_rgba(40,217,177,0.5)]" />
+                <span className="absolute -ml-3.5 h-[24px] w-1 rounded-r-full bg-gradient-to-b from-fuchsia-500 via-purple-600 to-pink-500 shadow-[0_0_12px_rgba(217,70,239,0.5)]" />
               )}
-              <Icon className={cn("size-[17px] shrink-0", active ? "text-emerald-600 dark:text-emerald-400" : "")} />
+              <Icon className={cn("size-[17px] shrink-0", active ? "text-fuchsia-600 dark:text-fuchsia-400" : "")} />
               <span>{item.label}</span>
-              {active && <ChevronRight className="ml-auto size-3.5 text-emerald-500" />}
+              {active && <ChevronRight className="ml-auto size-3.5 text-fuchsia-500" />}
             </Link>
           );
         })}
@@ -147,17 +147,17 @@ export function DashboardSidebar({ mobileOpen = false, onMobileClose }: { mobile
         {/* Credits card */}
         <div className="mx-3 mb-4 rounded-2xl border border-slate-200/90 bg-white/65 p-4 dark:border-white/10 dark:bg-slate-900/50">
           <div className="flex items-center gap-2">
-            <Zap className="size-4 text-emerald-500" />
+            <Zap className="size-4 text-fuchsia-500" />
             <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200">Audit Credits</span>
           </div>
           <div className="mt-2 text-xs font-bold text-slate-600 dark:text-slate-400">
             36 / 50 used
           </div>
           <div className="mt-2.5 h-[7px] w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-            <div className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400" style={{ width: "72%" }} />
+            <div className="h-full rounded-full bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500" style={{ width: "72%" }} />
           </div>
           <div className="mt-2 text-[10px] font-semibold text-slate-400 dark:text-slate-500">Renews in 14 days</div>
-          <Button variant="outline" size="sm" className="mt-3 w-full text-xs font-bold">
+          <Button variant="outline" size="sm" className="mt-3 w-full text-xs font-bold hover:bg-fuchsia-50 hover:text-fuchsia-700 dark:hover:bg-fuchsia-400/10">
             Upgrade plan
           </Button>
         </div>
@@ -165,7 +165,7 @@ export function DashboardSidebar({ mobileOpen = false, onMobileClose }: { mobile
         {/* User info + logout */}
         <div className="mx-3 mb-3 rounded-2xl border border-slate-200/90 bg-white/65 p-3 dark:border-white/10 dark:bg-slate-900/50">
           <div className="flex items-center gap-2.5">
-            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-700 text-xs font-bold text-white">
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 via-purple-600 to-pink-500 text-xs font-bold text-white shadow-sm">
               {user?.name?.charAt(0).toUpperCase() ?? "U"}
             </span>
             <div className="min-w-0 flex-1">

@@ -17,7 +17,7 @@ const statusConfig: Record<AuditStatus, { label: string; icon: typeof Clock; col
   enriching: { label: "Enriching", icon: Loader2, color: "text-blue-500" },
   analyzing: { label: "Analyzing", icon: Loader2, color: "text-amber-500" },
   reporting: { label: "Reporting", icon: Loader2, color: "text-amber-500" },
-  completed: { label: "Completed", icon: CheckCircle2, color: "text-emerald-500" },
+  completed: { label: "Completed", icon: CheckCircle2, color: "text-fuchsia-500" },
   failed: { label: "Failed", icon: AlertTriangle, color: "text-red-500" },
 }
 
@@ -69,7 +69,7 @@ export function PastAudits({ refreshKey, onSelectAudit }: PastAuditsProps) {
     return (
       <section className="mt-12">
         <div className="flex items-center gap-2.5 mb-5">
-          <FileSearch className="size-5 text-emerald-600" />
+          <FileSearch className="size-5 text-fuchsia-600" />
           <h2 className="text-xl font-bold text-slate-900 dark:text-white">Past audits</h2>
         </div>
         <div className="flex items-center gap-3 rounded-[18px] border border-slate-200 bg-white/80 p-8 text-sm text-slate-500 dark:border-white/10 dark:bg-slate-900/60">
@@ -83,7 +83,7 @@ export function PastAudits({ refreshKey, onSelectAudit }: PastAuditsProps) {
     return (
       <section className="mt-12">
         <div className="flex items-center gap-2.5 mb-5">
-          <FileSearch className="size-5 text-emerald-600" />
+          <FileSearch className="size-5 text-fuchsia-600" />
           <h2 className="text-xl font-bold text-slate-900 dark:text-white">Past audits</h2>
         </div>
         <div className="rounded-[18px] border border-slate-200 bg-white/80 p-8 text-sm text-slate-500 dark:border-white/10 dark:bg-slate-900/60">
@@ -100,7 +100,7 @@ export function PastAudits({ refreshKey, onSelectAudit }: PastAuditsProps) {
   return (
     <section className="mt-12">
       <div className="flex items-center gap-2.5 mb-5">
-        <FileSearch className="size-5 text-emerald-600" />
+        <FileSearch className="size-5 text-fuchsia-600" />
         <h2 className="text-xl font-bold text-slate-900 dark:text-white">Past audits</h2>
         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
           {audits.length}
@@ -137,13 +137,13 @@ export function PastAudits({ refreshKey, onSelectAudit }: PastAuditsProps) {
                     isCompleted ? "cursor-pointer" : "cursor-default"
                   } ${
                     isSelected
-                      ? "bg-emerald-50 dark:bg-emerald-400/10"
+                      ? "bg-fuchsia-50 dark:bg-fuchsia-400/10"
                       : "hover:bg-slate-50 dark:hover:bg-slate-800/30"
                   }`}
                 >
                   <td className="border-b border-slate-100 px-5 py-4 dark:border-white/5">
                     <div className="flex items-center gap-2">
-                      <span className="grid size-8 shrink-0 place-items-center rounded-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400">
+                      <span className="grid size-8 shrink-0 place-items-center rounded-[10px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400">
                         <Globe className="size-4" />
                       </span>
                       <div>
@@ -151,7 +151,7 @@ export function PastAudits({ refreshKey, onSelectAudit }: PastAuditsProps) {
                         <small className="block text-[10px] text-slate-500 dark:text-slate-400">{audit.url}</small>
                       </div>
                       {isCompleted && (
-                        <span className="ml-auto flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                        <span className="ml-auto flex items-center gap-1 text-[10px] font-bold text-fuchsia-600 dark:text-fuchsia-400">
                           <Eye className="size-3" /> View
                         </span>
                       )}
@@ -168,7 +168,7 @@ export function PastAudits({ refreshKey, onSelectAudit }: PastAuditsProps) {
                   </td>
                   <td className="border-b border-slate-100 px-5 py-4 dark:border-white/5">
                     {score != null ? (
-                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{score}/100</span>
+                      <span className="text-xs font-bold text-fuchsia-600 dark:text-fuchsia-400">{score}/100</span>
                     ) : (
                       <span className="text-xs text-slate-400">—</span>
                     )}

@@ -29,13 +29,13 @@ export default function PostCreatePage() {
     <DashboardLayout>
       {/* Hero */}
       <section className="mb-8">
-        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/60 bg-emerald-50/86 px-3 py-2 text-xs font-bold uppercase tracking-[0.19em] text-emerald-700">
+        <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200/80 bg-fuchsia-50/86 px-3 py-2 text-xs font-bold uppercase tracking-[0.19em] text-fuchsia-700 dark:border-fuchsia-400/20 dark:bg-fuchsia-400/10 dark:text-fuchsia-300">
           <PenLine className="size-3.5" />
           Content Engine
         </div>
         <h1 className="mt-5 text-[clamp(34px,5vw,52px)] font-black leading-[1.02] tracking-[-0.052em] text-slate-900 dark:text-white">
           Post{" "}
-          <em className="not-italic bg-gradient-to-r from-emerald-600 via-emerald-500 to-amber-500 bg-clip-text text-transparent">
+          <em className="not-italic bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">
             Creator
           </em>
         </h1>
@@ -70,7 +70,7 @@ export default function PostCreatePage() {
           <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
             <header className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5.5 dark:border-white/5">
               <div className="flex gap-2.75">
-                <span className="grid size-9 place-items-center rounded-[12px] bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400"><PenLine className="size-[18px]" /></span>
+                <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><PenLine className="size-[18px]" /></span>
                 <div>
                   <h3 className="m-0 text-base text-slate-900 dark:text-white">Content Configuration</h3>
                   <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Define your target keyword and content parameters</p>
@@ -185,7 +185,7 @@ export default function PostCreatePage() {
             <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
               <div className="p-5">
                 <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
-                  <Sparkles className="size-4 text-emerald-500 animate-pulse" />
+                  <Sparkles className="size-4 text-fuchsia-500 animate-pulse" />
                   {post.generationStep}
                 </div>
                 <Progress value={post.generationProgress} className="mt-3" />
@@ -198,7 +198,7 @@ export default function PostCreatePage() {
           <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
             <header className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5.5 dark:border-white/5">
               <div className="flex gap-2.75">
-                <span className="grid size-9 place-items-center rounded-[12px] bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400"><Eye className="size-[18px]" /></span>
+                <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Eye className="size-[18px]" /></span>
                 <div>
                   <h3 className="m-0 text-base text-slate-900 dark:text-white">Content Preview</h3>
                   <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">AI-generated SEO content will appear here</p>
@@ -242,7 +242,7 @@ export default function PostCreatePage() {
           <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
             <header className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5.5 dark:border-white/5">
               <div className="flex gap-2.75">
-                <span className="grid size-9 place-items-center rounded-[12px] bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400"><History className="size-[18px]" /></span>
+                <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><History className="size-[18px]" /></span>
                 <div>
                   <h3 className="m-0 text-base text-slate-900 dark:text-white">Content History</h3>
                   <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Recently generated posts</p>
@@ -267,7 +267,7 @@ export default function PostCreatePage() {
                       <TableCell className="font-semibold text-slate-800 dark:text-slate-200 max-w-[280px] truncate">{item.title}</TableCell>
                       <TableCell className="text-xs text-slate-500">{item.createdAt}</TableCell>
                       <TableCell>
-                        <Badge variant={item.status === "published" ? "default" : "secondary"} className={item.status === "published" ? "bg-emerald-100 text-emerald-700 border-emerald-200" : ""}>
+                        <Badge variant={item.status === "published" ? "default" : "secondary"} className={item.status === "published" ? "bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200" : ""}>
                           {item.status}
                         </Badge>
                       </TableCell>

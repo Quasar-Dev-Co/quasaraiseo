@@ -56,21 +56,21 @@ export default function SignupPage() {
       <AuthBrandPanel />
 
       {/* Right: Signup form */}
-      <div className="relative flex flex-col items-center justify-center bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,0.06),transparent_40%),linear-gradient(180deg,#fbfefd_0%,#f8fafc_50%,#fff_100%)] px-6 py-16">
+      <div className="relative flex flex-col items-center justify-center bg-[radial-gradient(circle_at_50%_0%,rgba(217,70,239,0.08),transparent_40%),linear-gradient(180deg,#fdf4ff_0%,#f8fafc_50%,#fff_100%)] px-6 py-16">
         {/* Mobile logo */}
         <Link href="/" className="mb-8 flex items-center gap-2.5 text-[19px] font-black tracking-[-0.035em] lg:hidden">
-          <span className="grid size-9.5 place-items-center rounded-[13px] bg-gradient-to-br from-emerald-400 to-emerald-700 text-white shadow-[0_12px_25px_rgba(16,185,129,0.28)]">
+          <span className="grid size-9.5 place-items-center rounded-[13px] bg-gradient-to-br from-fuchsia-500 via-purple-600 to-pink-500 text-white shadow-[0_12px_25px_rgba(217,70,239,0.28)]">
             <Orbit className="size-[19px]" />
           </span>
           <span>
-            Quasar<span className="text-emerald-600">AISEO</span>
+            Quasar<span className="bg-gradient-to-r from-fuchsia-600 to-pink-500 bg-clip-text text-transparent">AISEO</span>
           </span>
         </Link>
 
         <div className="w-full max-w-[420px]">
           {/* Header */}
           <div className="mb-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/60 bg-emerald-50/86 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-700">
+            <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200/80 bg-fuchsia-50/86 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-fuchsia-700">
               Free plan · No credit card
             </div>
             <h1 className="mt-4 text-[clamp(30px,4vw,40px)] font-black leading-[1.05] tracking-[-0.05em] text-slate-950">
@@ -92,7 +92,7 @@ export default function SignupPage() {
           <div className="mb-6 grid gap-2">
             {benefits.map((b) => (
               <div key={b} className="flex items-center gap-2.5 text-[13px] font-semibold text-slate-600">
-                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-emerald-100 text-emerald-600">
+                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-fuchsia-100 text-fuchsia-600">
                   <Check className="size-3" />
                 </span>
                 {b}
@@ -144,7 +144,7 @@ export default function SignupPage() {
                     type="text"
                     placeholder="Jane Doe"
                     required
-                    className="h-13 w-full rounded-[14px] border border-slate-200 bg-white px-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-emerald-400/65 focus:ring-4 focus:ring-emerald-500/10"
+                    className="h-13 w-full rounded-[14px] border border-slate-200 bg-white px-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-fuchsia-400/65 focus:ring-4 focus:ring-fuchsia-500/10"
                   />
                 </div>
               </label>
@@ -156,7 +156,7 @@ export default function SignupPage() {
                     name="company"
                     type="text"
                     placeholder="Acme Inc."
-                    className="h-13 w-full rounded-[14px] border border-slate-200 bg-white px-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-emerald-400/65 focus:ring-4 focus:ring-emerald-500/10"
+                    className="h-13 w-full rounded-[14px] border border-slate-200 bg-white px-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-fuchsia-400/65 focus:ring-4 focus:ring-fuchsia-500/10"
                   />
                 </div>
               </label>
@@ -171,7 +171,7 @@ export default function SignupPage() {
                   type="email"
                   placeholder="you@company.com"
                   required
-                  className="h-13 w-full rounded-[14px] border border-slate-200 bg-white px-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-emerald-400/65 focus:ring-4 focus:ring-emerald-500/10"
+                  className="h-13 w-full rounded-[14px] border border-slate-200 bg-white px-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-fuchsia-400/65 focus:ring-4 focus:ring-fuchsia-500/10"
                 />
               </div>
             </label>
@@ -186,7 +186,7 @@ export default function SignupPage() {
                   placeholder="At least 8 characters"
                   required
                   minLength={8}
-                  className="h-13 w-full rounded-[14px] border border-slate-200 bg-white px-11 pr-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-emerald-400/65 focus:ring-4 focus:ring-emerald-500/10"
+                  className="h-13 w-full rounded-[14px] border border-slate-200 bg-white px-11 pr-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-fuchsia-400/65 focus:ring-4 focus:ring-fuchsia-500/10"
                 />
                 <button
                   type="button"
@@ -208,20 +208,20 @@ export default function SignupPage() {
                 checked={agreed}
                 onChange={(e) => setAgreed(e.target.checked)}
                 required
-                className="mt-0.5 size-4.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500/20"
+                className="mt-0.5 size-4.5 rounded border-slate-300 text-fuchsia-600 focus:ring-fuchsia-500/20"
               />
               <span className="text-[13px] leading-relaxed text-slate-600">
                 I agree to the{" "}
-                <Link href="#" className="font-bold text-emerald-600 hover:text-emerald-700">Terms of Service</Link>
+                <Link href="#" className="font-bold text-fuchsia-600 hover:text-fuchsia-700">Terms of Service</Link>
                 {" "}and{" "}
-                <Link href="#" className="font-bold text-emerald-600 hover:text-emerald-700">Privacy Policy</Link>.
+                <Link href="#" className="font-bold text-fuchsia-600 hover:text-fuchsia-700">Privacy Policy</Link>.
               </span>
             </label>
 
             <button
               type="submit"
               disabled={loading}
-              className="mt-1.5 flex h-13 items-center justify-center gap-2.5 rounded-[15px] bg-gradient-to-br from-emerald-400 to-emerald-600 text-sm font-bold text-white shadow-[0_14px_32px_rgba(16,185,129,0.25)] transition-transform hover:-translate-y-px disabled:opacity-70"
+              className="mt-1.5 flex h-13 items-center justify-center gap-2.5 rounded-[15px] bg-gradient-to-br from-fuchsia-600 via-purple-600 to-pink-500 text-sm font-bold text-white shadow-[0_14px_32px_rgba(217,70,239,0.25)] transition-transform hover:-translate-y-px disabled:opacity-70"
             >
               {loading ? (
                 <><Loader2 className="size-4.5 animate-spin" /> Creating account...</>
@@ -234,7 +234,7 @@ export default function SignupPage() {
           {/* Footer */}
           <p className="mt-7 text-center text-[14px] text-slate-500">
             Already have an account?{" "}
-            <Link href="/login" className="font-bold text-emerald-600 transition-colors hover:text-emerald-700">
+            <Link href="/login" className="font-bold text-fuchsia-600 transition-colors hover:text-fuchsia-700">
               Sign in
             </Link>
           </p>

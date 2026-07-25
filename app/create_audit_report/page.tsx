@@ -61,8 +61,8 @@ export default function CreateAuditReportPage() {
       <PipelineLoader phase={phase} audit={audit} error={error} />
 
       {phase === "completed" && (
-        <div className="fixed bottom-6 right-6 z-[150] flex w-[min(380px,calc(100%-32px))] gap-3 rounded-[15px] border border-emerald-200 bg-white/96 p-3.75 shadow-[0_24px_65px_rgba(15,23,42,0.18)]">
-          <CheckCircle2 className="size-5 text-emerald-600" />
+        <div className="fixed bottom-6 right-6 z-[150] flex w-[min(380px,calc(100%-32px))] gap-3 rounded-[15px] border border-fuchsia-200 bg-white/96 p-3.75 shadow-[0_24px_65px_rgba(15,23,42,0.18)]">
+          <CheckCircle2 className="size-5 text-fuchsia-600" />
           <div>
             <strong className="text-[13px]">Audit complete!</strong>
             <p className="mt-0.75 text-[11px] text-slate-500">Your report is ready. Scroll down to view it.</p>
@@ -72,7 +72,7 @@ export default function CreateAuditReportPage() {
 
       {toast && phase !== "completed" && (
         <div className="fixed bottom-6 right-6 z-100 flex w-[min(380px,calc(100%-32px))] gap-3 rounded-[15px] border border-slate-200 bg-white/96 p-3.75 shadow-[0_24px_65px_rgba(15,23,42,0.18)]">
-          <CheckCircle2 className="size-5 text-emerald-600" />
+          <CheckCircle2 className="size-5 text-fuchsia-600" />
           <div>
             <strong className="text-[13px]">Success</strong>
             <p className="mt-0.75 text-[11px] text-slate-500">{toast}</p>

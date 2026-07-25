@@ -24,7 +24,7 @@ export function PricingSection({ showToast }: { showToast: ShowToast }) {
       <div className="mx-auto w-full max-w-[1240px]">
         <div className="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-end">
           <div>
-            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">
+            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-fuchsia-700">
               <CreditCard className="size-3.5" /> Simple pricing
             </div>
             <h2 className="mt-3.5 max-w-[850px] text-[clamp(34px,4.5vw,60px)] font-black leading-[1.02] tracking-[-0.052em]">
@@ -72,36 +72,46 @@ export function PricingSection({ showToast }: { showToast: ShowToast }) {
             <ul className="mt-6 grid gap-2.75 border-t border-slate-200 pt-5.75">
               {["5 website audits per month", "SEO and AI visibility scores", "Keyword opportunity reports", "PDF and JSON exports"].map((item) => (
                 <li key={item} className="flex gap-2.25 text-[11px] text-slate-600">
-                  <Check className="size-3.5 text-emerald-600" /> {item}
+                  <Check className="size-3.5 text-fuchsia-600" /> {item}
                 </li>
               ))}
             </ul>
           </article>
 
-          {/* Growth - featured */}
-          <article className="rounded-3xl border border-slate-400/13 bg-gradient-to-br from-slate-900 to-slate-950 p-6.75 text-white shadow-[0_14px_42px_rgba(15,23,42,0.07)] lg:-translate-y-2">
-            <em className="absolute right-4.5 top-4.5 rounded-full bg-emerald-300 px-2.25 py-1.75 text-[9px] not-italic font-black uppercase text-[#022c22]">
+          {/* Growth - featured High Contrast Card */}
+          <article className="relative overflow-hidden rounded-3xl border-2 border-fuchsia-500/60 bg-slate-950 p-7.5 text-white shadow-[0_25px_60px_rgba(217,70,239,0.22)] transition-all duration-300 lg:-translate-y-2">
+            <div className="pointer-events-none absolute -right-20 -top-20 size-64 rounded-full bg-fuchsia-600/25 blur-3xl" />
+            
+            <em className="absolute right-5 top-5 rounded-full bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 px-3.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-[0_4px_15px_rgba(217,70,239,0.4)] not-italic">
               Most popular
             </em>
-            <small className="text-[11px] uppercase tracking-[0.15em] text-emerald-300">Growth</small>
-            <h3 className="mt-2.25 text-2xl">Automation</h3>
-            <p className="mt-2 min-h-12 text-xs leading-relaxed text-slate-400">
+            <small className="text-xs font-black uppercase tracking-[0.2em] text-fuchsia-400">Growth</small>
+            <h3 className="mt-1.5 text-2xl font-black text-white">Automation</h3>
+            <p className="mt-2 min-h-11 text-xs font-semibold leading-relaxed text-slate-300">
               For agencies and growing companies that need scalable content and visibility.
             </p>
-            <strong className="mt-5.5 block text-5xl font-black tracking-[-0.06em]">
-              ${prices.growth}
-              <span className="text-[11px] text-slate-500">/month</span>
-            </strong>
+            
+            <div className="mt-5 flex items-baseline gap-1.5">
+              <strong className="text-5xl font-black tracking-tight text-white">
+                ${prices.growth}
+              </strong>
+              <span className="text-xs font-bold text-slate-400">/month</span>
+            </div>
+
             <Link
               href="/create_audit_report"
-              className="mt-5.5 flex w-full items-center justify-center rounded-[13px] bg-gradient-to-br from-emerald-300 to-emerald-500 px-4 py-3 text-sm font-bold text-[#022c22] transition-transform hover:-translate-y-px"
+              className="mt-6 flex w-full items-center justify-center rounded-[14px] bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 px-4 py-3.5 text-sm font-extrabold text-white shadow-[0_12px_28px_rgba(217,70,239,0.35)] transition-all hover:scale-[1.02] hover:shadow-[0_16px_35px_rgba(217,70,239,0.5)]"
             >
               Start growing
             </Link>
-            <ul className="mt-6 grid gap-2.75 border-t border-slate-400/14 pt-5.75">
+
+            <ul className="mt-6 space-y-3 border-t border-white/10 pt-5">
               {["Everything in Audit", "25 projects and recurring audits", "Programmatic page generation", "AI citation tracking", "White-label reports"].map((item) => (
-                <li key={item} className="flex gap-2.25 text-[11px] text-slate-300">
-                  <Check className="size-3.5 text-emerald-600" /> {item}
+                <li key={item} className="flex items-center gap-3 text-xs font-bold text-slate-100">
+                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-fuchsia-500/20 text-fuchsia-400">
+                    <Check className="size-3 text-fuchsia-400" />
+                  </span>
+                  <span>{item}</span>
                 </li>
               ))}
             </ul>
@@ -124,7 +134,7 @@ export function PricingSection({ showToast }: { showToast: ShowToast }) {
             <ul className="mt-6 grid gap-2.75 border-t border-slate-200 pt-5.75">
               {["Unlimited project architecture", "Custom automation workflows", "API and data integrations", "Team roles and governance"].map((item) => (
                 <li key={item} className="flex gap-2.25 text-[11px] text-slate-600">
-                  <Check className="size-3.5 text-emerald-600" /> {item}
+                  <Check className="size-3.5 text-fuchsia-600" /> {item}
                 </li>
               ))}
             </ul>

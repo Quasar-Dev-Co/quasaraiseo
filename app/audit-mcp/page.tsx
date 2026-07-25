@@ -19,7 +19,7 @@ export default function AuditMcpPage() {
   const mcp = useSelector((state: RootState) => state.mcp);
 
   const statusBadge = (status: string) => {
-    if (status === "connected") return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">Connected</Badge>;
+    if (status === "connected") return <Badge className="bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200">Connected</Badge>;
     if (status === "error") return <Badge variant="destructive">Error</Badge>;
     return <Badge variant="secondary">Disconnected</Badge>;
   };
@@ -29,13 +29,13 @@ export default function AuditMcpPage() {
     <DashboardLayout>
       {/* Hero */}
       <section className="mb-8">
-        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/60 bg-emerald-50/86 px-3 py-2 text-xs font-bold uppercase tracking-[0.19em] text-emerald-700">
-          <span className="size-2 rounded-full bg-emerald-500" />
+        <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200/80 bg-fuchsia-50/86 px-3 py-2 text-xs font-bold uppercase tracking-[0.19em] text-fuchsia-700 dark:border-fuchsia-400/20 dark:bg-fuchsia-400/10 dark:text-fuchsia-300">
+          <span className="size-2 rounded-full bg-fuchsia-500" />
           MCP Server
         </div>
         <h1 className="mt-5 text-[clamp(34px,5vw,52px)] font-black leading-[1.02] tracking-[-0.052em] text-slate-900 dark:text-white">
           Audit MCP{" "}
-          <em className="not-italic bg-gradient-to-r from-emerald-600 via-emerald-500 to-amber-500 bg-clip-text text-transparent">
+          <em className="not-italic bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">
             Server & Tools
           </em>
         </h1>
@@ -49,12 +49,12 @@ export default function AuditMcpPage() {
         <article className="rounded-[18px] border border-slate-200 bg-white/80 p-5.5 shadow-[0_14px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-slate-900/60">
           <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400"><Server className="size-4" /> Servers</div>
           <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{mcp.servers.length}</div>
-          <div className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">{mcp.servers.filter(s => s.status === "connected").length} active</div>
+          <div className="mt-1 text-xs text-fuchsia-600 dark:text-fuchsia-400">{mcp.servers.filter(s => s.status === "connected").length} active</div>
         </article>
         <article className="rounded-[18px] border border-slate-200 bg-white/80 p-5.5 shadow-[0_14px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-slate-900/60">
           <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400"><Wrench className="size-4" /> Tools</div>
           <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{mcp.tools.length}</div>
-          <div className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">{mcp.tools.filter(t => t.enabled).length} enabled</div>
+          <div className="mt-1 text-xs text-fuchsia-600 dark:text-fuchsia-400">{mcp.tools.filter(t => t.enabled).length} enabled</div>
         </article>
         <article className="rounded-[18px] border border-slate-200 bg-white/80 p-5.5 shadow-[0_14px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-slate-900/60">
           <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400"><FileText className="size-4" /> Resources</div>
@@ -82,7 +82,7 @@ export default function AuditMcpPage() {
           <article className="mt-4.5 overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
             <header className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5.5 dark:border-white/5">
               <div className="flex gap-2.75">
-                <span className="grid size-9 place-items-center rounded-[12px] bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400"><Server className="size-[18px]" /></span>
+                <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Server className="size-[18px]" /></span>
                 <div>
                   <h3 className="m-0 text-base text-slate-900 dark:text-white">Connected Servers</h3>
                   <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">MCP servers providing audit tools and resources</p>
@@ -129,7 +129,7 @@ export default function AuditMcpPage() {
           <article className="mt-4.5 overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
             <header className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5.5 dark:border-white/5">
               <div className="flex gap-2.75">
-                <span className="grid size-9 place-items-center rounded-[12px] bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400"><Wrench className="size-[18px]" /></span>
+                <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Wrench className="size-[18px]" /></span>
                 <div>
                   <h3 className="m-0 text-base text-slate-900 dark:text-white">Available Tools</h3>
                   <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">MCP tools exposed by connected servers</p>
@@ -139,13 +139,13 @@ export default function AuditMcpPage() {
             <div className="p-5">
               <div className="grid gap-3 sm:grid-cols-2">
                 {mcp.tools.map((tool) => (
-                  <div key={tool.id} className={`rounded-xl border p-4 transition-colors ${tool.enabled ? "border-emerald-200 bg-emerald-50/40 dark:border-emerald-400/20 dark:bg-emerald-400/5" : "border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50"}`}>
+                  <div key={tool.id} className={`rounded-xl border p-4 transition-colors ${tool.enabled ? "border-fuchsia-200 bg-fuchsia-50/40 dark:border-fuchsia-400/20 dark:bg-fuchsia-400/5" : "border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50"}`}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2">
-                        <Wrench className={`size-4 ${tool.enabled ? "text-emerald-600" : "text-slate-400"}`} />
+                        <Wrench className={`size-4 ${tool.enabled ? "text-fuchsia-600" : "text-slate-400"}`} />
                         <code className="text-sm font-bold text-slate-800 dark:text-slate-200">{tool.name}</code>
                       </div>
-                      <Badge variant={tool.enabled ? "default" : "secondary"} className={tool.enabled ? "bg-emerald-100 text-emerald-700 border-emerald-200" : ""}>
+                      <Badge variant={tool.enabled ? "default" : "secondary"} className={tool.enabled ? "bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200" : ""}>
                         {tool.enabled ? "Enabled" : "Disabled"}
                       </Badge>
                     </div>
@@ -166,7 +166,7 @@ export default function AuditMcpPage() {
           <article className="mt-4.5 overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
             <header className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5.5 dark:border-white/5">
               <div className="flex gap-2.75">
-                <span className="grid size-9 place-items-center rounded-[12px] bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400"><FileText className="size-[18px]" /></span>
+                <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><FileText className="size-[18px]" /></span>
                 <div>
                   <h3 className="m-0 text-base text-slate-900 dark:text-white">MCP Resources</h3>
                   <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Files, configs, and data exposed via MCP resource URIs</p>
@@ -205,7 +205,7 @@ export default function AuditMcpPage() {
           <article className="mt-4.5 overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
             <header className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5.5 dark:border-white/5">
               <div className="flex gap-2.75">
-                <span className="grid size-9 place-items-center rounded-[12px] bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400"><Terminal className="size-[18px]" /></span>
+                <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Terminal className="size-[18px]" /></span>
                 <div>
                   <h3 className="m-0 text-base text-slate-900 dark:text-white">Server Logs</h3>
                   <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Real-time MCP server activity and events</p>
@@ -218,7 +218,7 @@ export default function AuditMcpPage() {
                 {mcp.logs.map((log) => (
                   <div key={log.id} className="flex items-start gap-3 rounded-lg px-3 py-2.5 font-mono text-xs hover:bg-slate-50 dark:hover:bg-white/5">
                     <span className="shrink-0 text-slate-400">{log.timestamp}</span>
-                    <span className={`shrink-0 font-bold uppercase ${log.level === "error" ? "text-red-500" : log.level === "warn" ? "text-amber-500" : "text-emerald-500"}`}>{log.level}</span>
+                    <span className={`shrink-0 font-bold uppercase ${log.level === "error" ? "text-red-500" : log.level === "warn" ? "text-amber-500" : "text-fuchsia-500"}`}>{log.level}</span>
                     <span className="shrink-0 text-slate-400">[{log.serverName}]</span>
                     <span className="text-slate-700 dark:text-slate-300">{log.message}</span>
                   </div>
@@ -233,7 +233,7 @@ export default function AuditMcpPage() {
       <article className="mt-4.5 overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
         <header className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5.5 dark:border-white/5">
           <div className="flex gap-2.75">
-            <span className="grid size-9 place-items-center rounded-[12px] bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400"><Plug className="size-[18px]" /></span>
+            <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Plug className="size-[18px]" /></span>
             <div>
               <h3 className="m-0 text-base text-slate-900 dark:text-white">API Configuration</h3>
               <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">MCP endpoint settings for AI agent connections</p>
@@ -253,7 +253,7 @@ export default function AuditMcpPage() {
               <label className="text-xs font-bold uppercase text-slate-500">Server Port</label>
               <div className="mt-2 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-white/10 dark:bg-slate-900/50">
                 <code className="flex-1 text-sm font-mono text-slate-700 dark:text-slate-300">:{mcp.port}</code>
-                <Badge className={mcp.isRunning ? "bg-emerald-100 text-emerald-700 border-emerald-200" : ""}>{mcp.isRunning ? "Running" : "Stopped"}</Badge>
+                <Badge className={mcp.isRunning ? "bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200" : ""}>{mcp.isRunning ? "Running" : "Stopped"}</Badge>
               </div>
             </div>
           </div>

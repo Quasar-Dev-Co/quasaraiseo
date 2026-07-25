@@ -36,7 +36,7 @@ const statusConfig: Record<TaskStatus, { label: string; color: string; bg: strin
   todo: { label: "To Do", color: "text-slate-600 dark:text-slate-400", bg: "bg-slate-50 dark:bg-slate-900/40", border: "border-slate-200 dark:border-white/5" },
   in_progress: { label: "In Progress", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50/50 dark:bg-blue-400/5", border: "border-blue-200 dark:border-blue-400/10" },
   review: { label: "In Review", color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50/50 dark:bg-amber-400/5", border: "border-amber-200 dark:border-amber-400/10" },
-  done: { label: "Done", color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50/50 dark:bg-emerald-400/5", border: "border-emerald-200 dark:border-emerald-400/10" },
+  done: { label: "Done", color: "text-fuchsia-600 dark:text-fuchsia-400", bg: "bg-fuchsia-50/50 dark:bg-fuchsia-400/5", border: "border-fuchsia-200 dark:border-fuchsia-400/10" },
 };
 
 const columnOrder: TaskStatus[] = ["todo", "in_progress", "review", "done"];
@@ -404,33 +404,33 @@ export default function TaskManagementPage() {
     <DashboardLayout>
       {/* Hero */}
       <section className="mb-8">
-        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/60 bg-emerald-50/86 px-3 py-2 text-xs font-bold uppercase tracking-[0.19em] text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-400">
+        <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200/80 bg-fuchsia-50/86 px-3 py-2 text-xs font-bold uppercase tracking-[0.19em] text-fuchsia-700 dark:border-fuchsia-400/20 dark:bg-fuchsia-400/10 dark:text-fuchsia-300">
           <ClipboardList className="size-3.5" />
-          Team Workflow
+          Execution Hub
         </div>
         <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="text-[clamp(34px,5vw,52px)] font-black leading-[1.02] tracking-[-0.052em] text-slate-900 dark:text-white">
               Task{" "}
-              <em className="not-italic bg-gradient-to-r from-emerald-600 via-emerald-500 to-amber-500 bg-clip-text text-transparent">
+              <em className="not-italic bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">
                 Management
               </em>
             </h1>
             <p className="mt-4 max-w-[700px] text-[15px] leading-relaxed text-slate-600 dark:text-slate-400">
-              Track SEO engineers&apos; work, assign tasks by audit findings, and monitor progress across all client projects.
+              Track, assign, and execute technical SEO recommendations. Sync bidirectionally with Google Sheets, drag-and-drop tasks across workflow columns, and monitor team performance.
             </p>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex rounded-xl border border-slate-200 bg-white p-1 dark:border-white/10 dark:bg-slate-900">
               <button
                 onClick={() => setView("board")}
-                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${view === "board" ? "bg-emerald-500 text-white" : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"}`}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${view === "board" ? "bg-fuchsia-600 text-white" : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"}`}
               >
                 Board
               </button>
               <button
                 onClick={() => setView("list")}
-                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${view === "list" ? "bg-emerald-500 text-white" : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"}`}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${view === "list" ? "bg-fuchsia-600 text-white" : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"}`}
               >
                 List
               </button>
@@ -454,7 +454,7 @@ export default function TaskManagementPage() {
       {/* Loading state */}
       {loading ? (
         <div className="flex h-[40vh] items-center justify-center">
-          <Loader2 className="size-8 animate-spin text-emerald-500" />
+          <Loader2 className="size-8 animate-spin text-fuchsia-500" />
         </div>
       ) : (
         <>
@@ -479,20 +479,20 @@ export default function TaskManagementPage() {
 
           {/* Google Sheets sync bar */}
           {googleStatus?.connected && googleStatus.services.sheets ? (
-            <div className="mb-6 rounded-2xl border border-emerald-200/60 bg-emerald-50/50 px-5 py-4 dark:border-emerald-400/20 dark:bg-emerald-400/5">
+            <div className="mb-6 rounded-2xl border border-fuchsia-200/60 bg-fuchsia-50/50 px-5 py-4 dark:border-fuchsia-400/20 dark:bg-fuchsia-400/5">
               <div className="flex flex-wrap items-center gap-3">
-                <FileSpreadsheet className="size-5 text-emerald-600 dark:text-emerald-400" />
+                <FileSpreadsheet className="size-5 text-fuchsia-600 dark:text-fuchsia-400" />
                 <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Google Sheets</span>
-                <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400">
+                <span className="rounded-full bg-fuchsia-100 px-2.5 py-0.5 text-[10px] font-bold text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-400">
                   {sheets.length} sheet{sheets.length !== 1 ? "s" : ""}
                 </span>
                 <select
                   value={selectedSheet}
                   onChange={(e) => setSelectedSheet(e.target.value)}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-emerald-400 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300"
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-fuchsia-400 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300"
                 >
                   <option value="">Select a sheet...</option>
-                  {sheets.map(s => (
+                  {sheets.map((s) => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
                 </select>
@@ -507,11 +507,11 @@ export default function TaskManagementPage() {
                 <Button size="sm" variant="ghost" onClick={() => setShowSheetPanel(!showSheetPanel)}>
                   <FileSpreadsheet className="size-3.5" /> Manage
                 </Button>
-                <Button size="sm" onClick={() => setShowSheetModal(true)}>
+                <Button size="sm" onClick={() => setShowSheetModal(true)} className="bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white">
                   <Plus className="size-3.5" /> New Sheet
                 </Button>
                 {syncMsg && (
-                  <span className={`text-xs font-semibold ${syncMsg.includes("Synced") || syncMsg.includes("Created") || syncMsg.includes("Deleted") || syncMsg.includes("Pulled") ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"}`}>
+                  <span className={`text-xs font-semibold ${syncMsg.includes("Synced") || syncMsg.includes("Created") || syncMsg.includes("Deleted") || syncMsg.includes("Pulled") ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-red-500"}`}>
                     {syncMsg}
                   </span>
                 )}
@@ -519,17 +519,17 @@ export default function TaskManagementPage() {
 
               {/* Sheet management panel */}
               {showSheetPanel && (
-                <div className="mt-4 border-t border-emerald-200/40 pt-4 dark:border-emerald-400/10">
+                <div className="mt-4 border-t border-fuchsia-200/40 pt-4 dark:border-fuchsia-400/10">
                   {sheets.length === 0 ? (
                     <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">No sheets found. Create a new sheet to get started.</p>
                   ) : (
                     <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-                      {sheets.map(s => (
+                      {sheets.map((s) => (
                         <div
                           key={s.id}
-                          className={`group flex items-center gap-3 rounded-xl border-2 p-3 transition-all ${selectedSheet === s.id ? "border-emerald-400 bg-emerald-50/40 dark:bg-emerald-400/5" : "border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50"}`}
+                          className={`group flex items-center gap-3 rounded-xl border-2 p-3 transition-all ${selectedSheet === s.id ? "border-fuchsia-400 bg-fuchsia-50/40 dark:bg-fuchsia-400/5" : "border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50"}`}
                         >
-                          <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-400/10 dark:text-emerald-400">
+                          <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-fuchsia-50 text-fuchsia-600 dark:bg-fuchsia-400/10 dark:text-fuchsia-400">
                             <FileSpreadsheet className="size-4.5" />
                           </span>
                           <div className="min-w-0 flex-1">
@@ -574,7 +574,7 @@ export default function TaskManagementPage() {
               >
                 <div className="mb-5 flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <span className="grid size-9 place-items-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-400/10 dark:text-emerald-400">
+                    <span className="grid size-9 place-items-center rounded-xl bg-fuchsia-50 text-fuchsia-600 dark:bg-fuchsia-400/10 dark:text-fuchsia-400">
                       <FileSpreadsheet className="size-5" />
                     </span>
                     <div>
@@ -596,7 +596,7 @@ export default function TaskManagementPage() {
                       placeholder="e.g. SEO Tasks Q1 2026"
                       value={newSheet.title}
                       onChange={e => setNewSheet({ ...newSheet, title: e.target.value })}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-emerald-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-fuchsia-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                       autoFocus
                     />
                   </div>
@@ -609,7 +609,7 @@ export default function TaskManagementPage() {
                       placeholder="e.g. Tasks, Backlog, Sprint"
                       value={newSheet.sheetTabName}
                       onChange={e => setNewSheet({ ...newSheet, sheetTabName: e.target.value })}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-emerald-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-fuchsia-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                     />
                     <p className="mt-1 text-[10px] text-slate-400">The name of the first tab inside the spreadsheet</p>
                   </div>
@@ -622,7 +622,7 @@ export default function TaskManagementPage() {
                       <select
                         value={newSheet.locale}
                         onChange={e => setNewSheet({ ...newSheet, locale: e.target.value })}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-emerald-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-fuchsia-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                       >
                         <option value="en_US">English (US)</option>
                         <option value="en_GB">English (UK)</option>
@@ -643,7 +643,7 @@ export default function TaskManagementPage() {
                       <select
                         value={newSheet.timeZone}
                         onChange={e => setNewSheet({ ...newSheet, timeZone: e.target.value })}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-emerald-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-fuchsia-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                       >
                         <option value="UTC">UTC</option>
                         <option value="America/New_York">US Eastern</option>
@@ -685,25 +685,25 @@ export default function TaskManagementPage() {
                   placeholder="Task title"
                   value={newTask.title}
                   onChange={e => setNewTask({ ...newTask, title: e.target.value })}
-                  className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-emerald-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                  className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-fuchsia-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                 />
                 <input
                   placeholder="Assignee name"
                   value={newTask.assignee}
                   onChange={e => setNewTask({ ...newTask, assignee: e.target.value })}
-                  className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-emerald-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                  className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-fuchsia-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                 />
                 <textarea
                   placeholder="Description"
                   value={newTask.description}
                   onChange={e => setNewTask({ ...newTask, description: e.target.value })}
-                  className="col-span-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                  className="col-span-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-fuchsia-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                   rows={2}
                 />
                 <select
                   value={newTask.priority}
                   onChange={e => setNewTask({ ...newTask, priority: e.target.value as TaskPriority })}
-                  className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-emerald-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                  className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-fuchsia-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                 >
                   <option value="low">Low Priority</option>
                   <option value="medium">Medium Priority</option>
@@ -713,7 +713,7 @@ export default function TaskManagementPage() {
                 <select
                   value={newTask.workType}
                   onChange={e => setNewTask({ ...newTask, workType: e.target.value as WorkType })}
-                  className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-emerald-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                  className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-fuchsia-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                 >
                   {workTypes.map(w => <option key={w} value={w}>{w}</option>)}
                 </select>
@@ -721,13 +721,13 @@ export default function TaskManagementPage() {
                   placeholder="https://example.com"
                   value={newTask.websiteUrl}
                   onChange={e => setNewTask({ ...newTask, websiteUrl: e.target.value })}
-                  className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-emerald-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                  className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-fuchsia-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                 />
                 <input
                   type="date"
                   value={newTask.dueDate}
                   onChange={e => setNewTask({ ...newTask, dueDate: e.target.value })}
-                  className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-emerald-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                  className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-fuchsia-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                 />
               </div>
               <div className="mt-4 flex gap-2">
@@ -748,7 +748,7 @@ export default function TaskManagementPage() {
                 placeholder="Search tasks..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm font-semibold text-slate-900 outline-none focus:border-emerald-400 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm font-semibold text-slate-900 outline-none focus:border-fuchsia-400 dark:border-white/10 dark:bg-slate-900 dark:text-white"
               />
             </div>
             <Select value={filterPriority} onValueChange={(v) => setFilterPriority(v as TaskPriority | "all")}>
@@ -784,11 +784,11 @@ export default function TaskManagementPage() {
                     onDragOver={(e) => handleDragOver(e, col)}
                     onDragLeave={() => setDragOverCol(null)}
                     onDrop={() => handleDrop(col)}
-                    className={`rounded-2xl border-2 p-3 transition-all ${dragOverCol === col ? "border-emerald-400 bg-emerald-50/30 dark:bg-emerald-400/5" : cfg.border + " " + cfg.bg}`}
+                    className={`rounded-2xl border-2 p-3 transition-all ${dragOverCol === col ? "border-fuchsia-400 bg-fuchsia-50/30 dark:bg-fuchsia-400/5" : cfg.border + " " + cfg.bg}`}
                   >
                     <div className="mb-3 flex items-center justify-between px-1">
                       <div className="flex items-center gap-2">
-                        <span className={`size-2 rounded-full ${col === "todo" ? "bg-slate-400" : col === "in_progress" ? "bg-blue-500" : col === "review" ? "bg-amber-400" : "bg-emerald-500"}`} />
+                        <span className={`size-2 rounded-full ${col === "todo" ? "bg-slate-400" : col === "in_progress" ? "bg-blue-500" : col === "review" ? "bg-amber-400" : "bg-fuchsia-500"}`} />
                         <span className={`text-xs font-bold uppercase tracking-wider ${cfg.color}`}>{cfg.label}</span>
                       </div>
                       <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">{colTasks.length}</span>
@@ -827,7 +827,7 @@ export default function TaskManagementPage() {
                                   {t.progress > 0 && (
                                     <div className="flex items-center gap-1.5">
                                       <div className="h-1 w-12 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                                        <div className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400" style={{ width: `${t.progress}%` }} />
+                                        <div className="h-full rounded-full bg-gradient-to-r from-fuchsia-600 to-purple-600" style={{ width: `${t.progress}%` }} />
                                       </div>
                                       <span className="text-[9px] font-bold text-slate-400">{t.progress}%</span>
                                     </div>
@@ -909,7 +909,7 @@ export default function TaskManagementPage() {
                             <td className="px-5 py-3">
                               <div className="flex items-center gap-2">
                                 <div className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                                  <div className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400" style={{ width: `${t.progress}%` }} />
+                                  <div className="h-full rounded-full bg-gradient-to-r from-fuchsia-600 to-purple-600" style={{ width: `${t.progress}%` }} />
                                 </div>
                                 <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{t.progress}%</span>
                               </div>
@@ -950,7 +950,7 @@ export default function TaskManagementPage() {
           >
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/95 px-5 py-4 backdrop-blur dark:border-white/5 dark:bg-slate-950/95">
               <div className="flex items-center gap-2">
-                <span className="grid size-8 place-items-center rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400"><ClipboardList className="size-4" /></span>
+                <span className="grid size-8 place-items-center rounded-lg bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><ClipboardList className="size-4" /></span>
                 <div>
                   <h3 className="m-0 text-sm font-bold text-slate-900 dark:text-white">Task Details</h3>
                   <p className="mt-0.5 text-[10px] text-slate-400">{selectedTask.id.slice(0, 8)}</p>
@@ -1014,7 +1014,7 @@ export default function TaskManagementPage() {
                   max={100}
                   value={selectedTask.progress}
                   onChange={e => handleUpdateProgress(selectedTask.id, Number(e.target.value))}
-                  className="mt-3 w-full accent-emerald-500"
+                  className="mt-3 w-full accent-fuchsia-600"
                 />
               </div>
 
@@ -1023,7 +1023,7 @@ export default function TaskManagementPage() {
                   <button
                     key={col}
                     onClick={() => handleUpdateStatus(selectedTask.id, col)}
-                    className={`rounded-lg px-2 py-2 text-[10px] font-bold transition ${selectedTask.status === col ? statusConfig[col].color + " ring-2 " + (col === "todo" ? "ring-slate-300" : col === "in_progress" ? "ring-blue-300" : col === "review" ? "ring-amber-300" : "ring-emerald-300") : "text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"}`}
+                    className={`rounded-lg px-2 py-2 text-[10px] font-bold transition ${selectedTask.status === col ? statusConfig[col].color + " ring-2 " + (col === "todo" ? "ring-slate-300" : col === "in_progress" ? "ring-blue-300" : col === "review" ? "ring-amber-300" : "ring-fuchsia-300") : "text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"}`}
                   >
                     {statusConfig[col].label}
                   </button>
@@ -1058,7 +1058,7 @@ export default function TaskManagementPage() {
                     value={commentText}
                     onChange={e => setCommentText(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAddComment(selectedTask.id); } }}
-                    className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-900 outline-none focus:border-emerald-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                    className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-900 outline-none focus:border-fuchsia-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                   />
                   <Button size="sm" onClick={() => handleAddComment(selectedTask.id)} disabled={!commentText.trim() || submitting}>
                     {submitting ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}

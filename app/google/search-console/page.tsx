@@ -79,7 +79,7 @@ export default function SearchConsolePage() {
       <RequireAuth>
         <DashboardLayout>
           <div className="flex h-[60vh] items-center justify-center">
-            <Loader2 className="size-8 animate-spin text-emerald-500" />
+            <Loader2 className="size-8 animate-spin text-fuchsia-500" />
           </div>
         </DashboardLayout>
       </RequireAuth>
@@ -152,7 +152,7 @@ export default function SearchConsolePage() {
               <select
                 value={selectedSite}
                 onChange={(e) => setSelectedSite(e.target.value)}
-                className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
               >
                 {sites.map((s) => (
                   <option key={s.siteUrl} value={s.siteUrl}>
@@ -166,7 +166,7 @@ export default function SearchConsolePage() {
           {/* Stats cards */}
           <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
             {[
-              { label: "Total Clicks", value: totalClicks.toLocaleString(), icon: MousePointerClick, color: "text-emerald-600 dark:text-emerald-400" },
+              { label: "Total Clicks", value: totalClicks.toLocaleString(), icon: MousePointerClick, color: "text-fuchsia-600 dark:text-fuchsia-400" },
               { label: "Impressions", value: totalImpressions.toLocaleString(), icon: Eye, color: "text-blue-600 dark:text-blue-400" },
               { label: "Avg CTR", value: `${avgCtr}%`, icon: Target, color: "text-purple-600 dark:text-purple-400" },
               { label: "Avg Position", value: avgPosition, icon: TrendingUp, color: "text-orange-600 dark:text-orange-400" },
@@ -206,7 +206,7 @@ export default function SearchConsolePage() {
             </div>
             {fetching ? (
               <div className="flex h-40 items-center justify-center">
-                <Loader2 className="size-6 animate-spin text-emerald-500" />
+                <Loader2 className="size-6 animate-spin text-fuchsia-500" />
               </div>
             ) : rows.length === 0 ? (
               <div className="flex h-40 items-center justify-center text-sm text-slate-400">
@@ -238,12 +238,12 @@ export default function SearchConsolePage() {
                     {rows.map((row, i) => (
                       <tr
                         key={`${row.query}-${i}`}
-                        className="transition-colors hover:bg-slate-50 dark:hover:bg-white/5"
+                        className="transition-colors hover:bg-fuchsia-50/50 dark:hover:bg-fuchsia-900/10"
                       >
                         <td className="px-6 py-3 font-semibold text-slate-900 dark:text-white">
                           {row.query}
                         </td>
-                        <td className="px-6 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                        <td className="px-6 py-3 text-right font-bold text-fuchsia-600 dark:text-fuchsia-400">
                           {row.clicks.toLocaleString()}
                         </td>
                         <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">
