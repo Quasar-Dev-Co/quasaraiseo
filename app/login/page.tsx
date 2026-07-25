@@ -2,8 +2,9 @@
 
 import { FormEvent, useEffect, useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail, Orbit, TriangleAlert } from "lucide-react"
+import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail, TriangleAlert } from "lucide-react"
 
 import { AuthBrandPanel } from "@/components/auth/auth-brand-panel"
 import { useAuth } from "@/hooks/use-auth"
@@ -47,14 +48,14 @@ export default function LoginPage() {
       <AuthBrandPanel />
 
       {/* Right: Login form */}
-      <div className="relative flex flex-col items-center justify-center bg-[radial-gradient(circle_at_50%_0%,rgba(217,70,239,0.08),transparent_40%),linear-gradient(180deg,#fdf4ff_0%,#f8fafc_50%,#fff_100%)] px-6 py-16">
+      <div className="relative flex flex-col items-center justify-center bg-[radial-gradient(circle_at_50%_0%,rgba(217,70,239,0.08),transparent_40%),linear-gradient(180deg,#fdf4ff_0%,#f8fafc_50%,#fff_100%)] px-4 sm:px-8 py-10 sm:py-16">
         {/* Mobile logo */}
-        <Link href="/" className="mb-10 flex items-center gap-2.5 text-[19px] font-black tracking-[-0.035em] lg:hidden">
-          <span className="grid size-9.5 place-items-center rounded-[13px] bg-gradient-to-br from-fuchsia-500 via-purple-600 to-pink-500 text-white shadow-[0_12px_25px_rgba(217,70,239,0.28)]">
-            <Orbit className="size-[19px]" />
+        <Link href="/" className="mb-8 flex items-center gap-2.5 text-[19px] font-black tracking-[-0.035em] lg:hidden">
+          <span className="grid size-9.5 place-items-center rounded-[13px] border border-fuchsia-500/30 bg-slate-950 p-1.5 shadow-[0_8px_20px_rgba(217,70,239,0.35)]">
+            <Image src="/mainlogos/mainlogo.png" alt="QuasarAISEO" width={26} height={26} className="size-full object-contain" priority />
           </span>
-          <span>
-            Quasar<span className="bg-gradient-to-r from-fuchsia-600 to-pink-500 bg-clip-text text-transparent">AISEO</span>
+          <span className="text-slate-950 font-black">
+            Quasar<span className="bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">AISEO</span>
           </span>
         </Link>
 
