@@ -144,25 +144,47 @@ export default function AuditMcpPage() {
 
   const handleDownloadPdf = async (html: string, jobPrompt: string) => {
     try {
-      // Sanitize unsupported CSS color functions that break html2canvas
-      const sanitized = html
-        .replace(/\b(?:lab|lch|oklab|oklch|color-mix|color)\([^)]*\)/gi, "#000000")
-        .replace(/<!--[\s\S]*?-->/g, "");
+      const sanitized = html.replace(/<!--[\s\S]*?-->/g, "");
 
-      const container = document.createElement("div");
-      container.style.position = "fixed";
-      container.style.left = "-9999px";
-      container.style.top = "0";
-      container.style.width = "794px";
-      container.style.background = "#ffffff";
-      container.innerHTML = sanitized;
-      document.body.appendChild(container);
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "fixed";
+      iframe.style.left = "-9999px";
+      iframe.style.top = "0";
+      iframe.style.width = "794px";
+      iframe.style.height = "1123px";
+      iframe.style.border = "none";
+      iframe.style.background = "#ffffff";
+      document.body.appendChild(iframe);
+
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!doc) throw new Error("Could not create iframe document");
+      doc.open();
+      doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+        * { all: initial; }
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #1a1a1a; line-height: 1.6; padding: 40px; background: #fff; }
+        h1 { font-size: 24px; font-weight: bold; margin: 16px 0 8px; color: #111; }
+        h2 { font-size: 20px; font-weight: bold; margin: 14px 0 6px; color: #111; }
+        h3 { font-size: 16px; font-weight: bold; margin: 12px 0 4px; color: #222; }
+        p { margin: 8px 0; }
+        table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 13px; }
+        th { background: #f0f0f0; font-weight: bold; }
+        ul, ol { margin: 8px 0; padding-left: 24px; }
+        li { margin: 4px 0; }
+        strong { font-weight: bold; }
+        em { font-style: italic; }
+        a { color: #4f46e5; text-decoration: underline; }
+        div, section, article, header, footer { display: block; }
+      </style></head><body>${sanitized}</body></html>`);
+      doc.close();
+
+      await new Promise((r) => setTimeout(r, 300));
 
       const pdf = new jsPDF("p", "pt", "a4");
-      await pdf.html(container, {
-        callback: (doc) => {
+      await pdf.html(doc.body, {
+        callback: (doc2) => {
           const filename = jobPrompt.slice(0, 40).replace(/[^a-zA-Z0-9]/g, "_") || "report";
-          doc.save(`${filename}.pdf`);
+          doc2.save(`${filename}.pdf`);
         },
         autoPaging: "text",
         width: 794,
@@ -170,7 +192,7 @@ export default function AuditMcpPage() {
         margin: 20,
       });
 
-      document.body.removeChild(container);
+      document.body.removeChild(iframe);
     } catch (err) {
       setError(err instanceof Error ? err.message : "PDF generation failed");
     }
