@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { jsPDF } from "jspdf";
 import {
   Upload, FileArchive, Sparkles, Loader2, FileText, Download,
   Trash2, Zap, CheckCircle2, XCircle, Clock, Package, Brain,
@@ -145,6 +144,7 @@ export default function AuditMcpPage() {
   const handleDownloadPdf = async (html: string, jobPrompt: string) => {
     try {
       const sanitized = html.replace(/<!--[\s\S]*?-->/g, "");
+      const filename = jobPrompt.slice(0, 40).replace(/[^a-zA-Z0-9]/g, "_") || "report";
 
       const iframe = document.createElement("iframe");
       iframe.style.position = "fixed";
@@ -159,9 +159,9 @@ export default function AuditMcpPage() {
       const doc = iframe.contentDocument || iframe.contentWindow?.document;
       if (!doc) throw new Error("Could not create iframe document");
       doc.open();
-      doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>
-        * { all: initial; }
-        body { font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #1a1a1a; line-height: 1.6; padding: 40px; background: #fff; }
+      doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${filename}</title><style>
+        @page { margin: 20mm; }
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #1a1a1a; line-height: 1.6; background: #fff; }
         h1 { font-size: 24px; font-weight: bold; margin: 16px 0 8px; color: #111; }
         h2 { font-size: 20px; font-weight: bold; margin: 14px 0 6px; color: #111; }
         h3 { font-size: 16px; font-weight: bold; margin: 12px 0 4px; color: #222; }
@@ -174,25 +174,15 @@ export default function AuditMcpPage() {
         strong { font-weight: bold; }
         em { font-style: italic; }
         a { color: #4f46e5; text-decoration: underline; }
-        div, section, article, header, footer { display: block; }
       </style></head><body>${sanitized}</body></html>`);
       doc.close();
 
-      await new Promise((r) => setTimeout(r, 300));
+      await new Promise((r) => setTimeout(r, 500));
 
-      const pdf = new jsPDF("p", "pt", "a4");
-      await pdf.html(doc.body, {
-        callback: (doc2) => {
-          const filename = jobPrompt.slice(0, 40).replace(/[^a-zA-Z0-9]/g, "_") || "report";
-          doc2.save(`${filename}.pdf`);
-        },
-        autoPaging: "text",
-        width: 794,
-        windowWidth: 794,
-        margin: 20,
-      });
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
 
-      document.body.removeChild(iframe);
+      setTimeout(() => document.body.removeChild(iframe), 1000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "PDF generation failed");
     }
