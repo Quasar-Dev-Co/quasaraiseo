@@ -151,7 +151,7 @@ export default function GoogleSheetsPage() {
           )}
 
           {msg && (
-            <div className="mb-6 flex items-center gap-2 rounded-xl border border-fuchsia-200 bg-fuchsia-50 px-4 py-3 text-sm font-semibold text-fuchsia-700 dark:border-fuchsia-400/20 dark:bg-fuchsia-400/10 dark:text-fuchsia-400">
+            <div className="mb-6 flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 dark:border-blue-400/20 dark:bg-blue-400/10 dark:text-blue-400">
               <FileSpreadsheet className="size-4 shrink-0" />
               {msg}
             </div>
@@ -181,11 +181,11 @@ export default function GoogleSheetsPage() {
               {sheets.map(s => (
                 <div
                   key={s.id}
-                  className={`cursor-pointer rounded-2xl border-2 p-4 transition-all ${selectedSheet === s.id ? "border-fuchsia-400 bg-fuchsia-50/30 dark:bg-fuchsia-400/5" : "border-slate-200 bg-white hover:border-slate-300 dark:border-white/10 dark:bg-slate-900/50"}`}
+                  className={`cursor-pointer rounded-xl border p-4 shadow-sm transition-all hover:shadow-md ${selectedSheet === s.id ? "border-blue-400 bg-blue-50/30 dark:bg-blue-400/5" : "border-slate-200 bg-white hover:border-blue-300 dark:border-white/10 dark:bg-slate-900/50"}`}
                   onClick={() => setSelectedSheet(s.id)}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="grid size-10 place-items-center rounded-xl bg-fuchsia-50 text-fuchsia-600 dark:bg-fuchsia-400/10 dark:text-fuchsia-400">
+                    <span className="grid size-10 place-items-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400">
                       <FileSpreadsheet className="size-5" />
                     </span>
                     <div className="min-w-0 flex-1">

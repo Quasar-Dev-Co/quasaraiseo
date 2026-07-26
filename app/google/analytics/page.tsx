@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   BarChart3, Loader2, AlertCircle, TrendingUp,
-  Users, Eye, Clock, RefreshCw, Activity, MousePointerClick,
+  Users, Eye, Clock, RefreshCw, Activity,
 } from "lucide-react";
 import { MetricCard } from "@/components/ui/metric-card";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";

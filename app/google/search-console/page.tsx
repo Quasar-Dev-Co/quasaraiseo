@@ -9,6 +9,7 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { MetricCard } from "@/components/ui/metric-card";
 import {
   googleApi,
   type SearchConsoleSite,
@@ -164,31 +165,43 @@ export default function SearchConsolePage() {
           )}
 
           {/* Stats cards */}
-          <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {[
-              { label: "Total Clicks", value: totalClicks.toLocaleString(), icon: MousePointerClick, color: "text-fuchsia-600 dark:text-fuchsia-400" },
-              { label: "Impressions", value: totalImpressions.toLocaleString(), icon: Eye, color: "text-blue-600 dark:text-blue-400" },
-              { label: "Avg CTR", value: `${avgCtr}%`, icon: Target, color: "text-purple-600 dark:text-purple-400" },
-              { label: "Avg Position", value: avgPosition, icon: TrendingUp, color: "text-orange-600 dark:text-orange-400" },
-            ].map((stat) => {
-              const Icon = stat.icon;
-              return (
-                <div
-                  key={stat.label}
-                  className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900/50"
-                >
-                  <div className="flex items-center gap-2">
-                    <Icon className={`size-4 ${stat.color}`} />
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                      {stat.label}
-                    </span>
-                  </div>
-                  <div className="mt-2 text-2xl font-extrabold text-slate-900 dark:text-white">
-                    {stat.value}
-                  </div>
-                </div>
-              );
-            })}
+          <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <MetricCard
+              label="Total Clicks"
+              value={totalClicks.toLocaleString()}
+              icon={MousePointerClick}
+              trend="total clicks"
+              trendUp
+              sparklineData={rows.map(r => r.clicks)}
+              color="#3b82f6"
+            />
+            <MetricCard
+              label="Impressions"
+              value={totalImpressions.toLocaleString()}
+              icon={Eye}
+              trend="total impressions"
+              trendUp
+              sparklineData={rows.map(r => r.impressions)}
+              color="#8b5cf6"
+            />
+            <MetricCard
+              label="Avg CTR"
+              value={`${avgCtr}%`}
+              icon={Target}
+              trend="click-through rate"
+              trendUp
+              sparklineData={rows.map(r => (r.impressions > 0 ? (r.clicks / r.impressions) * 100 : 0))}
+              color="#10b981"
+            />
+            <MetricCard
+              label="Avg Position"
+              value={avgPosition}
+              icon={TrendingUp}
+              trend="search position"
+              trendUp={parseFloat(avgPosition) <= 10}
+              sparklineData={rows.map(r => r.position)}
+              color="#f59e0b"
+            />
           </div>
 
           {/* Search queries table */}
