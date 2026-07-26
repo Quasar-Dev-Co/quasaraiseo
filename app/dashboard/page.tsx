@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import { MetricCard } from "@/components/ui/metric-card";
 
 const auditTrend = [42, 55, 48, 67, 72, 80, 76, 88, 92, 85, 98, 110];
 const scoreTrend = [58, 62, 65, 68, 70, 72, 75, 76, 78, 80, 79, 82];
@@ -62,41 +63,43 @@ export default function DashboardPage() {
       </section>
 
       {/* Stats */}
-      <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <article className="rounded-[18px] border border-slate-200 bg-white/80 p-5.5 shadow-[0_14px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-slate-900/60">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400"><FileSearch className="size-4" /> Audits</div>
-            <span className="flex items-center gap-1 text-[10px] font-bold text-fuchsia-600 dark:text-fuchsia-400"><TrendingUp className="size-3" /> +12.8%</span>
-          </div>
-          <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">1,284</div>
-          <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">Total generated</div>
-        </article>
-        <article className="rounded-[18px] border border-slate-200 bg-white/80 p-5.5 shadow-[0_14px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-slate-900/60">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400"><ClipboardList className="size-4" /> Tasks</div>
-            <span className="flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400"><Clock className="size-3" /> {activeTasks} active</span>
-          </div>
-          <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{task.tasks.length}</div>
-          <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">{doneTasks} completed · {urgentTasks} urgent</div>
-        </article>
-        <article className="rounded-[18px] border border-slate-200 bg-white/80 p-5.5 shadow-[0_14px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-slate-900/60">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400"><Users className="size-4" /> Team</div>
-            <span className="flex items-center gap-1 text-[10px] font-bold text-fuchsia-600 dark:text-fuchsia-400"><span className="size-1.5 rounded-full bg-fuchsia-500" /> {onlineMembers} online</span>
-          </div>
-          <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{task.teamMembers.length}</div>
-          <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">SEO engineers</div>
-        </article>
-        <article className="rounded-[18px] border border-slate-200 bg-white/80 p-5.5 shadow-[0_14px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-slate-900/60">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400"><Zap className="size-4" /> Credits</div>
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">14 days left</span>
-          </div>
-          <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">14</div>
-          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-            <div className="h-full rounded-full bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500" style={{ width: "72%" }} />
-          </div>
-        </article>
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          label="Audits"
+          value="1,284"
+          icon={FileSearch}
+          trend="+12.8%"
+          trendUp
+          sparklineData={auditTrend}
+          color="#3b82f6"
+        />
+        <MetricCard
+          label="Tasks"
+          value={task.tasks.length.toString()}
+          icon={ClipboardList}
+          trend={`${activeTasks} active`}
+          trendUp={activeTasks < 10}
+          sparklineData={[doneTasks, activeTasks, urgentTasks, task.tasks.length]}
+          color="#8b5cf6"
+        />
+        <MetricCard
+          label="Team"
+          value={task.teamMembers.length.toString()}
+          icon={Users}
+          trend={`${onlineMembers} online`}
+          trendUp
+          sparklineData={task.teamMembers.map(m => (m.online ? 1 : 0))}
+          color="#10b981"
+        />
+        <MetricCard
+          label="Credits"
+          value="14"
+          icon={Zap}
+          trend="14 days left"
+          trendUp={false}
+          sparklineData={[12, 13, 14, 14, 14, 13, 14]}
+          color="#f59e0b"
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">

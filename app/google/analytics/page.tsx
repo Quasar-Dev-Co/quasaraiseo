@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   BarChart3, Loader2, AlertCircle, TrendingUp,
-  Users, Eye, Clock, RefreshCw, Activity,
+  Users, Eye, Clock, RefreshCw, Activity, MousePointerClick,
 } from "lucide-react";
+import { MetricCard } from "@/components/ui/metric-card";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Button } from "@/components/ui/button";
@@ -170,31 +171,43 @@ export default function AnalyticsPage() {
           )}
 
           {/* Stats cards */}
-          <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {[
-              { label: "Sessions", value: (totalsMap.sessions ?? 0).toLocaleString(), icon: Activity, color: "text-fuchsia-600 dark:text-fuchsia-400" },
-              { label: "Total Users", value: (totalsMap.totalUsers ?? 0).toLocaleString(), icon: Users, color: "text-fuchsia-600 dark:text-fuchsia-400" },
-              { label: "Page Views", value: (totalsMap.pageViews ?? 0).toLocaleString(), icon: Eye, color: "text-fuchsia-600 dark:text-fuchsia-400" },
-              { label: "Avg Session", value: formatDuration(totalsMap.avgSessionDuration ?? 0), icon: Clock, color: "text-fuchsia-600 dark:text-fuchsia-400" },
-            ].map((stat) => {
-              const Icon = stat.icon;
-              return (
-                <div
-                  key={stat.label}
-                  className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900/50"
-                >
-                  <div className="flex items-center gap-2">
-                    <Icon className={`size-4 ${stat.color}`} />
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                      {stat.label}
-                    </span>
-                  </div>
-                  <div className="mt-2 text-2xl font-extrabold text-slate-900 dark:text-white">
-                    {stat.value}
-                  </div>
-                </div>
-              );
-            })}
+          <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <MetricCard
+              label="Sessions"
+              value={(totalsMap.sessions ?? 0).toLocaleString()}
+              icon={Activity}
+              trend="vs previous period"
+              trendUp
+              sparklineData={data?.rows.map(r => r.sessions) ?? [0]}
+              color="#3b82f6"
+            />
+            <MetricCard
+              label="Total Users"
+              value={(totalsMap.totalUsers ?? 0).toLocaleString()}
+              icon={Users}
+              trend="vs previous period"
+              trendUp
+              sparklineData={data?.rows.map(r => r.users) ?? [0]}
+              color="#8b5cf6"
+            />
+            <MetricCard
+              label="Page Views"
+              value={(totalsMap.pageViews ?? 0).toLocaleString()}
+              icon={Eye}
+              trend="vs previous period"
+              trendUp
+              sparklineData={data?.rows.map(r => r.pageViews) ?? [0]}
+              color="#10b981"
+            />
+            <MetricCard
+              label="Avg Session"
+              value={formatDuration(totalsMap.avgSessionDuration ?? 0)}
+              icon={Clock}
+              trend="vs previous period"
+              trendUp={false}
+              sparklineData={data?.rows.map(r => r.avgSessionDuration) ?? [0]}
+              color="#f59e0b"
+            />
           </div>
 
           {/* Daily sessions bar chart */}
