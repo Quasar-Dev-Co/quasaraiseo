@@ -24,7 +24,7 @@ export function PricingSection({ showToast }: { showToast: ShowToast }) {
       <div className="mx-auto w-full max-w-[1240px]">
         <div className="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-end">
           <div>
-            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-fuchsia-700">
+            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-700">
               <CreditCard className="size-3.5" /> Simple pricing
             </div>
             <h2 className="mt-3.5 max-w-[850px] text-[clamp(34px,4.5vw,60px)] font-black leading-[1.02] tracking-[-0.052em]">
@@ -72,20 +72,20 @@ export function PricingSection({ showToast }: { showToast: ShowToast }) {
             <ul className="mt-6 grid gap-2.75 border-t border-slate-200 pt-5.75">
               {["5 website audits per month", "SEO and AI visibility scores", "Keyword opportunity reports", "PDF and JSON exports"].map((item) => (
                 <li key={item} className="flex gap-2.25 text-[11px] text-slate-600">
-                  <Check className="size-3.5 text-fuchsia-600" /> {item}
+                  <Check className="size-3.5 text-blue-600" /> {item}
                 </li>
               ))}
             </ul>
           </article>
 
           {/* Growth - featured High Contrast Card */}
-          <article className="relative overflow-hidden rounded-3xl border-2 border-fuchsia-500/60 bg-slate-950 p-7.5 text-white shadow-[0_25px_60px_rgba(217,70,239,0.22)] transition-all duration-300 lg:-translate-y-2">
-            <div className="pointer-events-none absolute -right-20 -top-20 size-64 rounded-full bg-fuchsia-600/25 blur-3xl" />
+          <article className="relative overflow-hidden rounded-3xl border-2 border-blue-500/60 bg-slate-950 p-7.5 text-white shadow-[0_25px_60px_rgba(217,70,239,0.22)] transition-all duration-300 lg:-translate-y-2">
+            <div className="pointer-events-none absolute -right-20 -top-20 size-64 rounded-full bg-blue-600/25 blur-3xl" />
             
-            <em className="absolute right-5 top-5 rounded-full bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 px-3.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-[0_4px_15px_rgba(217,70,239,0.4)] not-italic">
+            <em className="absolute right-5 top-5 rounded-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 px-3.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-[0_4px_15px_rgba(217,70,239,0.4)] not-italic">
               Most popular
             </em>
-            <small className="text-xs font-black uppercase tracking-[0.2em] text-fuchsia-400">Growth</small>
+            <small className="text-xs font-black uppercase tracking-[0.2em] text-blue-400">Growth</small>
             <h3 className="mt-1.5 text-2xl font-black text-white">Automation</h3>
             <p className="mt-2 min-h-11 text-xs font-semibold leading-relaxed text-slate-300">
               For agencies and growing companies that need scalable content and visibility.
@@ -100,7 +100,7 @@ export function PricingSection({ showToast }: { showToast: ShowToast }) {
 
             <Link
               href="/create_audit_report"
-              className="mt-6 flex w-full items-center justify-center rounded-[14px] bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 px-4 py-3.5 text-sm font-extrabold text-white shadow-[0_12px_28px_rgba(217,70,239,0.35)] transition-all hover:scale-[1.02] hover:shadow-[0_16px_35px_rgba(217,70,239,0.5)]"
+              className="mt-6 flex w-full items-center justify-center rounded-[14px] bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 px-4 py-3.5 text-sm font-extrabold text-white shadow-[0_12px_28px_rgba(217,70,239,0.35)] transition-all hover:scale-[1.02] hover:shadow-[0_16px_35px_rgba(217,70,239,0.5)]"
             >
               Start growing
             </Link>
@@ -108,8 +108,8 @@ export function PricingSection({ showToast }: { showToast: ShowToast }) {
             <ul className="mt-6 space-y-3 border-t border-white/10 pt-5">
               {["Everything in Audit", "25 projects and recurring audits", "Programmatic page generation", "AI citation tracking", "White-label reports"].map((item) => (
                 <li key={item} className="flex items-center gap-3 text-xs font-bold text-slate-100">
-                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-fuchsia-500/20 text-fuchsia-400">
-                    <Check className="size-3 text-fuchsia-400" />
+                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-blue-500/20 text-blue-400">
+                    <Check className="size-3 text-blue-400" />
                   </span>
                   <span>{item}</span>
                 </li>
@@ -134,7 +134,7 @@ export function PricingSection({ showToast }: { showToast: ShowToast }) {
             <ul className="mt-6 grid gap-2.75 border-t border-slate-200 pt-5.75">
               {["Unlimited project architecture", "Custom automation workflows", "API and data integrations", "Team roles and governance"].map((item) => (
                 <li key={item} className="flex gap-2.25 text-[11px] text-slate-600">
-                  <Check className="size-3.5 text-fuchsia-600" /> {item}
+                  <Check className="size-3.5 text-blue-600" /> {item}
                 </li>
               ))}
             </ul>

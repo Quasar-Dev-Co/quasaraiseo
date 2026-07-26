@@ -28,17 +28,17 @@ export function Hero() {
         {/* Left Column */}
         <div className="flex flex-col items-start">
           {/* SEO + GEO Tag */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200/60 bg-fuchsia-50/86 px-3.5 py-1.5 text-xs font-bold text-fuchsia-700 shadow-sm backdrop-blur-sm">
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/60 bg-blue-50/86 px-3.5 py-1.5 text-xs font-bold text-blue-700 shadow-sm backdrop-blur-sm">
             <span className="relative flex size-2">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-fuchsia-400 opacity-75" />
-              <span className="relative inline-flex size-2 rounded-full bg-fuchsia-500 shadow-[0_0_0_5px_rgba(217,70,239,0.18)]" />
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-blue-400 opacity-75" />
+              <span className="relative inline-flex size-2 rounded-full bg-blue-500 shadow-[0_0_0_5px_rgba(217,70,239,0.18)]" />
             </span>
             <span>SEO + GEO Automation Platform</span>
           </div>
 
           <h1 className="mt-5 text-[clamp(40px,5.5vw,72px)] font-black leading-[0.98] tracking-[-0.055em] text-slate-950">
             Get cited in{" "}
-            <span className="bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">
               AI answers.
             </span>
             <br />
@@ -53,7 +53,7 @@ export function Hero() {
           <div className="mt-8 flex flex-col items-stretch gap-3.5 sm:flex-row sm:items-center">
             <Link
               href="/create_audit_report"
-              className="flex items-center justify-center gap-2 rounded-[15px] bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 px-6 py-4 text-sm font-bold text-white shadow-[0_16px_35px_rgba(217,70,239,0.3)] transition-transform hover:-translate-y-px"
+              className="flex items-center justify-center gap-2 rounded-[15px] bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 px-6 py-4 text-sm font-bold text-white shadow-[0_16px_35px_rgba(217,70,239,0.3)] transition-transform hover:-translate-y-px"
             >
               Create your free audit <ArrowUpRight className="size-4" />
             </Link>
@@ -74,7 +74,7 @@ export function Hero() {
               { icon: Bot, text: "Programmatic Pages" },
             ].map(({ icon: Icon, text }) => (
               <div key={text} className="flex items-center gap-2 text-xs font-semibold text-slate-600">
-                <Icon className="size-3.5 text-fuchsia-600" />
+                <Icon className="size-3.5 text-blue-600" />
                 <span>{text}</span>
               </div>
             ))}
@@ -84,7 +84,7 @@ export function Hero() {
         {/* Right Column - Mockup Graphic */}
         <div className="relative">
           {/* Ambient Glow */}
-          <div className="absolute -inset-4 rounded-[36px] bg-gradient-to-r from-fuchsia-500/20 via-purple-500/20 to-pink-500/20 blur-2xl" />
+          <div className="absolute -inset-4 rounded-[36px] bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 blur-2xl" />
 
           <div className="relative overflow-hidden rounded-[28px] border border-slate-700/60 bg-[radial-gradient(circle_at_90%_0,rgba(217,70,239,0.24),transparent_35%),linear-gradient(145deg,#0f172a,#020617)] text-white shadow-[0_30px_90px_rgba(15,23,42,0.35)]">
             {/* Topbar */}
@@ -97,7 +97,7 @@ export function Hero() {
               <div className="flex items-center gap-2 rounded-full border border-slate-400/15 bg-slate-900/80 px-3.5 py-1 text-[11px] font-mono text-slate-400">
                 <LockKeyhole className="size-3 text-emerald-400" /> app.quasaraiseo.com/dashboard
               </div>
-              <div className="grid size-7.5 place-items-center rounded-[10px] bg-fuchsia-500/15 text-fuchsia-400">
+              <div className="grid size-7.5 place-items-center rounded-[10px] bg-blue-500/15 text-blue-400">
                 <CircleUserRound className="size-3.5" />
               </div>
             </div>
@@ -107,7 +107,7 @@ export function Hero() {
               {/* Sidebar */}
               <aside className="hidden border-r border-slate-400/12 px-3.5 py-5 sm:block">
                 <div className="flex items-center gap-2 px-1.75 pb-4.5 text-xs font-extrabold tracking-wide">
-                  <span className="grid size-5 place-items-center rounded bg-slate-950 border border-fuchsia-500/40 p-0.5 shadow-sm">
+                  <span className="grid size-5 place-items-center rounded bg-slate-950 border border-blue-500/40 p-0.5 shadow-sm">
                     <Image src="/mainlogos/mainlogo.png" alt="Logo" width={16} height={16} className="size-full object-contain" />
                   </span>
                   QuasarAISEO
@@ -124,7 +124,7 @@ export function Hero() {
                   <div
                     key={label}
                     className={`flex items-center gap-2.25 rounded-[10px] px-2.5 py-2.25 text-[10px] font-semibold ${
-                      active ? "bg-fuchsia-500/15 text-fuchsia-400" : "text-slate-500"
+                      active ? "bg-blue-500/15 text-blue-400" : "text-slate-500"
                     }`}
                   >
                     <Icon className="size-3.5" /> {label}
@@ -139,8 +139,8 @@ export function Hero() {
                     <h3 className="m-0 text-lg">Visibility overview</h3>
                     <p className="mt-1 text-[10px] text-slate-500">Search and AI discovery performance</p>
                   </div>
-                  <span className="flex items-center gap-1.5 rounded-full bg-fuchsia-500/15 px-2.25 py-1.75 text-[9px] text-fuchsia-400">
-                    <i className="size-1.5 rounded-full bg-fuchsia-400" /> Tracking live
+                  <span className="flex items-center gap-1.5 rounded-full bg-blue-500/15 px-2.25 py-1.75 text-[9px] text-blue-400">
+                    <i className="size-1.5 rounded-full bg-blue-400" /> Tracking live
                   </span>
                 </div>
 
@@ -157,7 +157,7 @@ export function Hero() {
                     >
                       <small className="block text-[8px] uppercase text-slate-500">{stat.label}</small>
                       <strong className="mt-2.5 block text-[23px]">{stat.value}</strong>
-                      <span className="mt-2 block text-[8px] text-fuchsia-400">{stat.note}</span>
+                      <span className="mt-2 block text-[8px] text-blue-400">{stat.note}</span>
                     </div>
                   ))}
                 </div>
@@ -206,7 +206,7 @@ export function Hero() {
                       >
                         <b className="text-slate-200">{row.kw}</b>
                         <span>{row.vol}</span>
-                        <em className="not-italic text-fuchsia-400">{row.change}</em>
+                        <em className="not-italic text-blue-400">{row.change}</em>
                       </div>
                     ))}
                   </div>

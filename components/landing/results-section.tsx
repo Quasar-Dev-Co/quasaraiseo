@@ -18,7 +18,7 @@ export function ResultsSection() {
   return (
     <section id="results" className="px-4 py-26">
       <div className="mx-auto w-full max-w-[1240px]">
-        <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-fuchsia-700">
+        <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-700">
           <BarChart3 className="size-3.5" /> Measurable growth
         </div>
         <h2 className="mt-3.5 max-w-[850px] text-[clamp(34px,4.5vw,60px)] font-black leading-[1.02] tracking-[-0.052em]">
@@ -31,12 +31,12 @@ export function ResultsSection() {
 
         <div className="mt-8.5 grid grid-cols-1 gap-5.5 lg:grid-cols-[1.15fr_0.85fr]">
           {/* Dark card - High Contrast & Premium Aesthetics */}
-          <article className="relative overflow-hidden rounded-3xl border border-fuchsia-500/30 bg-slate-950 p-5 sm:p-7.5 text-white shadow-[0_20px_50px_rgba(217,70,239,0.15)]">
-            <div className="pointer-events-none absolute -right-16 -top-16 size-60 rounded-full bg-fuchsia-600/20 blur-3xl" />
+          <article className="relative overflow-hidden rounded-3xl border border-blue-500/30 bg-slate-950 p-5 sm:p-7.5 text-white shadow-[0_20px_50px_rgba(217,70,239,0.15)]">
+            <div className="pointer-events-none absolute -right-16 -top-16 size-60 rounded-full bg-blue-600/20 blur-3xl" />
             
-            <small className="text-xs font-bold uppercase tracking-wider text-fuchsia-400">Search visibility growth</small>
+            <small className="text-xs font-bold uppercase tracking-wider text-blue-400">Search visibility growth</small>
             <strong className="mt-4 flex items-baseline text-5xl sm:text-6xl font-black tracking-tight text-white">
-              +38<span className="ml-1 text-xl font-bold text-fuchsia-400">%</span>
+              +38<span className="ml-1 text-xl font-bold text-blue-400">%</span>
             </strong>
             <p className="mt-2 mb-6 text-xs font-semibold text-slate-300">Combined organic and AI discovery score</p>
             
@@ -46,7 +46,7 @@ export function ResultsSection() {
                   <span className="text-[11px] sm:text-xs font-bold text-slate-200 truncate">{m.label}</span>
                   <div className="h-2.5 overflow-hidden rounded-full border border-white/10 bg-slate-900">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-500 to-pink-500 shadow-[0_0_12px_rgba(217,70,239,0.6)]"
+                      className="h-full rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 shadow-[0_0_12px_rgba(217,70,239,0.6)]"
                       style={{ width: `${m.value}%` }}
                     />
                   </div>
@@ -66,7 +66,7 @@ export function ResultsSection() {
                 <span className="truncate">{m.label}</span>
                 <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-fuchsia-500 to-purple-600"
+                    className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-600"
                     style={{ width: `${m.width}%` }}
                   />
                 </div>

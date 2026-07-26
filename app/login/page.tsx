@@ -51,11 +51,11 @@ export default function LoginPage() {
       <div className="relative flex flex-col items-center justify-center bg-[radial-gradient(circle_at_50%_0%,rgba(217,70,239,0.08),transparent_40%),linear-gradient(180deg,#fdf4ff_0%,#f8fafc_50%,#fff_100%)] px-4 sm:px-8 py-10 sm:py-16">
         {/* Mobile logo */}
         <Link href="/" className="mb-8 flex items-center gap-2.5 text-[19px] font-black tracking-[-0.035em] lg:hidden">
-          <span className="grid size-9.5 place-items-center rounded-[13px] border border-fuchsia-500/30 bg-slate-950 p-1.5 shadow-[0_8px_20px_rgba(217,70,239,0.35)]">
+          <span className="grid size-9.5 place-items-center rounded-[13px] border border-blue-500/30 bg-slate-950 p-1.5 shadow-[0_8px_20px_rgba(217,70,239,0.35)]">
             <Image src="/mainlogos/mainlogo.png" alt="QuasarAISEO" width={26} height={26} className="size-full object-contain" priority />
           </span>
           <span className="text-slate-950 font-black">
-            Quasar<span className="bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">AISEO</span>
+            Quasar<span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">AISEO</span>
           </span>
         </Link>
 
@@ -120,7 +120,7 @@ export default function LoginPage() {
                   type="email"
                   placeholder="you@company.com"
                   required
-                  className="h-13 w-full rounded-[14px] border border-slate-200 bg-white px-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-fuchsia-400/65 focus:ring-4 focus:ring-fuchsia-500/10"
+                  className="h-13 w-full rounded-[14px] border border-slate-200 bg-white px-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-400/65 focus:ring-4 focus:ring-blue-500/10"
                 />
               </div>
             </label>
@@ -128,7 +128,7 @@ export default function LoginPage() {
             <label>
               <span className="flex items-center justify-between text-[13px] font-bold text-slate-700">
                 Password
-                <Link href="#" className="text-[12px] font-semibold text-fuchsia-600 hover:text-fuchsia-700">
+                <Link href="#" className="text-[12px] font-semibold text-blue-600 hover:text-blue-700">
                   Forgot password?
                 </Link>
               </span>
@@ -139,7 +139,7 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   required
-                  className="h-13 w-full rounded-[14px] border border-slate-200 bg-white px-11 pr-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-fuchsia-400/65 focus:ring-4 focus:ring-fuchsia-500/10"
+                  className="h-13 w-full rounded-[14px] border border-slate-200 bg-white px-11 pr-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-400/65 focus:ring-4 focus:ring-blue-500/10"
                 />
                 <button
                   type="button"
@@ -155,7 +155,7 @@ export default function LoginPage() {
               <input
                 type="checkbox"
                 name="remember"
-                className="size-4.5 rounded border-slate-300 text-fuchsia-600 focus:ring-fuchsia-500/20"
+                className="size-4.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20"
               />
               <span className="text-[13px] font-semibold text-slate-600">Keep me signed in for 30 days</span>
             </label>
@@ -163,7 +163,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-1.5 flex h-13 items-center justify-center gap-2.5 rounded-[15px] bg-gradient-to-br from-fuchsia-600 via-purple-600 to-pink-500 text-sm font-bold text-white shadow-[0_14px_32px_rgba(217,70,239,0.25)] transition-transform hover:-translate-y-px disabled:opacity-70"
+              className="mt-1.5 flex h-13 items-center justify-center gap-2.5 rounded-[15px] bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 text-sm font-bold text-white shadow-[0_14px_32px_rgba(217,70,239,0.25)] transition-transform hover:-translate-y-px disabled:opacity-70"
             >
               {loading ? (
                 <><Loader2 className="size-4.5 animate-spin" /> Signing in...</>
@@ -176,7 +176,7 @@ export default function LoginPage() {
           {/* Footer */}
           <p className="mt-7 text-center text-[14px] text-slate-500">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="font-bold text-fuchsia-600 transition-colors hover:text-fuchsia-700">
+            <Link href="/signup" className="font-bold text-blue-600 transition-colors hover:text-blue-700">
               Create one for free
             </Link>
           </p>

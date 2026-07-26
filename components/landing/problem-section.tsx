@@ -22,7 +22,7 @@ export function ProblemSection() {
     <section className="px-4 py-26">
       <div className="mx-auto grid w-full max-w-[1240px] grid-cols-1 items-center gap-13.5 lg:grid-cols-[0.88fr_1.12fr]">
         <div>
-          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-fuchsia-700">
+          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-700">
             <Activity className="size-3.5" /> The visibility problem
           </div>
           <h2 className="mt-3.5 max-w-[850px] text-[clamp(34px,4.5vw,60px)] font-black leading-[1.02] tracking-[-0.052em]">
@@ -56,7 +56,7 @@ export function ProblemSection() {
               <h3 className="m-0 text-base sm:text-lg font-bold">Multi-platform visibility</h3>
               <p className="mt-1 text-xs text-slate-500">Discoverability across modern search surfaces</p>
             </div>
-            <div className="min-w-[88px] rounded-[14px] bg-fuchsia-50 px-3 py-2 text-center text-fuchsia-700">
+            <div className="min-w-[88px] rounded-[14px] bg-blue-50 px-3 py-2 text-center text-blue-700">
               <strong className="block text-2xl font-black">74</strong>
               <span className="text-[9px] uppercase font-bold tracking-wider">Overall</span>
             </div>
@@ -70,13 +70,13 @@ export function ProblemSection() {
               >
                 <div className="flex items-center gap-2 text-[11px] sm:text-xs font-bold truncate">
                   <span className="grid size-6.5 sm:size-7.5 shrink-0 place-items-center rounded-[9px] border border-slate-200 bg-white">
-                    <Icon className="size-3 sm:size-3.5 text-fuchsia-600" />
+                    <Icon className="size-3 sm:size-3.5 text-blue-600" />
                   </span>
                   <span className="truncate">{label}</span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-fuchsia-500 to-purple-600"
+                    className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-600"
                     style={{ width: `${value}%` }}
                   />
                 </div>

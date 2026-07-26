@@ -47,7 +47,7 @@ export default function Home() {
 
       {toast && (
         <div className="fixed bottom-6 right-6 z-100 flex w-[min(380px,calc(100%-32px))] gap-3 rounded-[15px] border border-slate-200 bg-white/96 p-3.75 shadow-[0_24px_65px_rgba(15,23,42,0.18)]">
-          <CheckCircle2 className="size-5 text-fuchsia-600" />
+          <CheckCircle2 className="size-5 text-blue-600" />
           <div>
             <strong className="text-[13px]">Action ready</strong>
             <p className="mt-0.75 text-[11px] text-slate-500">{toast}</p>

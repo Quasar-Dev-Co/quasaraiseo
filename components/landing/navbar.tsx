@@ -14,11 +14,11 @@ export function Navbar() {
     <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/84 backdrop-blur-xl">
       <div className="mx-auto flex h-18 w-full max-w-[1240px] items-center justify-between gap-6 px-4 py-3.5">
         <Link href="#top" className="flex items-center gap-2.5 text-[19px] font-black tracking-[-0.035em]">
-          <span className="grid size-9.5 place-items-center rounded-[13px] border border-fuchsia-500/30 bg-slate-950 p-1.5 shadow-[0_8px_20px_rgba(217,70,239,0.35)]">
+          <span className="grid size-9.5 place-items-center rounded-[13px] border border-blue-500/30 bg-slate-950 p-1.5 shadow-[0_8px_20px_rgba(217,70,239,0.35)]">
             <Image src="/mainlogos/mainlogo.png" alt="QuasarAISEO" width={26} height={26} className="size-full object-contain" priority />
           </span>
           <span className="text-slate-950">
-            Quasar<span className="bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">AISEO</span>
+            Quasar<span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">AISEO</span>
           </span>
         </Link>
 
@@ -42,7 +42,7 @@ export function Navbar() {
           <Link
             href="/create_audit_report"
             onClick={() => setMenuOpen(false)}
-            className="flex items-center justify-center gap-2 rounded-[13px] bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 px-4 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(217,70,239,0.3)] md:hidden"
+            className="flex items-center justify-center gap-2 rounded-[13px] bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 px-4 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(217,70,239,0.3)] md:hidden"
           >
             Create free audit <ArrowUpRight className="size-3.5" />
           </Link>
@@ -57,7 +57,7 @@ export function Navbar() {
           </Link>
           <Link
             href="/create_audit_report"
-            className="flex items-center gap-2 rounded-[13px] bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(217,70,239,0.3)] transition-transform hover:-translate-y-px"
+            className="flex items-center gap-2 rounded-[13px] bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(217,70,239,0.3)] transition-transform hover:-translate-y-px"
           >
             Create free audit <ArrowUpRight className="size-3.5" />
           </Link>

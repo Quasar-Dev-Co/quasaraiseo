@@ -11,7 +11,7 @@ export function PlatformSection() {
       <div className="mx-auto w-full max-w-[1240px]">
         <div className="flex flex-col items-start justify-between gap-7.5 lg:flex-row lg:items-end">
           <div>
-            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-fuchsia-400">
+            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-400">
               <Boxes className="size-3.5" /> One connected platform
             </div>
             <h2 className="mt-3.5 max-w-[850px] text-[clamp(34px,4.5vw,60px)] font-black leading-[1.02] tracking-[-0.052em] text-white">
@@ -30,7 +30,7 @@ export function PlatformSection() {
               key={title}
               className="flex min-h-[280px] flex-col rounded-[22px] border border-slate-400/13 bg-slate-900/72 p-6"
             >
-              <span className="grid size-11.5 place-items-center rounded-[15px] bg-fuchsia-500/15 text-fuchsia-400">
+              <span className="grid size-11.5 place-items-center rounded-[15px] bg-blue-500/15 text-blue-400">
                 <Icon className="size-5.5" />
               </span>
               <h3 className="mt-5 text-lg">{title}</h3>
@@ -38,7 +38,7 @@ export function PlatformSection() {
               <div className="mt-4.5 grid gap-2.25">
                 {bullets.map((bullet) => (
                   <span key={bullet} className="flex items-center gap-2 text-[11px] text-slate-300">
-                    <Check className="size-3.5 text-fuchsia-400" /> {bullet}
+                    <Check className="size-3.5 text-blue-400" /> {bullet}
                   </span>
                 ))}
               </div>

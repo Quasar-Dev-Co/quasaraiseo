@@ -34,7 +34,7 @@ export function WorkflowSection() {
     <section id="workflow" className="px-4 py-26">
       <div className="mx-auto grid w-full max-w-[1240px] grid-cols-1 items-center gap-13.5 lg:grid-cols-[0.88fr_1.12fr]">
         <div>
-          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-fuchsia-700">
+          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-700">
             <Workflow className="size-3.5" /> Automated workflow
           </div>
           <h2 className="mt-3.5 max-w-[850px] text-[clamp(34px,4.5vw,60px)] font-black leading-[1.02] tracking-[-0.052em]">
@@ -48,7 +48,7 @@ export function WorkflowSection() {
           <div className="mt-7.5 grid gap-3">
             {workflowSteps.map((step) => (
               <div key={step.number} className="grid grid-cols-[48px_1fr] gap-3.5 rounded-2xl p-4">
-                <span className="grid size-12 place-items-center rounded-[15px] bg-fuchsia-50 text-xs font-black text-fuchsia-700">
+                <span className="grid size-12 place-items-center rounded-[15px] bg-blue-50 text-xs font-black text-blue-700">
                   {step.number}
                 </span>
                 <div>
@@ -77,7 +77,7 @@ export function WorkflowSection() {
                 <div className="flex items-center gap-3">
                   <span
                     className={`grid size-9 place-items-center rounded-xl ${
-                      isDark ? "bg-fuchsia-500/15 text-fuchsia-400" : "bg-fuchsia-50 text-fuchsia-700"
+                      isDark ? "bg-blue-500/15 text-blue-400" : "bg-blue-50 text-blue-700"
                     }`}
                   >
                     <Icon className="size-4.5" />
@@ -106,7 +106,7 @@ export function WorkflowSection() {
               >
                 <span
                   className={`grid size-8.5 place-items-center rounded-[11px] ${
-                    isDark ? "bg-fuchsia-500/15 text-fuchsia-400" : "bg-fuchsia-50 text-fuchsia-700"
+                    isDark ? "bg-blue-500/15 text-blue-400" : "bg-blue-50 text-blue-700"
                   }`}
                 >
                   <Icon className="size-4.5" />

@@ -13,7 +13,7 @@ export function DiscoverySection() {
   return (
     <section className="border-y border-slate-200 bg-slate-50 px-4 py-26">
       <div className="mx-auto w-full max-w-[1240px]">
-        <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-fuchsia-700">
+        <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-700">
           <Sparkles className="size-3.5" /> AI discovery optimization
         </div>
         <h2 className="mt-3.5 max-w-[850px] text-[clamp(34px,4.5vw,60px)] font-black leading-[1.02] tracking-[-0.052em]">
@@ -49,7 +49,7 @@ export function DiscoverySection() {
           {/* Panel */}
           <div className="grid grid-cols-1 items-center gap-8.5 px-3.5 sm:px-5.5 pb-5.5 pt-6 lg:grid-cols-[0.9fr_1.1fr]">
             <div>
-              <span className="inline-flex items-center gap-1.75 rounded-full bg-fuchsia-50 px-2.75 py-2 text-[11px] font-bold text-fuchsia-700">
+              <span className="inline-flex items-center gap-1.75 rounded-full bg-blue-50 px-2.75 py-2 text-[11px] font-bold text-blue-700">
                 <DiscoveryIcon className="size-3.5" /> {discovery.badge}
               </span>
               <h3 className="mt-4.5 text-[30px] tracking-[-0.04em]">{discovery.title}</h3>
@@ -57,7 +57,7 @@ export function DiscoverySection() {
               <div className="mt-5 grid gap-2.5">
                 {discovery.points.map((point) => (
                   <span key={point} className="flex items-center gap-2.25 text-xs font-bold text-slate-700">
-                    <CheckCircle2 className="size-3.5 text-fuchsia-600" /> {point}
+                    <CheckCircle2 className="size-3.5 text-blue-600" /> {point}
                   </span>
                 ))}
               </div>

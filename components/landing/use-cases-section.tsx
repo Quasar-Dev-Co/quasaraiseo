@@ -7,7 +7,7 @@ export function UseCasesSection() {
   return (
     <section className="px-4 py-19">
       <div className="mx-auto w-full max-w-[1240px]">
-        <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-fuchsia-700">
+        <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-700">
           <BriefcaseBusiness className="size-3.5" /> Built for your workflow
         </div>
         <h2 className="mt-3.5 max-w-[850px] text-[clamp(34px,4.5vw,60px)] font-black leading-[1.02] tracking-[-0.052em]">
@@ -20,14 +20,14 @@ export function UseCasesSection() {
               key={title}
               className="flex min-h-[250px] flex-col rounded-[20px] border border-slate-200 bg-white p-5.75"
             >
-              <span className="grid size-11 place-items-center rounded-[14px] bg-fuchsia-50 text-fuchsia-700">
+              <span className="grid size-11 place-items-center rounded-[14px] bg-blue-50 text-blue-700">
                 <Icon className="size-5.25" />
               </span>
               <h3 className="mt-4.5 text-lg">{title}</h3>
               <p className="mt-2.25 text-xs leading-relaxed text-slate-500">{text}</p>
               <Link
                 href="#pricing"
-                className="mt-4.5 flex items-center gap-1.75 text-[11px] font-bold text-fuchsia-600 hover:text-fuchsia-700"
+                className="mt-4.5 flex items-center gap-1.75 text-[11px] font-bold text-blue-600 hover:text-blue-700"
               >
                 Explore solution <ArrowRight className="size-3.5" />
               </Link>
