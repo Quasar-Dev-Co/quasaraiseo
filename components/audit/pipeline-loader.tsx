@@ -111,7 +111,7 @@ export function PipelineLoader({ phase, audit, error }: PipelineLoaderProps) {
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
       <div className="relative w-[min(520px,calc(100%-32px))] overflow-hidden rounded-[28px] border border-slate-700/50 bg-gradient-to-br from-slate-900 via-slate-950 to-black p-8 shadow-[0_40px_120px_rgba(0,0,0,0.5)]">
         {/* Glow background */}
-        <div className="pointer-events-none absolute -top-20 -right-20 size-60 rounded-full bg-fuchsia-600/15 blur-3xl" />
+        <div className="pointer-events-none absolute -top-20 -right-20 size-60 rounded-full bg-blue-600/15 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-20 -left-20 size-60 rounded-full bg-pink-500/10 blur-3xl" />
 
         {/* Close button (only on error) */}
@@ -130,8 +130,8 @@ export function PipelineLoader({ phase, audit, error }: PipelineLoaderProps) {
             isError
               ? "bg-red-500/15 text-red-400"
               : isComplete
-                ? "bg-fuchsia-500/15 text-fuchsia-400"
-                : "bg-fuchsia-500/10 text-fuchsia-300"
+                ? "bg-blue-500/15 text-blue-400"
+                : "bg-blue-500/10 text-blue-300"
           }`}>
             {isError ? (
               <TriangleAlert className="size-6" />
@@ -140,7 +140,7 @@ export function PipelineLoader({ phase, audit, error }: PipelineLoaderProps) {
             ) : (
               <div className="relative">
                 <Bot className="size-6" />
-                <span className="absolute -inset-1 animate-ping rounded-full bg-fuchsia-400/20" />
+                <span className="absolute -inset-1 animate-ping rounded-full bg-blue-400/20" />
               </div>
             )}
           </div>
@@ -161,11 +161,11 @@ export function PipelineLoader({ phase, audit, error }: PipelineLoaderProps) {
               <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
                 {isComplete ? "Complete" : activeStage?.label ?? "Starting..."}
               </span>
-              <span className="text-[11px] font-bold text-fuchsia-300">{progress}%</span>
+              <span className="text-[11px] font-bold text-blue-300">{progress}%</span>
             </div>
             <div className="h-2.5 overflow-hidden rounded-full bg-slate-800">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 transition-all duration-700 ease-out"
+                className="h-full rounded-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 transition-all duration-700 ease-out"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -174,13 +174,13 @@ export function PipelineLoader({ phase, audit, error }: PipelineLoaderProps) {
 
         {/* Current stage description */}
         {!isError && !isComplete && activeStage && (
-          <div className="relative mt-5 flex items-start gap-3 rounded-[16px] border border-fuchsia-400/15 bg-fuchsia-500/5 p-4">
+          <div className="relative mt-5 flex items-start gap-3 rounded-[16px] border border-blue-400/15 bg-blue-500/5 p-4">
             <div className="relative mt-0.5 shrink-0">
-              <activeStage.icon className="size-5 text-fuchsia-300" />
-              <span className="absolute -inset-1 animate-ping rounded-full bg-fuchsia-400/20" />
+              <activeStage.icon className="size-5 text-blue-300" />
+              <span className="absolute -inset-1 animate-ping rounded-full bg-blue-400/20" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-fuchsia-200">{activeStage.label}</p>
+              <p className="text-sm font-semibold text-blue-200">{activeStage.label}</p>
               <p className="mt-0.5 text-xs leading-relaxed text-slate-400">{activeStage.description}</p>
             </div>
           </div>
@@ -198,7 +198,7 @@ export function PipelineLoader({ phase, audit, error }: PipelineLoaderProps) {
                   key={stage.status}
                   className={`flex items-center gap-3 rounded-[12px] px-3 py-2.5 transition-all duration-300 ${
                     active
-                      ? "bg-fuchsia-500/8"
+                      ? "bg-blue-500/8"
                       : done
                         ? "bg-slate-800/30"
                         : "bg-transparent"
@@ -206,9 +206,9 @@ export function PipelineLoader({ phase, audit, error }: PipelineLoaderProps) {
                 >
                   <span className={`grid size-8 shrink-0 place-items-center rounded-[10px] transition-colors ${
                     done
-                      ? "bg-fuchsia-500/15 text-fuchsia-400"
+                      ? "bg-blue-500/15 text-blue-400"
                       : active
-                        ? "bg-fuchsia-500/10 text-fuchsia-300"
+                        ? "bg-blue-500/10 text-blue-300"
                         : "bg-slate-800/60 text-slate-600"
                   }`}>
                     {done ? (
@@ -223,22 +223,22 @@ export function PipelineLoader({ phase, audit, error }: PipelineLoaderProps) {
                     done
                       ? "text-slate-300"
                       : active
-                        ? "text-fuchsia-200"
+                        ? "text-blue-200"
                         : "text-slate-600"
                   }`}>
                     {stage.label}
                   </span>
                   {done && (
-                    <span className="ml-auto text-[10px] font-bold uppercase tracking-wider text-fuchsia-500/60">
+                    <span className="ml-auto text-[10px] font-bold uppercase tracking-wider text-blue-500/60">
                       Done
                     </span>
                   )}
                   {active && (
-                    <span className="ml-auto flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-fuchsia-400">
+                    <span className="ml-auto flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-blue-400">
                       <span className="flex gap-0.5">
-                        <span className="size-1 animate-bounce rounded-full bg-fuchsia-400 [animation-delay:0ms]" />
-                        <span className="size-1 animate-bounce rounded-full bg-fuchsia-400 [animation-delay:150ms]" />
-                        <span className="size-1 animate-bounce rounded-full bg-fuchsia-400 [animation-delay:300ms]" />
+                        <span className="size-1 animate-bounce rounded-full bg-blue-400 [animation-delay:0ms]" />
+                        <span className="size-1 animate-bounce rounded-full bg-blue-400 [animation-delay:150ms]" />
+                        <span className="size-1 animate-bounce rounded-full bg-blue-400 [animation-delay:300ms]" />
                       </span>
                     </span>
                   )}
@@ -261,12 +261,12 @@ export function PipelineLoader({ phase, audit, error }: PipelineLoaderProps) {
         {/* Footer */}
         {!isError && !isComplete && (
           <div className="relative mt-6 flex items-center justify-center gap-2 text-[11px] text-slate-500">
-            <Sparkles className="size-3 text-fuchsia-400/60" />
+            <Sparkles className="size-3 text-blue-400/60" />
             QuasarAISEO is processing your audit. This usually takes 1–3 minutes.
           </div>
         )}
         {isComplete && (
-          <div className="relative mt-6 flex items-center justify-center gap-2 text-[11px] text-fuchsia-400">
+          <div className="relative mt-6 flex items-center justify-center gap-2 text-[11px] text-blue-400">
             <CircleCheckBig className="size-3.5" />
             Scrolling to your report...
           </div>

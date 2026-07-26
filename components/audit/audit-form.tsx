@@ -75,11 +75,11 @@ export function AuditForm({ showToast, phase, audit, error, submitAudit }: Audit
         id="audit-form"
         className="relative overflow-hidden rounded-[30px] bg-[radial-gradient(circle_at_88%_5%,rgba(217,70,239,0.22),transparent_26%),linear-gradient(145deg,#0b1220,#110a1f_40%,#020617)] p-10.5 text-white shadow-[0_32px_100px_rgba(2,6,23,0.35)] ring-1 ring-white/10"
       >
-        <span className="absolute right-7.5 top-7.5 grid size-14 place-items-center rounded-[19px] border border-fuchsia-300/18 bg-fuchsia-500/10 text-fuchsia-300">
+        <span className="absolute right-7.5 top-7.5 grid size-14 place-items-center rounded-[19px] border border-blue-300/18 bg-blue-500/10 text-blue-300">
           <Bot className="size-5.25" />
         </span>
 
-        <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.19em] text-fuchsia-300">
+        <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.19em] text-blue-300">
           <Sparkles className="size-[15px]" /> Start a new audit
         </div>
         <h2 className="mt-2.75 max-w-[640px] text-[clamp(30px,4vw,48px)] font-black leading-[1.04] tracking-[-0.05em]">
@@ -129,12 +129,12 @@ export function AuditForm({ showToast, phase, audit, error, submitAudit }: Audit
 
             <label className="sm:col-span-2">
               <span className="flex justify-between text-[13px] font-bold text-slate-200">
-                Audit focus <em className="text-[11px] not-italic uppercase text-fuchsia-300">Optional</em>
+                Audit focus <em className="text-[11px] not-italic uppercase text-blue-300">Optional</em>
               </span>
               <textarea
                 name="auditFocus"
                 placeholder="Describe specific goals, priority services, target keywords, competitors, or pages that need extra attention..."
-                className="mt-2.25 min-h-32 w-full resize-y rounded-[14px] border border-slate-400/16 bg-slate-900/72 px-4 py-3.75 text-sm text-white outline-none placeholder:text-slate-500 focus:border-fuchsia-400/65 focus:ring-4 focus:ring-fuchsia-500/10"
+                className="mt-2.25 min-h-32 w-full resize-y rounded-[14px] border border-slate-400/16 bg-slate-900/72 px-4 py-3.75 text-sm text-white outline-none placeholder:text-slate-500 focus:border-blue-400/65 focus:ring-4 focus:ring-blue-500/10"
               />
               <small className="mt-2 block text-[11px] leading-relaxed text-slate-500">
                 Add any business context that should shape the recommendations.
@@ -153,7 +153,7 @@ export function AuditForm({ showToast, phase, audit, error, submitAudit }: Audit
                   onClick={() => toggleFeature(value)}
                   className={`flex min-h-9.5 items-center gap-2 rounded-full border px-3.25 text-xs font-bold transition-colors ${
                     active
-                      ? "border-fuchsia-400/32 bg-fuchsia-500/15 text-fuchsia-300"
+                      ? "border-blue-400/32 bg-blue-500/15 text-blue-300"
                       : "border-slate-400/18 bg-slate-900/55 text-slate-400"
                   }`}
                 >
@@ -171,7 +171,7 @@ export function AuditForm({ showToast, phase, audit, error, submitAudit }: Audit
             <button
               type="submit"
               disabled={isBusy}
-              className="flex min-h-13 min-w-[210px] items-center justify-center gap-2.5 rounded-[15px] bg-gradient-to-br from-fuchsia-600 via-purple-600 to-pink-500 text-sm font-bold text-white shadow-[0_14px_32px_rgba(217,70,239,0.3)] transition-transform hover:-translate-y-px disabled:opacity-70"
+              className="flex min-h-13 min-w-[210px] items-center justify-center gap-2.5 rounded-[15px] bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 text-sm font-bold text-white shadow-[0_14px_32px_rgba(217,70,239,0.3)] transition-transform hover:-translate-y-px disabled:opacity-70"
             >
               {isBusy ? "Processing..." : "Create audit report"}
               {!isBusy && <ArrowUpRight className="size-4.5" />}
@@ -201,7 +201,7 @@ function FormField({
   return (
     <label>
       <span className="flex justify-between text-[13px] font-bold text-slate-200">
-        {label} <em className="text-[11px] not-italic uppercase text-fuchsia-300">Required</em>
+        {label} <em className="text-[11px] not-italic uppercase text-blue-300">Required</em>
       </span>
       <div className="relative mt-2.25">
         <Icon className="absolute left-3.75 top-1/2 size-[18px] -translate-y-1/2 text-slate-500" />
@@ -210,7 +210,7 @@ function FormField({
           type={type}
           placeholder={placeholder}
           required
-          className="h-13 w-full rounded-[14px] border border-slate-400/16 bg-slate-900/72 px-11 text-sm text-white outline-none placeholder:text-slate-500 focus:border-fuchsia-400/65 focus:ring-4 focus:ring-fuchsia-500/10"
+          className="h-13 w-full rounded-[14px] border border-slate-400/16 bg-slate-900/72 px-11 text-sm text-white outline-none placeholder:text-slate-500 focus:border-blue-400/65 focus:ring-4 focus:ring-blue-500/10"
         />
       </div>
       <small className="mt-2 block text-[11px] leading-relaxed text-slate-500">{help}</small>
@@ -236,7 +236,7 @@ function SelectField({
   return (
     <label>
       <span className="flex justify-between text-[13px] font-bold text-slate-200">
-        {label} <em className="text-[11px] not-italic uppercase text-fuchsia-300">Required</em>
+        {label} <em className="text-[11px] not-italic uppercase text-blue-300">Required</em>
       </span>
       <div className="relative mt-2.25">
         <Icon className="absolute left-3.75 top-1/2 size-[18px] -translate-y-1/2 text-slate-500" />
@@ -244,7 +244,7 @@ function SelectField({
           name={name}
           required
           defaultValue=""
-          className="h-13 w-full appearance-none rounded-[14px] border border-slate-400/16 bg-slate-900/72 px-11 text-sm text-white outline-none focus:border-fuchsia-400/65 focus:ring-4 focus:ring-fuchsia-500/10"
+          className="h-13 w-full appearance-none rounded-[14px] border border-slate-400/16 bg-slate-900/72 px-11 text-sm text-white outline-none focus:border-blue-400/65 focus:ring-4 focus:ring-blue-500/10"
         >
           <option value="" disabled>{placeholder}</option>
           {options.map((item) => (

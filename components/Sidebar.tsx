@@ -45,12 +45,12 @@ export default function Sidebar() {
     <aside className="relative overflow-hidden flex h-full w-[238px] flex-col border-r border-slate-200/90 bg-white/76 px-4 py-7 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/80">
       {/* Brand logo */}
       <div className="flex items-center gap-3 px-3 pb-8">
-        <div className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-[12px] border border-fuchsia-500/30 bg-slate-950 p-1.5 shadow-[0_8px_20px_rgba(217,70,239,0.3)]">
+        <div className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-[12px] border border-blue-500/30 bg-slate-950 p-1.5 shadow-[0_8px_20px_rgba(217,70,239,0.3)]">
           <Image src="/mainlogos/mainlogo.png" alt="QuasarAISEO" width={26} height={26} className="h-[26px] w-[26px] object-contain" />
         </div>
         <div>
           <div className="text-sm font-extrabold tracking-[0.11em] text-slate-950 dark:text-white uppercase leading-none">
-            Quasar<span className="bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">AISEO</span>
+            Quasar<span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">AISEO</span>
           </div>
           <div className="mt-1 text-[10px] font-bold tracking-[0.12em] text-slate-500 dark:text-slate-400 uppercase leading-none">
             Audit Studio
@@ -74,18 +74,18 @@ export default function Sidebar() {
               className={cn(
                 "relative flex min-h-[48px] items-center gap-3.5 rounded-xl px-4 text-[13px] font-semibold transition-all duration-200 hover:translate-x-1 cursor-pointer",
                 isActive
-                  ? "text-fuchsia-950 font-bold bg-gradient-to-r from-fuchsia-500/15 via-purple-500/10 to-transparent dark:text-fuchsia-300"
-                  : "text-slate-600 hover:text-fuchsia-700 hover:bg-fuchsia-500/5 dark:text-slate-400 dark:hover:text-fuchsia-300"
+                  ? "text-blue-950 font-bold bg-gradient-to-r from-blue-500/15 via-purple-500/10 to-transparent dark:text-blue-300"
+                  : "text-slate-600 hover:text-blue-700 hover:bg-blue-500/5 dark:text-slate-400 dark:hover:text-blue-300"
               )}
             >
               {isActive && (
                 <motion.div
                   layoutId="activeTabIndicator"
-                  className="absolute left-0 top-1/2 -translate-y-1/2 h-[26px] w-1.5 rounded-r-lg bg-gradient-to-b from-fuchsia-500 via-purple-600 to-pink-500 shadow-[0_0_14px_rgba(217,70,239,0.7)]"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 h-[26px] w-1.5 rounded-r-lg bg-gradient-to-b from-blue-500 via-purple-600 to-pink-500 shadow-[0_0_14px_rgba(217,70,239,0.7)]"
                   transition={{ type: "spring", stiffness: 380, damping: 30 }}
                 />
               )}
-              <Icon className={cn("size-[18px] shrink-0", isActive ? "text-fuchsia-600 dark:text-fuchsia-400" : "")} />
+              <Icon className={cn("size-[18px] shrink-0", isActive ? "text-blue-600 dark:text-blue-400" : "")} />
               <span>{item.name}</span>
             </button>
           );
@@ -99,9 +99,9 @@ export default function Sidebar() {
           {creditsUsed} / {creditsMax} used
         </div>
 
-        <div className="mt-2.5 h-[7px] w-full overflow-hidden rounded-full bg-fuchsia-50 dark:bg-slate-900">
+        <div className="mt-2.5 h-[7px] w-full overflow-hidden rounded-full bg-blue-50 dark:bg-slate-900">
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500"
+            className="h-full rounded-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500"
             initial={{ width: 0 }}
             animate={{ width: `${progressPercentage}%` }}
             transition={{ duration: 1.2, ease: "easeOut" }}
@@ -112,7 +112,7 @@ export default function Sidebar() {
 
         <a
           href="#"
-          className="mt-4.5 inline-flex items-center gap-2 text-xs font-extrabold text-fuchsia-700 hover:text-fuchsia-600 dark:text-fuchsia-400 dark:hover:text-fuchsia-300"
+          className="mt-4.5 inline-flex items-center gap-2 text-xs font-extrabold text-blue-700 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
         >
           Upgrade plan
           <ArrowRight className="size-3.5" />

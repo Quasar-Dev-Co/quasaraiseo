@@ -34,7 +34,7 @@ export function AuditHero({ audits = [] }: AuditHeroProps) {
             >
               <div className="flex items-center justify-between">
                 <small className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{stat.label}</small>
-                <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400">
+                <span className="grid size-9 place-items-center rounded-[12px] bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400">
                   <Icon className="size-[18px]" />
                 </span>
               </div>

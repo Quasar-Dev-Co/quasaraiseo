@@ -27,7 +27,7 @@ const GIcon = ({ c }: { c?: string }) => (
 function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
   return (
     <button type="button" onClick={onChange}
-      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-fuchsia-500/30 ${checked ? "bg-fuchsia-500" : "bg-slate-200 dark:bg-slate-700"}`}>
+      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${checked ? "bg-blue-500" : "bg-slate-200 dark:bg-slate-700"}`}>
       <span className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow transition ${checked ? "translate-x-5" : "translate-x-0"}`} />
     </button>
   );
@@ -159,7 +159,7 @@ function SettingsInner() {
     <RequireAuth>
       <DashboardLayout>
         <section className="mb-8">
-          <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200/80 bg-fuchsia-50/86 px-3 py-2 text-xs font-bold uppercase tracking-[0.19em] text-fuchsia-700 dark:border-fuchsia-400/20 dark:bg-fuchsia-400/10 dark:text-fuchsia-300">
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/80 bg-blue-50/86 px-3 py-2 text-xs font-bold uppercase tracking-[0.19em] text-blue-700 dark:border-blue-400/20 dark:bg-blue-400/10 dark:text-blue-300">
             <Settings className="size-3.5" /> Configuration
           </div>
           <h1 className="mt-5 text-[clamp(34px,5vw,52px)] font-black leading-[1.02] tracking-[-0.052em] text-slate-900 dark:text-white">Settings</h1>
@@ -184,7 +184,7 @@ function SettingsInner() {
           ].map((s) => (
             <article key={s.l} className="rounded-[18px] border border-slate-200 bg-white/80 p-5 shadow-[0_14px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-slate-900/60">
               <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400"><s.i className="size-4" /> {s.l}</div>
-              <div className={`mt-2 text-3xl font-black ${s.green ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-slate-900 dark:text-white"}`}>{s.v}</div>
+              <div className={`mt-2 text-3xl font-black ${s.green ? "text-blue-600 dark:text-blue-400" : "text-slate-900 dark:text-white"}`}>{s.v}</div>
             </article>
           ))}
         </div>
@@ -201,7 +201,7 @@ function SettingsInner() {
           {/* GOOGLE TAB */}
           <TabsContent value="google">
             <div className="space-y-5">
-              <article className="overflow-hidden rounded-3xl border border-fuchsia-200/50 bg-gradient-to-br from-fuchsia-50/90 via-purple-50/40 to-white dark:border-fuchsia-400/15 dark:from-fuchsia-400/5 dark:to-slate-900/50">
+              <article className="overflow-hidden rounded-3xl border border-blue-200/50 bg-gradient-to-br from-blue-50/90 via-purple-50/40 to-white dark:border-blue-400/15 dark:from-blue-400/5 dark:to-slate-900/50">
                 <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-start gap-4">
                     <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-white shadow-[0_8px_20px_rgba(217,70,239,0.15)] dark:bg-slate-800"><GIcon c="size-6" /></span>
@@ -210,7 +210,7 @@ function SettingsInner() {
                       <p className="mt-1 max-w-[520px] text-[13px] leading-relaxed text-slate-600 dark:text-slate-400">Connect all Google services at once with a single OAuth sign-in.</p>
                     </div>
                   </div>
-                  <Button size="lg" className="h-12 shrink-0 gap-2.5 rounded-[14px] bg-gradient-to-br from-fuchsia-600 via-purple-600 to-pink-500 px-6 text-sm font-bold text-white shadow-[0_12px_28px_rgba(217,70,239,0.25)]"
+                  <Button size="lg" className="h-12 shrink-0 gap-2.5 rounded-[14px] bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 px-6 text-sm font-bold text-white shadow-[0_12px_28px_rgba(217,70,239,0.25)]"
                     onClick={handleConnectAll} disabled={connecting || connected}>
                     {connecting ? <><Loader2 className="size-4 animate-spin" /> Redirecting...</> : connected ? <><CheckCircle2 className="size-4" /> Connected</> : <><Zap className="size-4" /> Connect All</>}
                   </Button>
@@ -223,11 +223,11 @@ function SettingsInner() {
                   <article key={s.id} className={card}>
                     <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-start gap-4">
-                        <span className={`grid size-12 shrink-0 place-items-center rounded-2xl ${s.isOn ? "bg-fuchsia-50 text-fuchsia-600 dark:bg-fuchsia-400/10 dark:text-fuchsia-400" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}`}><Icon className="size-5" /></span>
+                        <span className={`grid size-12 shrink-0 place-items-center rounded-2xl ${s.isOn ? "bg-blue-50 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}`}><Icon className="size-5" /></span>
                         <div className="max-w-[480px]">
                           <div className="flex items-center gap-2.5">
                             <h3 className="text-[15px] font-bold text-slate-900 dark:text-white">{s.name}</h3>
-                            {s.isOn ? <Badge className="bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-400"><CheckCircle2 className="size-3" /> Connected</Badge> : <Badge className="bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"><Circle className="size-3" /> Not Connected</Badge>}
+                            {s.isOn ? <Badge className="bg-blue-50 text-blue-700 dark:bg-blue-400/15 dark:text-blue-400"><CheckCircle2 className="size-3" /> Connected</Badge> : <Badge className="bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"><Circle className="size-3" /> Not Connected</Badge>}
                           </div>
                           <p className="mt-1.5 text-[13px] leading-relaxed text-slate-600 dark:text-slate-400">{s.desc}</p>
                           {connected && connectedEmail && s.isOn && <div className="mt-2.5 flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400"><Mail className="size-3" /> {connectedEmail}</div>}
@@ -257,7 +257,7 @@ function SettingsInner() {
               <article className={card}>
                 <header className={hdr}>
                   <div className="flex gap-2.75">
-                    <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Smartphone className="size-[18px]" /></span>
+                    <span className="grid size-9 place-items-center rounded-[12px] bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400"><Smartphone className="size-[18px]" /></span>
                     <div><h3 className="m-0 text-base text-slate-900 dark:text-white">Progressive Web App</h3><p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Install on any device — works offline</p></div>
                   </div>
                   <Toggle checked={pwaOn} onChange={() => setPwaOn(!pwaOn)} />
@@ -266,7 +266,7 @@ function SettingsInner() {
                   <div className="space-y-4 p-6">
                     <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-white/10 dark:bg-slate-800/30">
                       <div className="flex items-center gap-3">
-                        <span className="grid size-10 place-items-center rounded-xl bg-white shadow-sm dark:bg-slate-800"><Download className="size-5 text-fuchsia-600 dark:text-fuchsia-400" /></span>
+                        <span className="grid size-10 place-items-center rounded-xl bg-white shadow-sm dark:bg-slate-800"><Download className="size-5 text-blue-600 dark:text-blue-400" /></span>
                         <div><h4 className="text-[14px] font-bold text-slate-900 dark:text-white">Install as Desktop App</h4><p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">Native app experience with offline support</p></div>
                       </div>
                       <Button size="sm" className="gap-1.5"><Download className="size-3.5" /> Install</Button>
@@ -281,7 +281,7 @@ function SettingsInner() {
                         <div key={f.t} className="rounded-2xl border border-slate-200 bg-white/65 p-4 dark:border-white/10 dark:bg-slate-900/40">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2.5">
-                              <span className="grid size-8 place-items-center rounded-lg bg-fuchsia-50 text-fuchsia-600 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><f.i className="size-4" /></span>
+                              <span className="grid size-8 place-items-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400"><f.i className="size-4" /></span>
                               <div><h4 className="text-[13px] font-bold text-slate-900 dark:text-white">{f.t}</h4><p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{f.d}</p></div>
                             </div>
                             <Toggle checked={f.on} onChange={() => {}} />
@@ -308,7 +308,7 @@ function SettingsInner() {
             <article className={card}>
               <header className={hdr}>
                 <div className="flex gap-2.75">
-                  <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Bell className="size-[18px]" /></span>
+                  <span className="grid size-9 place-items-center rounded-[12px] bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400"><Bell className="size-[18px]" /></span>
                   <div><h3 className="m-0 text-base text-slate-900 dark:text-white">Notification Preferences</h3><p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Control how and when you get alerts</p></div>
                 </div>
                 <Toggle checked={notifOn} onChange={() => setNotifOn(!notifOn)} />
@@ -339,7 +339,7 @@ function SettingsInner() {
               <article className={card}>
                 <header className={hdr}>
                   <div className="flex gap-2.75">
-                    <span className={`grid size-9 place-items-center rounded-[12px] ${twoFAOn ? "bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}`}><KeyRound className="size-[18px]" /></span>
+                    <span className={`grid size-9 place-items-center rounded-[12px] ${twoFAOn ? "bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}`}><KeyRound className="size-[18px]" /></span>
                     <div>
                       <h3 className="m-0 text-base text-slate-900 dark:text-white">Two-Factor Authentication</h3>
                       <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Add an extra layer of security to your account</p>
@@ -349,8 +349,8 @@ function SettingsInner() {
                 </header>
                 {twoFAOn ? (
                   <div className="space-y-4 p-6">
-                    <div className="flex items-center gap-3 rounded-2xl border border-fuchsia-200/60 bg-fuchsia-50/50 p-4 dark:border-fuchsia-400/15 dark:bg-fuchsia-400/5">
-                      <span className="grid size-9 place-items-center rounded-xl bg-fuchsia-100 text-fuchsia-600 dark:bg-fuchsia-400/15 dark:text-fuchsia-400"><CheckCircle2 className="size-5" /></span>
+                    <div className="flex items-center gap-3 rounded-2xl border border-blue-200/60 bg-blue-50/50 p-4 dark:border-blue-400/15 dark:bg-blue-400/5">
+                      <span className="grid size-9 place-items-center rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-400/15 dark:text-blue-400"><CheckCircle2 className="size-5" /></span>
                       <div>
                         <h4 className="text-[14px] font-bold text-slate-900 dark:text-white">2FA is Active</h4>
                         <p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">Your account is protected with authenticator app verification.</p>
@@ -358,7 +358,7 @@ function SettingsInner() {
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="rounded-2xl border border-slate-200 bg-white/65 p-4 dark:border-white/10 dark:bg-slate-900/40">
-                        <div className="flex items-center gap-2.5"><Smartphone className="size-4 text-fuchsia-600 dark:text-fuchsia-400" /><h4 className="text-[13px] font-bold text-slate-900 dark:text-white">Authenticator App</h4></div>
+                        <div className="flex items-center gap-2.5"><Smartphone className="size-4 text-blue-600 dark:text-blue-400" /><h4 className="text-[13px] font-bold text-slate-900 dark:text-white">Authenticator App</h4></div>
                         <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">Google Authenticator · Enabled</p>
                         <Button size="xs" variant="outline" className="mt-3 gap-1.5"><RefreshCw className="size-3" /> Reconfigure</Button>
                       </div>
@@ -387,7 +387,7 @@ function SettingsInner() {
               <article className={card}>
                 <header className={hdr}>
                   <div className="flex gap-2.75">
-                    <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Monitor className="size-[18px]" /></span>
+                    <span className="grid size-9 place-items-center rounded-[12px] bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400"><Monitor className="size-[18px]" /></span>
                     <div>
                       <h3 className="m-0 text-base text-slate-900 dark:text-white">Active Device Sessions</h3>
                       <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{devices.length} device{devices.length !== 1 ? "s" : ""} currently logged in</p>
@@ -401,11 +401,11 @@ function SettingsInner() {
                     return (
                       <div key={d.id} className="flex items-center justify-between gap-4 px-6 py-4">
                         <div className="flex items-start gap-3.5">
-                          <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${d.current ? "bg-fuchsia-50 text-fuchsia-600 dark:bg-fuchsia-400/10 dark:text-fuchsia-400" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}`}><DIcon className="size-5" /></span>
+                          <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${d.current ? "bg-blue-50 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}`}><DIcon className="size-5" /></span>
                           <div>
                             <div className="flex items-center gap-2">
                               <h4 className="text-[14px] font-bold text-slate-900 dark:text-white">{d.name}</h4>
-                              {d.current && <Badge className="bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-400"><CheckCircle2 className="size-3" /> This device</Badge>}
+                              {d.current && <Badge className="bg-blue-50 text-blue-700 dark:bg-blue-400/15 dark:text-blue-400"><CheckCircle2 className="size-3" /> This device</Badge>}
                             </div>
                             <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                               <span className="flex items-center gap-1"><MapPin className="size-3" /> {d.location}</span>
@@ -430,7 +430,7 @@ function SettingsInner() {
               <article className={card}>
                 <header className={hdr}>
                   <div className="flex gap-2.75">
-                    <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Settings className="size-[18px]" /></span>
+                    <span className="grid size-9 place-items-center rounded-[12px] bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400"><Settings className="size-[18px]" /></span>
                     <div><h3 className="m-0 text-base text-slate-900 dark:text-white">Workspace Settings</h3><p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">General preferences for your account</p></div>
                   </div>
                 </header>

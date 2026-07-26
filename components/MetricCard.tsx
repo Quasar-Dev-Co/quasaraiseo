@@ -26,12 +26,12 @@ export default function MetricCard({
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       className={cn(
         "relative min-h-[118px] overflow-hidden rounded-[18px] border border-slate-200 bg-white/73 p-5 shadow-xs backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/60",
-        "hover:border-fuchsia-400/32 hover:shadow-md transition-colors duration-300"
+        "hover:border-blue-400/32 hover:shadow-md transition-colors duration-300"
       )}
     >
       {/* Top accent bar indicator on the first metric card or hovered cards */}
       {accentBar && (
-        <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-fuchsia-500 via-purple-500 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-blue-500 via-purple-500 to-transparent" />
       )}
 
       <div className="flex items-center gap-2 text-[9px] font-extrabold tracking-[0.08em] text-slate-500 uppercase dark:text-slate-400">

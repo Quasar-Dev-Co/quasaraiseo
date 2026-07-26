@@ -208,13 +208,13 @@ export default function AuditMcpPage() {
       <DashboardLayout>
         {/* Hero */}
         <section className="mb-8">
-          <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200/60 bg-fuchsia-50/80 px-3 py-2 text-xs font-bold uppercase tracking-[0.19em] text-fuchsia-700 dark:border-fuchsia-400/20 dark:bg-fuchsia-400/10 dark:text-fuchsia-400">
-            <span className="size-2 rounded-full bg-fuchsia-500" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/60 bg-blue-50/80 px-3 py-2 text-xs font-bold uppercase tracking-[0.19em] text-blue-700 dark:border-blue-400/20 dark:bg-blue-400/10 dark:text-blue-400">
+            <span className="size-2 rounded-full bg-blue-500" />
             AI Agent Workspace
           </div>
           <h1 className="mt-5 text-[clamp(34px,5vw,52px)] font-black leading-[1.02] tracking-[-0.052em] text-slate-900 dark:text-white">
             Upload, Analyze{" "}
-            <em className="not-italic bg-gradient-to-r from-fuchsia-600 via-purple-500 to-amber-500 bg-clip-text text-transparent">
+            <em className="not-italic bg-gradient-to-r from-blue-600 via-purple-500 to-amber-500 bg-clip-text text-transparent">
               & Generate
             </em>
           </h1>
@@ -228,7 +228,7 @@ export default function AuditMcpPage() {
           <article className="rounded-[18px] border border-slate-200 bg-white/80 p-5 shadow-[0_14px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-slate-900/60">
             <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400"><Package className="size-4" /> Skills</div>
             <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{skills.length}</div>
-            <div className="mt-1 text-xs text-fuchsia-600 dark:text-fuchsia-400">{skills.filter(s => s.fileCount > 1).length} multi-file</div>
+            <div className="mt-1 text-xs text-blue-600 dark:text-blue-400">{skills.filter(s => s.fileCount > 1).length} multi-file</div>
           </article>
           <article className="rounded-[18px] border border-slate-200 bg-white/80 p-5 shadow-[0_14px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-slate-900/60">
             <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400"><Zap className="size-4" /> Tasks Run</div>
@@ -262,14 +262,14 @@ export default function AuditMcpPage() {
             <article className="rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
               <header className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5 dark:border-white/5">
                 <div className="flex gap-2.75">
-                  <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Brain className="size-[18px]" /></span>
+                  <span className="grid size-9 place-items-center rounded-[12px] bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400"><Brain className="size-[18px]" /></span>
                   <div>
                     <h3 className="m-0 text-base text-slate-900 dark:text-white">Create AI Task</h3>
                     <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Describe what you want the AI to do</p>
                   </div>
                 </div>
                 {selectedSkill && (
-                  <Badge className="bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200">
+                  <Badge className="bg-blue-100 text-blue-700 border-blue-200">
                     <Package className="size-3" /> {selectedSkill.name}
                   </Badge>
                 )}
@@ -290,7 +290,7 @@ export default function AuditMcpPage() {
                   <select
                     value={selectedModel}
                     onChange={(e) => setSelectedModel(e.target.value)}
-                    className="w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white outline-none transition-colors focus-visible:border-fuchsia-500 focus-visible:ring-3 focus-visible:ring-fuchsia-500/30"
+                    className="w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white outline-none transition-colors focus-visible:border-blue-500 focus-visible:ring-3 focus-visible:ring-blue-500/30"
                     style={{ colorScheme: "dark" }}
                   >
                     {models.length === 0 && (
@@ -308,7 +308,7 @@ export default function AuditMcpPage() {
                     {selectedSkillId ? (
                       <span className="inline-flex items-center gap-1.5">
                         <Package className="size-3.5" /> Using skill: <strong className="text-slate-700 dark:text-slate-300">{selectedSkill?.name}</strong>
-                        <button className="ml-1 text-fuchsia-600 hover:underline" onClick={() => setSelectedSkillId(null)}>remove</button>
+                        <button className="ml-1 text-blue-600 hover:underline" onClick={() => setSelectedSkillId(null)}>remove</button>
                       </span>
                     ) : (
                       <span className="text-amber-600 dark:text-amber-400">Select a skill to enable task creation</span>
@@ -480,7 +480,7 @@ export default function AuditMcpPage() {
             <article className="rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
               <header className="border-b border-slate-100 px-5 py-4 dark:border-white/5">
                 <div className="flex gap-2.5">
-                  <span className="grid size-8 place-items-center rounded-[10px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Package className="size-4" /></span>
+                  <span className="grid size-8 place-items-center rounded-[10px] bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400"><Package className="size-4" /></span>
                   <div>
                     <h3 className="m-0 text-sm text-slate-900 dark:text-white">Skill Library</h3>
                     <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Upload and manage skill zips</p>
@@ -490,12 +490,12 @@ export default function AuditMcpPage() {
               <div className="p-4">
                 {/* Upload zone */}
                 <div
-                  className="relative rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/50 px-4 py-6 text-center transition-colors hover:border-fuchsia-400 hover:bg-fuchsia-50/30 dark:border-white/15 dark:bg-slate-800/30 dark:hover:border-fuchsia-400/40 dark:hover:bg-fuchsia-400/5"
-                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-fuchsia-400"); }}
-                  onDragLeave={(e) => { e.currentTarget.classList.remove("border-fuchsia-400"); }}
+                  className="relative rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/50 px-4 py-6 text-center transition-colors hover:border-blue-400 hover:bg-blue-50/30 dark:border-white/15 dark:bg-slate-800/30 dark:hover:border-blue-400/40 dark:hover:bg-blue-400/5"
+                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-blue-400"); }}
+                  onDragLeave={(e) => { e.currentTarget.classList.remove("border-blue-400"); }}
                   onDrop={(e) => {
                     e.preventDefault();
-                    e.currentTarget.classList.remove("border-fuchsia-400");
+                    e.currentTarget.classList.remove("border-blue-400");
                     const file = e.dataTransfer.files?.[0];
                     if (file && file.name.endsWith(".zip")) {
                       const input = fileInputRef.current;
@@ -517,7 +517,7 @@ export default function AuditMcpPage() {
                   />
                   {uploading ? (
                     <div className="flex flex-col items-center gap-2">
-                      <Loader2 className="size-6 animate-spin text-fuchsia-500" />
+                      <Loader2 className="size-6 animate-spin text-blue-500" />
                       <p className="text-xs text-slate-500">Uploading & extracting...</p>
                     </div>
                   ) : (
@@ -557,7 +557,7 @@ export default function AuditMcpPage() {
                         key={skill.id}
                         className={`group rounded-xl border p-3 transition-all cursor-pointer ${
                           selectedSkillId === skill.id
-                            ? "border-fuchsia-300 bg-fuchsia-50/50 dark:border-fuchsia-400/30 dark:bg-fuchsia-400/10"
+                            ? "border-blue-300 bg-blue-50/50 dark:border-blue-400/30 dark:bg-blue-400/10"
                             : "border-slate-200 bg-white hover:border-slate-300 dark:border-white/10 dark:bg-slate-900/40 dark:hover:border-white/20"
                         }`}
                         onClick={() => setSelectedSkillId(selectedSkillId === skill.id ? null : skill.id)}
@@ -565,7 +565,7 @@ export default function AuditMcpPage() {
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <Package className="size-3.5 shrink-0 text-fuchsia-500" />
+                              <Package className="size-3.5 shrink-0 text-blue-500" />
                               <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">{skill.name}</p>
                             </div>
                             {skill.description && (
@@ -584,7 +584,7 @@ export default function AuditMcpPage() {
                           </button>
                         </div>
                         {selectedSkillId === skill.id && (
-                          <div className="mt-2 flex items-center gap-1 text-xs font-medium text-fuchsia-600 dark:text-fuchsia-400">
+                          <div className="mt-2 flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400">
                             <ArrowRight className="size-3" /> Selected for next task
                           </div>
                         )}
@@ -596,23 +596,23 @@ export default function AuditMcpPage() {
             </article>
 
             {/* How it works */}
-            <article className="rounded-3xl border border-slate-200 bg-gradient-to-br from-fuchsia-50/80 to-purple-50/40 p-5 dark:border-white/10 dark:from-fuchsia-400/5 dark:to-purple-400/5">
+            <article className="rounded-3xl border border-slate-200 bg-gradient-to-br from-blue-50/80 to-purple-50/40 p-5 dark:border-white/10 dark:from-blue-400/5 dark:to-purple-400/5">
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">How it works</h3>
               <ol className="mt-3 space-y-2.5">
                 <li className="flex gap-2.5 text-xs text-slate-600 dark:text-slate-400">
-                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-fuchsia-100 text-[10px] font-bold text-fuchsia-700 dark:bg-fuchsia-400/20 dark:text-fuchsia-400">1</span>
+                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-700 dark:bg-blue-400/20 dark:text-blue-400">1</span>
                   Upload a skill zip (must contain a .md file)
                 </li>
                 <li className="flex gap-2.5 text-xs text-slate-600 dark:text-slate-400">
-                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-fuchsia-100 text-[10px] font-bold text-fuchsia-700 dark:bg-fuchsia-400/20 dark:text-fuchsia-400">2</span>
+                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-700 dark:bg-blue-400/20 dark:text-blue-400">2</span>
                   Select the skill and write your prompt
                 </li>
                 <li className="flex gap-2.5 text-xs text-slate-600 dark:text-slate-400">
-                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-fuchsia-100 text-[10px] font-bold text-fuchsia-700 dark:bg-fuchsia-400/20 dark:text-fuchsia-400">3</span>
+                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-700 dark:bg-blue-400/20 dark:text-blue-400">3</span>
                   AI processes via WindsurfAPI with tool access
                 </li>
                 <li className="flex gap-2.5 text-xs text-slate-600 dark:text-slate-400">
-                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-fuchsia-100 text-[10px] font-bold text-fuchsia-700 dark:bg-fuchsia-400/20 dark:text-fuchsia-400">4</span>
+                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-700 dark:bg-blue-400/20 dark:text-blue-400">4</span>
                   Download generated PDFs, spreadsheets & files
                 </li>
               </ol>

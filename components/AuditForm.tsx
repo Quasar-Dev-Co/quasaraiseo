@@ -130,7 +130,7 @@ export default function AuditForm() {
             exit={{ opacity: 0, scale: 0.98 }}
             className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/95 px-8 text-center text-white"
           >
-            <Loader2 className="size-10 animate-spin text-fuchsia-400" />
+            <Loader2 className="size-10 animate-spin text-blue-400" />
             <h3 className="mt-5 font-heading text-xl font-normal tracking-wide">
               Generating Audit Report
             </h3>
@@ -142,7 +142,7 @@ export default function AuditForm() {
             {/* Progress track */}
             <div className="mt-8 h-2.5 w-full max-w-sm overflow-hidden rounded-full bg-slate-800">
               <motion.div
-                className="h-full bg-gradient-to-r from-fuchsia-500 via-purple-600 to-pink-500 shadow-[0_0_12px_rgba(217,70,239,0.5)]"
+                className="h-full bg-gradient-to-r from-blue-500 via-purple-600 to-pink-500 shadow-[0_0_12px_rgba(217,70,239,0.5)]"
                 animate={{ width: `${progress}%` }}
                 transition={{ duration: 0.4 }}
               />
@@ -156,7 +156,7 @@ export default function AuditForm() {
               key={currentStep}
               initial={{ opacity: 0, y: 5 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-4 text-xs font-semibold text-fuchsia-400/90"
+              className="mt-4 text-xs font-semibold text-blue-400/90"
             >
               {currentStep}
             </motion.p>
@@ -167,7 +167,7 @@ export default function AuditForm() {
       {/* Form Content Header */}
       <div className="relative z-10 flex items-center justify-between pb-7">
         <div className="flex items-center gap-3">
-          <span className="text-fuchsia-400">
+          <span className="text-blue-400">
             <Sparkles className="size-[22px]" />
           </span>
           <h2 className="font-heading text-[23px] font-normal text-slate-900 dark:text-white">
@@ -178,7 +178,7 @@ export default function AuditForm() {
         <button
           type="button"
           onClick={loadPresetExample}
-          className="inline-flex min-h-[36px] items-center gap-2 rounded-xl border border-slate-200 bg-white/10 px-3.5 text-[10px] font-bold text-slate-700 hover:border-fuchsia-400/50 hover:text-fuchsia-600 transition-colors cursor-pointer dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:text-fuchsia-400"
+          className="inline-flex min-h-[36px] items-center gap-2 rounded-xl border border-slate-200 bg-white/10 px-3.5 text-[10px] font-bold text-slate-700 hover:border-blue-400/50 hover:text-blue-600 transition-colors cursor-pointer dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:text-blue-400"
         >
           <FileInput className="size-3.5" />
           Load example
@@ -202,7 +202,7 @@ export default function AuditForm() {
                 value={form.websiteUrl}
                 onChange={handleInputChange}
                 placeholder="https://example.com"
-                className="h-[45px] w-full rounded-xl border border-slate-200 bg-white/45 pl-10 pr-4 text-xs font-semibold text-slate-900 outline-none placeholder:text-slate-400 hover:border-slate-300 focus:border-fuchsia-400 focus:ring-1 focus:ring-fuchsia-400/30 transition-all dark:border-white/10 dark:bg-white/5 dark:text-white"
+                className="h-[45px] w-full rounded-xl border border-slate-200 bg-white/45 pl-10 pr-4 text-xs font-semibold text-slate-900 outline-none placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-400 focus:ring-1 focus:ring-blue-400/30 transition-all dark:border-white/10 dark:bg-white/5 dark:text-white"
               />
             </div>
           </div>
@@ -220,7 +220,7 @@ export default function AuditForm() {
                 onValueChange={(val) => handleSelectChange("businessNiche", val)}
               >
                 <SelectTrigger
-                  className="h-[45px] w-full rounded-xl border border-slate-200 bg-white/45 pl-10 pr-4 text-xs font-semibold text-slate-900 outline-none hover:border-slate-300 focus:border-fuchsia-400 focus:ring-1 focus:ring-fuchsia-400/30 transition-all dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  className="h-[45px] w-full rounded-xl border border-slate-200 bg-white/45 pl-10 pr-4 text-xs font-semibold text-slate-900 outline-none hover:border-slate-300 focus:border-blue-400 focus:ring-1 focus:ring-blue-400/30 transition-all dark:border-white/10 dark:bg-white/5 dark:text-white"
                 >
                   <SelectValue placeholder="SEO agency, SaaS, eCommerce..." />
                 </SelectTrigger>
@@ -248,7 +248,7 @@ export default function AuditForm() {
                 onValueChange={(val) => handleSelectChange("targetCountry", val)}
               >
                 <SelectTrigger
-                  className="h-[45px] w-full rounded-xl border border-slate-200 bg-white/45 pl-10 pr-4 text-xs font-semibold text-slate-900 outline-none hover:border-slate-300 focus:border-fuchsia-400 focus:ring-1 focus:ring-fuchsia-400/30 transition-all dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  className="h-[45px] w-full rounded-xl border border-slate-200 bg-white/45 pl-10 pr-4 text-xs font-semibold text-slate-900 outline-none hover:border-slate-300 focus:border-blue-400 focus:ring-1 focus:ring-blue-400/30 transition-all dark:border-white/10 dark:bg-white/5 dark:text-white"
                 >
                   <SelectValue placeholder="Select target country" />
                 </SelectTrigger>
@@ -276,7 +276,7 @@ export default function AuditForm() {
                 onValueChange={(val) => handleSelectChange("primaryLanguage", val)}
               >
                 <SelectTrigger
-                  className="h-[45px] w-full rounded-xl border border-slate-200 bg-white/45 pl-10 pr-4 text-xs font-semibold text-slate-900 outline-none hover:border-slate-300 focus:border-fuchsia-400 focus:ring-1 focus:ring-fuchsia-400/30 transition-all dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  className="h-[45px] w-full rounded-xl border border-slate-200 bg-white/45 pl-10 pr-4 text-xs font-semibold text-slate-900 outline-none hover:border-slate-300 focus:border-blue-400 focus:ring-1 focus:ring-blue-400/30 transition-all dark:border-white/10 dark:bg-white/5 dark:text-white"
                 >
                   <SelectValue placeholder="Select primary language" />
                 </SelectTrigger>
@@ -306,7 +306,7 @@ export default function AuditForm() {
                 value={form.auditFocus}
                 onChange={handleInputChange}
                 placeholder="Add target services, target keywords, cities, competitors, or any notes for the AI report engine."
-                className="min-h-[95px] w-full rounded-2xl border border-slate-200 bg-white/45 py-3 pl-10 pr-14 text-xs font-semibold text-slate-900 outline-none placeholder:text-slate-400 hover:border-slate-300 focus:border-fuchsia-400 focus:ring-1 focus:ring-fuchsia-400/30 transition-all dark:border-white/10 dark:bg-white/5 dark:text-white"
+                className="min-h-[95px] w-full rounded-2xl border border-slate-200 bg-white/45 py-3 pl-10 pr-14 text-xs font-semibold text-slate-900 outline-none placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-400 focus:ring-1 focus:ring-blue-400/30 transition-all dark:border-white/10 dark:bg-white/5 dark:text-white"
               />
               <span className="absolute bottom-3 right-3.5 text-[9px] font-bold text-slate-400 dark:text-slate-500">
                 {charCount} / 500
@@ -326,11 +326,11 @@ export default function AuditForm() {
               className={cn(
                 "inline-flex min-h-[38px] items-center gap-2 rounded-xl border px-3.5 text-[10px] font-bold tracking-wide transition-all duration-200 cursor-pointer hover:-translate-y-0.5",
                 form.options.crawl
-                  ? "text-fuchsia-950 border-fuchsia-400/55 bg-fuchsia-400/10 dark:text-fuchsia-100 dark:border-fuchsia-400/55"
-                  : "text-slate-500 border-slate-200 hover:border-fuchsia-400/45 dark:border-white/10 dark:text-slate-400"
+                  ? "text-blue-950 border-blue-400/55 bg-blue-400/10 dark:text-blue-100 dark:border-blue-400/55"
+                  : "text-slate-500 border-slate-200 hover:border-blue-400/45 dark:border-white/10 dark:text-slate-400"
               )}
             >
-              <CheckCircle2 className={cn("size-3.5", form.options.crawl ? "text-fuchsia-500" : "text-slate-400")} />
+              <CheckCircle2 className={cn("size-3.5", form.options.crawl ? "text-blue-500" : "text-slate-400")} />
               <span>Full crawl</span>
             </button>
 
@@ -340,11 +340,11 @@ export default function AuditForm() {
               className={cn(
                 "inline-flex min-h-[38px] items-center gap-2 rounded-xl border px-3.5 text-[10px] font-bold tracking-wide transition-all duration-200 cursor-pointer hover:-translate-y-0.5",
                 form.options.keywords
-                  ? "text-fuchsia-950 border-fuchsia-400/55 bg-fuchsia-400/10 dark:text-fuchsia-100 dark:border-fuchsia-400/55"
-                  : "text-slate-500 border-slate-200 hover:border-fuchsia-400/45 dark:border-white/10 dark:text-slate-400"
+                  ? "text-blue-950 border-blue-400/55 bg-blue-400/10 dark:text-blue-100 dark:border-blue-400/55"
+                  : "text-slate-500 border-slate-200 hover:border-blue-400/45 dark:border-white/10 dark:text-slate-400"
               )}
             >
-              <CheckCircle2 className={cn("size-3.5", form.options.keywords ? "text-fuchsia-500" : "text-slate-400")} />
+              <CheckCircle2 className={cn("size-3.5", form.options.keywords ? "text-blue-500" : "text-slate-400")} />
               <span>Keyword gap</span>
             </button>
 
@@ -354,11 +354,11 @@ export default function AuditForm() {
               className={cn(
                 "inline-flex min-h-[38px] items-center gap-2 rounded-xl border px-3.5 text-[10px] font-bold tracking-wide transition-all duration-200 cursor-pointer hover:-translate-y-0.5",
                 form.options.pdf
-                  ? "text-fuchsia-950 border-fuchsia-400/55 bg-fuchsia-400/10 dark:text-fuchsia-100 dark:border-fuchsia-400/55"
-                  : "text-slate-500 border-slate-200 hover:border-fuchsia-400/45 dark:border-white/10 dark:text-slate-400"
+                  ? "text-blue-950 border-blue-400/55 bg-blue-400/10 dark:text-blue-100 dark:border-blue-400/55"
+                  : "text-slate-500 border-slate-200 hover:border-blue-400/45 dark:border-white/10 dark:text-slate-400"
               )}
             >
-              <CheckCircle2 className={cn("size-3.5", form.options.pdf ? "text-fuchsia-500" : "text-slate-400")} />
+              <CheckCircle2 className={cn("size-3.5", form.options.pdf ? "text-blue-500" : "text-slate-400")} />
               <span>PDF output</span>
             </button>
           </div>
@@ -366,7 +366,7 @@ export default function AuditForm() {
           {/* Submit Action Button */}
           <button
             type="submit"
-            className="group relative inline-flex min-w-[245px] min-h-[54px] items-center justify-center gap-4.5 overflow-hidden rounded-full px-6 font-extrabold text-[12px] text-white bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 hover:scale-[1.01] hover:-translate-y-0.5 active:scale-95 shadow-[0_13px_30px_rgba(217,70,239,0.28)] cursor-pointer transition-all duration-300"
+            className="group relative inline-flex min-w-[245px] min-h-[54px] items-center justify-center gap-4.5 overflow-hidden rounded-full px-6 font-extrabold text-[12px] text-white bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 hover:scale-[1.01] hover:-translate-y-0.5 active:scale-95 shadow-[0_13px_30px_rgba(217,70,239,0.28)] cursor-pointer transition-all duration-300"
           >
             {/* Gloss reflection shine effect */}
             <span className="absolute top-[-60%] left-[-45%] w-[38%] h-[220%] rotate-[28deg] bg-white/43 transition-all duration-700 group-hover:left-[125%]" />

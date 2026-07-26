@@ -80,7 +80,7 @@ export default function SearchConsolePage() {
       <RequireAuth>
         <DashboardLayout>
           <div className="flex h-[60vh] items-center justify-center">
-            <Loader2 className="size-8 animate-spin text-fuchsia-500" />
+            <Loader2 className="size-8 animate-spin text-blue-500" />
           </div>
         </DashboardLayout>
       </RequireAuth>
@@ -153,7 +153,7 @@ export default function SearchConsolePage() {
               <select
                 value={selectedSite}
                 onChange={(e) => setSelectedSite(e.target.value)}
-                className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
               >
                 {sites.map((s) => (
                   <option key={s.siteUrl} value={s.siteUrl}>
@@ -219,7 +219,7 @@ export default function SearchConsolePage() {
             </div>
             {fetching ? (
               <div className="flex h-40 items-center justify-center">
-                <Loader2 className="size-6 animate-spin text-fuchsia-500" />
+                <Loader2 className="size-6 animate-spin text-blue-500" />
               </div>
             ) : rows.length === 0 ? (
               <div className="flex h-40 items-center justify-center text-sm text-slate-400">
@@ -251,12 +251,12 @@ export default function SearchConsolePage() {
                     {rows.map((row, i) => (
                       <tr
                         key={`${row.query}-${i}`}
-                        className="transition-colors hover:bg-fuchsia-50/50 dark:hover:bg-fuchsia-900/10"
+                        className="transition-colors hover:bg-blue-50/50 dark:hover:bg-blue-900/10"
                       >
                         <td className="px-6 py-3 font-semibold text-slate-900 dark:text-white">
                           {row.query}
                         </td>
-                        <td className="px-6 py-3 text-right font-bold text-fuchsia-600 dark:text-fuchsia-400">
+                        <td className="px-6 py-3 text-right font-bold text-blue-600 dark:text-blue-400">
                           {row.clicks.toLocaleString()}
                         </td>
                         <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">

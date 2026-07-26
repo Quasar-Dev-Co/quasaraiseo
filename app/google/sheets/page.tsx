@@ -89,7 +89,7 @@ export default function GoogleSheetsPage() {
       <RequireAuth>
         <DashboardLayout>
           <div className="flex h-[60vh] items-center justify-center">
-            <Loader2 className="size-8 animate-spin text-fuchsia-500" />
+            <Loader2 className="size-8 animate-spin text-blue-500" />
           </div>
         </DashboardLayout>
       </RequireAuth>
@@ -166,7 +166,7 @@ export default function GoogleSheetsPage() {
               <select
                 value={selectedSheet}
                 onChange={(e) => setSelectedSheet(e.target.value)}
-                className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
               >
                 {sheets.map(s => (
                   <option key={s.id} value={s.id}>{s.name}</option>
@@ -215,7 +215,7 @@ export default function GoogleSheetsPage() {
             </div>
             {fetching ? (
               <div className="flex h-40 items-center justify-center">
-                <Loader2 className="size-6 animate-spin text-fuchsia-500" />
+                <Loader2 className="size-6 animate-spin text-blue-500" />
               </div>
             ) : sheetData.length > 0 ? (
               <div className="overflow-x-auto">
