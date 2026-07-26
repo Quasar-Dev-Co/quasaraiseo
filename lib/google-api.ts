@@ -47,6 +47,14 @@ export interface SearchConsoleRow {
   position: number;
 }
 
+export interface SearchConsoleDailyRow {
+  date: string;
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  position: number;
+}
+
 export interface AnalyticsProperty {
   propertyId: string;
   displayName: string;
@@ -201,6 +209,24 @@ export const googleApi = {
       throw new Error(data.message ?? "Failed to fetch Search Console analytics");
     }
     const data = (await res.json()) as { rows: SearchConsoleRow[] };
+    return data.rows;
+  },
+
+  async getSearchConsoleDaily(
+    siteUrl: string,
+    startDate: string,
+    endDate: string,
+  ): Promise<SearchConsoleDailyRow[]> {
+    const params = new URLSearchParams({ siteUrl, startDate, endDate });
+    const res = await fetch(
+      `${BACKEND_URL}/api/google/search-console/daily?${params}`,
+      { method: "GET", headers: { ...authHeaders() } },
+    );
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message ?? "Failed to fetch Search Console daily data");
+    }
+    const data = (await res.json()) as { rows: SearchConsoleDailyRow[] };
     return data.rows;
   },
 

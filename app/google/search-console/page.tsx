@@ -5,6 +5,10 @@ import {
   Globe2, Loader2, AlertCircle, Search, TrendingUp,
   MousePointerClick, Eye, Target, RefreshCw,
 } from "lucide-react";
+import {
+  ResponsiveContainer, AreaChart, Area, XAxis, YAxis,
+  CartesianGrid, Tooltip as RTooltip,
+} from "recharts";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Button } from "@/components/ui/button";
@@ -13,6 +17,7 @@ import {
   googleApi,
   type SearchConsoleSite,
   type SearchConsoleRow,
+  type SearchConsoleDailyRow,
   type GoogleStatus,
 } from "@/lib/google-api";
 
@@ -20,17 +25,35 @@ function formatDate(d: Date): string {
   return d.toISOString().split("T")[0];
 }
 
+function formatScDate(dateStr: string): string {
+  if (!dateStr) return dateStr;
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+const DATE_RANGES = [
+  { label: "1 Day", days: 1 },
+  { label: "3 Days", days: 3 },
+  { label: "7 Days", days: 7 },
+  { label: "30 Days", days: 30 },
+  { label: "2 Months", days: 60 },
+  { label: "3 Months", days: 90 },
+  { label: "6 Months", days: 180 },
+];
+
 export default function SearchConsolePage() {
   const [status, setStatus] = useState<GoogleStatus | null>(null);
   const [sites, setSites] = useState<SearchConsoleSite[]>([]);
   const [selectedSite, setSelectedSite] = useState<string>("");
   const [rows, setRows] = useState<SearchConsoleRow[]>([]);
+  const [dailyRows, setDailyRows] = useState<SearchConsoleDailyRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rangeDays, setRangeDays] = useState(30);
 
   const endDate = formatDate(new Date());
-  const startDate = formatDate(new Date(Date.now() - 28 * 24 * 60 * 60 * 1000));
+  const startDate = formatDate(new Date(Date.now() - (rangeDays - 1) * 24 * 60 * 60 * 1000));
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -59,8 +82,12 @@ export default function SearchConsolePage() {
     setFetching(true);
     setError(null);
     try {
-      const data = await googleApi.getSearchConsoleAnalytics(selectedSite, startDate, endDate);
-      setRows(data);
+      const [queryData, dailyData] = await Promise.all([
+        googleApi.getSearchConsoleAnalytics(selectedSite, startDate, endDate),
+        googleApi.getSearchConsoleDaily(selectedSite, startDate, endDate),
+      ]);
+      setRows(queryData);
+      setDailyRows(dailyData);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to fetch analytics");
     } finally {
@@ -72,7 +99,7 @@ export default function SearchConsolePage() {
     if (selectedSite) {
       fetchAnalytics();
     }
-  }, [selectedSite, fetchAnalytics]);
+  }, [selectedSite, fetchAnalytics, rangeDays]);
 
   if (loading) {
     return (
@@ -115,6 +142,12 @@ export default function SearchConsolePage() {
   const avgCtr = totalImpressions > 0
     ? ((totalClicks / totalImpressions) * 100).toFixed(2)
     : "0";
+
+  const chartData = dailyRows.map((r) => ({
+    label: formatScDate(r.date),
+    clicks: r.clicks,
+    impressions: r.impressions,
+  }));
 
   return (
     <RequireAuth>
@@ -189,6 +222,105 @@ export default function SearchConsolePage() {
                 </div>
               );
             })}
+          </div>
+
+          {/* Date range selector */}
+          <div className="mb-4 flex flex-wrap gap-2">
+            {DATE_RANGES.map((r) => (
+              <button
+                key={r.days}
+                onClick={() => setRangeDays(r.days)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
+                  rangeDays === r.days
+                    ? "bg-fuchsia-600 text-white"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Clicks & Impressions line chart */}
+          <div className="mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-white/5">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="size-4 text-slate-400" />
+                <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Clicks & Impressions — {DATE_RANGES.find((r) => r.days === rangeDays)?.label ?? "30 Days"}
+                </h2>
+              </div>
+              <Badge className="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                {dailyRows.length} data points
+              </Badge>
+            </div>
+            {fetching ? (
+              <div className="flex h-40 items-center justify-center">
+                <Loader2 className="size-6 animate-spin text-fuchsia-500" />
+              </div>
+            ) : chartData.length > 0 ? (
+              <div className="px-6 py-6">
+                <ResponsiveContainer width="100%" height={260}>
+                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="clicksGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#d946ef" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="#d946ef" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="imprGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fontSize: 11, fill: "#94a3b8" }}
+                      interval={Math.max(Math.floor(chartData.length / 8), 1)}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11, fill: "#94a3b8" }}
+                      tickLine={false}
+                      axisLine={false}
+                      allowDecimals={false}
+                    />
+                    <RTooltip
+                      contentStyle={{
+                        borderRadius: "12px",
+                        border: "1px solid #e2e8f0",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                      }}
+                      labelStyle={{ color: "#64748b", marginBottom: "4px" }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="clicks"
+                      stroke="#d946ef"
+                      strokeWidth={2}
+                      fill="url(#clicksGradient)"
+                      dot={false}
+                      activeDot={{ r: 5, fill: "#d946ef" }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="impressions"
+                      stroke="#3b82f6"
+                      strokeWidth={2}
+                      fill="url(#imprGradient)"
+                      dot={false}
+                      activeDot={{ r: 5, fill: "#3b82f6" }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="flex h-40 items-center justify-center text-sm text-slate-400">
+                No time-series data found for this period.
+              </div>
+            )}
           </div>
 
           {/* Search queries table */}
