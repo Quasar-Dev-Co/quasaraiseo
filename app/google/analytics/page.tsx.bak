@@ -5,10 +5,7 @@ import {
   BarChart3, Loader2, AlertCircle, TrendingUp,
   Users, Eye, Clock, RefreshCw, Activity,
 } from "lucide-react";
-import {
-  ResponsiveContainer, AreaChart, Area, XAxis, YAxis,
-  CartesianGrid, Tooltip as RTooltip,
-} from "recharts";
+import { MetricCard } from "@/components/ui/metric-card";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Button } from "@/components/ui/button";
@@ -24,30 +21,11 @@ function formatDate(d: Date): string {
   return d.toISOString().split("T")[0];
 }
 
-function formatGaDate(gaDate: string): string {
-  if (!gaDate || gaDate.length !== 8) return gaDate;
-  const y = gaDate.slice(0, 4);
-  const m = gaDate.slice(4, 6);
-  const d = gaDate.slice(6, 8);
-  const date = new Date(`${y}-${m}-${d}`);
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
 function formatDuration(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}m ${secs}s`;
 }
-
-const DATE_RANGES = [
-  { label: "1 Day", days: 1 },
-  { label: "3 Days", days: 3 },
-  { label: "7 Days", days: 7 },
-  { label: "30 Days", days: 30 },
-  { label: "2 Months", days: 60 },
-  { label: "3 Months", days: 90 },
-  { label: "6 Months", days: 180 },
-];
 
 export default function AnalyticsPage() {
   const [status, setStatus] = useState<GoogleStatus | null>(null);
@@ -57,10 +35,9 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [rangeDays, setRangeDays] = useState(30);
 
   const endDate = formatDate(new Date());
-  const startDate = formatDate(new Date(Date.now() - (rangeDays - 1) * 24 * 60 * 60 * 1000));
+  const startDate = formatDate(new Date(Date.now() - 28 * 24 * 60 * 60 * 1000));
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -102,14 +79,14 @@ export default function AnalyticsPage() {
     if (selectedProperty) {
       fetchAnalytics();
     }
-  }, [selectedProperty, fetchAnalytics, rangeDays]);
+  }, [selectedProperty, fetchAnalytics]);
 
   if (loading) {
     return (
       <RequireAuth>
         <DashboardLayout>
           <div className="flex h-[60vh] items-center justify-center">
-            <Loader2 className="size-8 animate-spin text-fuchsia-500" />
+            <Loader2 className="size-8 animate-spin text-blue-500" />
           </div>
         </DashboardLayout>
       </RequireAuth>
@@ -142,12 +119,9 @@ export default function AnalyticsPage() {
     totalsMap[t.metric] = t.value;
   });
 
-  const chartData = (data?.rows ?? []).map((row) => ({
-    label: formatGaDate(row.date),
-    sessions: row.sessions,
-    users: row.users,
-    pageViews: row.pageViews,
-  }));
+  const maxSessions = data?.rows.length
+    ? Math.max(...data.rows.map((r) => r.sessions))
+    : 1;
 
   return (
     <RequireAuth>
@@ -185,7 +159,7 @@ export default function AnalyticsPage() {
               <select
                 value={selectedProperty}
                 onChange={(e) => setSelectedProperty(e.target.value)}
-                className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
               >
                 {properties.map((p) => (
                   <option key={p.propertyId} value={p.propertyId}>
@@ -197,111 +171,85 @@ export default function AnalyticsPage() {
           )}
 
           {/* Stats cards */}
-          <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {[
-              { label: "Sessions", value: (totalsMap.sessions ?? 0).toLocaleString(), icon: Activity, color: "text-fuchsia-600 dark:text-fuchsia-400" },
-              { label: "Total Users", value: (totalsMap.totalUsers ?? 0).toLocaleString(), icon: Users, color: "text-fuchsia-600 dark:text-fuchsia-400" },
-              { label: "Page Views", value: (totalsMap.pageViews ?? 0).toLocaleString(), icon: Eye, color: "text-fuchsia-600 dark:text-fuchsia-400" },
-              { label: "Avg Session", value: formatDuration(totalsMap.avgSessionDuration ?? 0), icon: Clock, color: "text-fuchsia-600 dark:text-fuchsia-400" },
-            ].map((stat) => {
-              const Icon = stat.icon;
-              return (
-                <div
-                  key={stat.label}
-                  className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900/50"
-                >
-                  <div className="flex items-center gap-2">
-                    <Icon className={`size-4 ${stat.color}`} />
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                      {stat.label}
-                    </span>
-                  </div>
-                  <div className="mt-2 text-2xl font-extrabold text-slate-900 dark:text-white">
-                    {stat.value}
-                  </div>
-                </div>
-              );
-            })}
+          <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <MetricCard
+              label="Sessions"
+              value={(totalsMap.sessions ?? 0).toLocaleString()}
+              icon={Activity}
+              trend="vs previous period"
+              trendUp
+              sparklineData={data?.rows.map(r => r.sessions) ?? [0]}
+              color="#3b82f6"
+            />
+            <MetricCard
+              label="Total Users"
+              value={(totalsMap.totalUsers ?? 0).toLocaleString()}
+              icon={Users}
+              trend="vs previous period"
+              trendUp
+              sparklineData={data?.rows.map(r => r.users) ?? [0]}
+              color="#8b5cf6"
+            />
+            <MetricCard
+              label="Page Views"
+              value={(totalsMap.pageViews ?? 0).toLocaleString()}
+              icon={Eye}
+              trend="vs previous period"
+              trendUp
+              sparklineData={data?.rows.map(r => r.pageViews) ?? [0]}
+              color="#10b981"
+            />
+            <MetricCard
+              label="Avg Session"
+              value={formatDuration(totalsMap.avgSessionDuration ?? 0)}
+              icon={Clock}
+              trend="vs previous period"
+              trendUp={false}
+              sparklineData={data?.rows.map(r => r.avgSessionDuration) ?? [0]}
+              color="#f59e0b"
+            />
           </div>
 
-          {/* Date range selector */}
-          <div className="mb-4 flex flex-wrap gap-2">
-            {DATE_RANGES.map((r) => (
-              <button
-                key={r.days}
-                onClick={() => setRangeDays(r.days)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
-                  rangeDays === r.days
-                    ? "bg-fuchsia-600 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Sessions line chart */}
+          {/* Daily sessions bar chart */}
           <div className="mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-white/5">
               <div className="flex items-center gap-2">
                 <TrendingUp className="size-4 text-slate-400" />
                 <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                  Sessions — {DATE_RANGES.find((r) => r.days === rangeDays)?.label ?? "30 Days"}
+                  Daily Sessions
                 </h2>
               </div>
               <Badge className="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                {data?.rows.length ?? 0} data points
+                {data?.rows.length ?? 0} days
               </Badge>
             </div>
             {fetching ? (
               <div className="flex h-40 items-center justify-center">
-                <Loader2 className="size-6 animate-spin text-fuchsia-500" />
+                <Loader2 className="size-6 animate-spin text-blue-500" />
               </div>
             ) : data && data.rows.length > 0 ? (
               <div className="px-6 py-6">
-                <ResponsiveContainer width="100%" height={260}>
-                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="sessionsGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#d946ef" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="#d946ef" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
-                    <XAxis
-                      dataKey="label"
-                      tick={{ fontSize: 11, fill: "#94a3b8" }}
-                      interval={Math.max(Math.floor(chartData.length / 8), 1)}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 11, fill: "#94a3b8" }}
-                      tickLine={false}
-                      axisLine={false}
-                      allowDecimals={false}
-                    />
-                    <RTooltip
-                      contentStyle={{
-                        borderRadius: "12px",
-                        border: "1px solid #e2e8f0",
-                        fontSize: "12px",
-                        fontWeight: 600,
-                      }}
-                      labelStyle={{ color: "#64748b", marginBottom: "4px" }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="sessions"
-                      stroke="#d946ef"
-                      strokeWidth={2}
-                      fill="url(#sessionsGradient)"
-                      dot={false}
-                      activeDot={{ r: 5, fill: "#d946ef" }}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                <div className="flex h-48 items-end gap-1 overflow-x-auto">
+                  {data.rows.map((row, i) => {
+                    const height = (row.sessions / maxSessions) * 100;
+                    return (
+                      <div
+                        key={i}
+                        className="group relative flex min-w-[8px] flex-1 flex-col items-center justify-end"
+                        title={`${row.date}: ${row.sessions} sessions`}
+                      >
+                        <div
+                          className="w-full rounded-t bg-gradient-to-t from-blue-600 to-blue-400 transition-all hover:from-blue-700 hover:to-blue-500"
+                          style={{ height: `${Math.max(height, 2)}%` }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-3 flex justify-between text-[10px] font-semibold text-slate-400">
+                  <span>{data.rows[0]?.date}</span>
+                  <span>{data.rows[data.rows.length - 1]?.date}</span>
+                </div>
               </div>
             ) : (
               <div className="flex h-40 items-center justify-center text-sm text-slate-400">
@@ -319,7 +267,7 @@ export default function AnalyticsPage() {
             </div>
             {fetching ? (
               <div className="flex h-40 items-center justify-center">
-                <Loader2 className="size-6 animate-spin text-fuchsia-500" />
+                <Loader2 className="size-6 animate-spin text-blue-500" />
               </div>
             ) : data && data.rows.length > 0 ? (
               <div className="overflow-x-auto">
@@ -341,9 +289,9 @@ export default function AnalyticsPage() {
                         className="transition-colors hover:bg-slate-50 dark:hover:bg-white/5"
                       >
                         <td className="px-6 py-3 font-semibold text-slate-900 dark:text-white">
-                          {formatGaDate(row.date)}
+                          {row.date}
                         </td>
-                        <td className="px-6 py-3 text-right font-bold text-fuchsia-600 dark:text-fuchsia-400">
+                        <td className="px-6 py-3 text-right font-bold text-blue-600 dark:text-blue-400">
                           {row.sessions.toLocaleString()}
                         </td>
                         <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">

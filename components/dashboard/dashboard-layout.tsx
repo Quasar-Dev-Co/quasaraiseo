@@ -15,7 +15,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const theme = useSelector((state: RootState) => state.audit.theme);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-white">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_8%_9%,rgba(217,70,239,0.12),transparent_27%),radial-gradient(circle_at_91%_14%,rgba(147,51,234,0.10),transparent_24%),linear-gradient(180deg,#fdf4ff_0%,#f8fafc_45%,#fff_100%)] text-slate-900 antialiased dark:bg-[radial-gradient(circle_at_8%_9%,rgba(217,70,239,0.08),transparent_27%),radial-gradient(circle_at_91%_14%,rgba(147,51,234,0.06),transparent_24%),linear-gradient(180deg,#020617_0%,#0f0720_45%,#020617_100%)] dark:text-white">
       <DashboardSidebar
         mobileOpen={mobileSidebarOpen}
         onMobileClose={() => setMobileSidebarOpen(false)}
@@ -50,10 +50,10 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
             </Button>
             <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
               <Bell className="size-[17px]" />
-              <span className="absolute top-1.5 right-1.5 size-2 rounded-full border-2 border-white bg-blue-500 dark:border-slate-950" />
+              <span className="absolute top-1.5 right-1.5 size-2 rounded-full border-2 border-white bg-fuchsia-500 dark:border-slate-950" />
             </Button>
             <div className="flex items-center gap-2 rounded-full border border-slate-200/90 bg-white/68 px-2.5 py-1.5 dark:border-white/10 dark:bg-slate-900/50">
-              <span className="grid size-7 place-items-center rounded-full bg-gradient-to-br from-blue-500 to-sky-400 text-xs font-extrabold text-white">
+              <span className="grid size-7 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-purple-600 text-xs font-extrabold text-white">
                 AR
               </span>
             </div>
