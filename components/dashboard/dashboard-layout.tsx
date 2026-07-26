@@ -50,10 +50,10 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
             </Button>
             <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
               <Bell className="size-[17px]" />
-              <span className="absolute top-1.5 right-1.5 size-2 rounded-full border-2 border-white bg-fuchsia-500 dark:border-slate-950" />
+              <span className="absolute top-1.5 right-1.5 size-2 rounded-full border-2 border-white bg-blue-500 dark:border-slate-950" />
             </Button>
             <div className="flex items-center gap-2 rounded-full border border-slate-200/90 bg-white/68 px-2.5 py-1.5 dark:border-white/10 dark:bg-slate-900/50">
-              <span className="grid size-7 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-purple-600 text-xs font-extrabold text-white">
+              <span className="grid size-7 place-items-center rounded-full bg-gradient-to-br from-blue-500 to-sky-400 text-xs font-extrabold text-white">
                 AR
               </span>
             </div>
