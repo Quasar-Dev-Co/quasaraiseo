@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback, Suspense } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/lib/store";
 import { useSearchParams } from "next/navigation";
+import {
+  setGenerating, updateProgress, setGeneratedContent, addToHistory,
+} from "@/lib/store/postSlice";
 import {
   PenLine, Sparkles, FileText, Clock, Eye, Copy, Download,
   Check, ChevronRight, History, Type, Target,
@@ -31,6 +34,7 @@ import {
 
 function PostCreateContent() {
   const post = useSelector((state: RootState) => state.post);
+  const dispatch = useDispatch();
   const searchParams = useSearchParams();
 
   const [wpSites, setWpSites] = useState<WordPressSite[]>([]);
@@ -45,6 +49,19 @@ function PostCreateContent() {
   const [postExcerpt, setPostExcerpt] = useState("");
   const [postCategories, setPostCategories] = useState("");
   const [postTags, setPostTags] = useState("");
+
+  // Form state for content generation
+  const [prompt, setPrompt] = useState("");
+  const [targetKeyword, setTargetKeyword] = useState("");
+  const [secondaryKeywords, setSecondaryKeywords] = useState("");
+  const [contentType, setContentType] = useState("Blog Post");
+  const [tone, setTone] = useState("Professional");
+  const [wordCount, setWordCount] = useState("1500");
+  const [language, setLanguage] = useState("English");
+  const [audience, setAudience] = useState("");
+  const [callToAction, setCallToAction] = useState("");
+  const [outline, setOutline] = useState("");
+  const [genError, setGenError] = useState<string | null>(null);
 
   const fetchSites = useCallback(async () => {
     try {
@@ -86,6 +103,53 @@ function PostCreateContent() {
       setPostExcerpt(post.generatedContent.metaDescription);
     }
   }, [post.generatedContent]);
+
+  const handleGenerate = async () => {
+    const finalPrompt = prompt || targetKeyword;
+    if (!finalPrompt.trim()) return;
+
+    setGenError(null);
+    dispatch(setGenerating(true));
+    dispatch(updateProgress({ progress: 10, step: "Analyzing keyword intent..." }));
+
+    try {
+      dispatch(updateProgress({ progress: 30, step: "Researching topic and generating outline..." }));
+
+      const result = await wordpressApi.generateContent({
+        prompt: finalPrompt,
+        contentType,
+        tone,
+        wordCount: parseInt(wordCount, 10) || 1500,
+        language,
+        audience,
+        callToAction,
+        secondaryKeywords,
+        outline,
+      });
+
+      dispatch(updateProgress({ progress: 80, step: "Finalizing content..." }));
+
+      const content = result.content;
+      dispatch(setGeneratedContent({
+        title: content.title,
+        metaDescription: content.metaDescription,
+        slug: content.slug,
+        headings: content.headings,
+        body: content.body,
+        wordCount: content.wordCount,
+        readingTime: content.readingTime,
+      }));
+
+      setPostTitle(content.title);
+      setPostContent(content.body);
+      setPostExcerpt(content.metaDescription);
+
+      dispatch(addToHistory({ keyword: finalPrompt, title: content.title }));
+    } catch (e) {
+      setGenError(e instanceof Error ? e.message : "Failed to generate content");
+      dispatch(setGenerating(false));
+    }
+  };
 
   const handlePublish = async () => {
     if (!selectedSiteId || !postTitle || !postContent) return;
@@ -168,23 +232,29 @@ function PostCreateContent() {
               </div>
             </header>
             <div className="p-5 space-y-4">
+              {/* Prompt */}
+              <div>
+                <label className="text-xs font-bold uppercase text-slate-500">Prompt / Topic</label>
+                <Textarea className="mt-2" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Describe what you want the AI to write about..." rows={3} />
+              </div>
+
               {/* Target keyword */}
               <div>
-                <label className="text-xs font-bold uppercase text-slate-500">Target Keyword</label>
-                <Input className="mt-2" placeholder="e.g. ai seo audit tool" defaultValue={post.form.targetKeyword} />
+                <label className="text-xs font-bold uppercase text-slate-500">Target Keyword (optional)</label>
+                <Input className="mt-2" placeholder="e.g. ai seo audit tool" value={targetKeyword} onChange={(e) => setTargetKeyword(e.target.value)} />
               </div>
 
               {/* Secondary keywords */}
               <div>
                 <label className="text-xs font-bold uppercase text-slate-500">Secondary Keywords</label>
-                <Input className="mt-2" placeholder="comma-separated keywords" defaultValue={post.form.secondaryKeywords} />
+                <Input className="mt-2" placeholder="comma-separated keywords" value={secondaryKeywords} onChange={(e) => setSecondaryKeywords(e.target.value)} />
               </div>
 
               {/* Content type + Tone */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold uppercase text-slate-500">Content Type</label>
-                  <Select defaultValue={post.form.contentType}>
+                  <Select value={contentType} onValueChange={(v) => setContentType(v ?? "Blog Post")}>
                     <SelectTrigger className="mt-2 w-full"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Blog Post">Blog Post</SelectItem>
@@ -197,7 +267,7 @@ function PostCreateContent() {
                 </div>
                 <div>
                   <label className="text-xs font-bold uppercase text-slate-500">Tone</label>
-                  <Select defaultValue={post.form.tone}>
+                  <Select value={tone} onValueChange={(v) => setTone(v ?? "Professional")}>
                     <SelectTrigger className="mt-2 w-full"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Professional">Professional</SelectItem>
@@ -214,7 +284,7 @@ function PostCreateContent() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold uppercase text-slate-500">Word Count</label>
-                  <Select defaultValue={String(post.form.wordCount)}>
+                  <Select value={wordCount} onValueChange={(v) => setWordCount(v ?? "1500")}>
                     <SelectTrigger className="mt-2 w-full"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="500">500</SelectItem>
@@ -227,7 +297,7 @@ function PostCreateContent() {
                 </div>
                 <div>
                   <label className="text-xs font-bold uppercase text-slate-500">Language</label>
-                  <Select defaultValue={post.form.language}>
+                  <Select value={language} onValueChange={(v) => setLanguage(v ?? "English")}>
                     <SelectTrigger className="mt-2 w-full"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="English">English</SelectItem>
@@ -243,26 +313,33 @@ function PostCreateContent() {
               {/* Audience */}
               <div>
                 <label className="text-xs font-bold uppercase text-slate-500">Target Audience</label>
-                <Input className="mt-2" placeholder="e.g. SaaS marketing managers" defaultValue={post.form.audience} />
+                <Input className="mt-2" placeholder="e.g. SaaS marketing managers" value={audience} onChange={(e) => setAudience(e.target.value)} />
               </div>
 
               {/* Call to action */}
               <div>
                 <label className="text-xs font-bold uppercase text-slate-500">Call to Action</label>
-                <Input className="mt-2" placeholder="e.g. Start your free audit today" defaultValue={post.form.callToAction} />
+                <Input className="mt-2" placeholder="e.g. Start your free audit today" value={callToAction} onChange={(e) => setCallToAction(e.target.value)} />
               </div>
 
               {/* Outline */}
               <div>
                 <label className="text-xs font-bold uppercase text-slate-500">Custom Outline (optional)</label>
-                <Textarea className="mt-2" placeholder="Add section headings or notes for the AI..." />
+                <Textarea className="mt-2" placeholder="Add section headings or notes for the AI..." value={outline} onChange={(e) => setOutline(e.target.value)} />
               </div>
+
+              {genError && (
+                <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-400">
+                  <AlertCircle className="size-4 shrink-0" />
+                  {genError}
+                </div>
+              )}
 
               <Separator />
 
-              <Button className="w-full" size="lg">
-                <Sparkles className="size-4" />
-                Generate Content
+              <Button className="w-full" size="lg" onClick={handleGenerate} disabled={post.isGenerating || (!prompt.trim() && !targetKeyword.trim())}>
+                {post.isGenerating ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+                {post.isGenerating ? "Generating..." : "Generate Content"}
               </Button>
             </div>
           </article>
@@ -413,9 +490,7 @@ function PostCreateContent() {
                     <span className="flex items-center gap-1"><Eye className="size-3.5" /> SEO-optimized</span>
                   </div>
                   <Separator />
-                  <div className="prose prose-sm max-w-none dark:prose-invert">
-                    {post.generatedContent.body}
-                  </div>
+                  <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: post.generatedContent.body }} />
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-center">

@@ -38,7 +38,40 @@ export interface WordPressPost {
   updatedAt: string;
 }
 
+export interface GeneratedContent {
+  title: string;
+  metaDescription: string;
+  body: string;
+  wordCount: number;
+  readingTime: number;
+  slug: string;
+  headings: string[];
+}
+
 export const wordpressApi = {
+  async generateContent(params: {
+    prompt: string;
+    contentType?: string;
+    tone?: string;
+    wordCount?: number;
+    language?: string;
+    audience?: string;
+    callToAction?: string;
+    secondaryKeywords?: string;
+    outline?: string;
+  }): Promise<{ success: boolean; content: GeneratedContent }> {
+    const res = await fetch(`${BACKEND_URL}/api/wordpress/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message ?? "Failed to generate content");
+    }
+    return res.json();
+  },
+
   async connectSite(siteUrl: string, token: string): Promise<{ success: boolean; site: WordPressSite & { appPassword?: string } }> {
     const res = await fetch(`${BACKEND_URL}/api/wordpress/connect`, {
       method: "POST",
