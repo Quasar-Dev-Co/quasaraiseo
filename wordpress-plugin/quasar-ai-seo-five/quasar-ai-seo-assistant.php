@@ -312,19 +312,58 @@ add_action('rest_api_init', function () {
     register_rest_route($namespace, '/connect', [
         'methods'  => 'POST',
         'callback' => function ($request) {
+            $diagnostics = [];
+
+            // Check WP version
+            global $wp_version;
+            $diagnostics['wp_version'] = $wp_version;
+            $diagnostics['app_passwords_class'] = class_exists('WP_Application_Passwords') ? 'yes' : 'no';
+            $diagnostics['app_passwords_function'] = function_exists('wp_create_application_password') ? 'yes' : 'no';
+
+            // Get user ID
+            $user_id = (int) get_option('quasar_user_id', 0);
+            if (!$user_id) {
+                $user_id = get_current_user_id();
+            }
+            if (!$user_id) {
+                $admin = get_users(['role' => 'administrator', 'number' => 1]);
+                if (!empty($admin)) {
+                    $user_id = $admin[0]->ID;
+                    update_option('quasar_user_id', $user_id);
+                }
+            }
+
+            $diagnostics['user_id'] = $user_id;
+            $diagnostics['user_exists'] = $user_id ? (get_userdata($user_id) ? 'yes' : 'no') : 'no';
+
+            if (!$user_id) {
+                return new WP_Error(
+                    'no_user',
+                    'No admin user found. Diagnostics: ' . json_encode($diagnostics),
+                    ['status' => 500]
+                );
+            }
+
+            if (!class_exists('WP_Application_Passwords')) {
+                return new WP_Error(
+                    'no_app_passwords',
+                    'Application Passwords not available (WordPress 5.6+ required). Diagnostics: ' . json_encode($diagnostics),
+                    ['status' => 500]
+                );
+            }
+
             $password = quasar_get_or_create_app_password();
 
             if (!$password) {
                 return new WP_Error(
                     'app_password_failed',
-                    'Failed to create Application Password. Ensure WordPress 5.6+ and Application Passwords are enabled.',
+                    'Failed to create Application Password. Diagnostics: ' . json_encode($diagnostics),
                     ['status' => 500]
                 );
             }
 
             update_option('quasar_connection_status', 'connected');
 
-            $user_id = (int) get_option('quasar_user_id', 0);
             $user = get_userdata($user_id);
 
             return rest_ensure_response([
@@ -338,6 +377,32 @@ add_action('rest_api_init', function () {
         'permission_callback' => function ($request) {
             return quasar_check_token($request);
         },
+    ]);
+
+    // Diagnostic endpoint - no token required
+    register_rest_route($namespace, '/diagnostics', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            global $wp_version;
+            $user_id = (int) get_option('quasar_user_id', 0);
+            $user = $user_id ? get_userdata($user_id) : null;
+
+            return rest_ensure_response([
+                'wp_version'             => $wp_version,
+                'php_version'            => PHP_VERSION,
+                'app_passwords_class'    => class_exists('WP_Application_Passwords') ? 'yes' : 'no',
+                'app_passwords_function' => function_exists('wp_create_application_password') ? 'yes' : 'no',
+                'stored_user_id'         => $user_id,
+                'user_exists'            => $user ? 'yes' : 'no',
+                'user_login'             => $user ? $user->user_login : '',
+                'is_https'               => is_ssl() ? 'yes' : 'no',
+                'home_url'               => home_url(),
+                'rest_url'               => rest_url('quasar-ai-seo/v1'),
+                'token_stored'           => !empty(get_option('quasar_connection_token', '')) ? 'yes' : 'no',
+                'connection_status'      => get_option('quasar_connection_status', 'disconnected'),
+            ]);
+        },
+        'permission_callback' => '__return_true',
     ]);
 
     register_rest_route($namespace, '/disconnect', [
