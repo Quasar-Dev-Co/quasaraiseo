@@ -409,21 +409,151 @@ add_action('admin_menu', function () {
     );
 });
 
-// Enqueue assets
+// Enqueue assets — inline CSS and JS for maximum reliability
 add_action('admin_enqueue_scripts', function ($hook) {
     if (strpos($hook, 'quasar-') === false) {
         return;
     }
-    wp_enqueue_style('quasar-admin', QUASAR_PLUGIN_URL . 'assets/css/admin.css', [], QUASAR_VERSION);
-    wp_enqueue_script('quasar-admin', QUASAR_PLUGIN_URL . 'assets/js/admin.js', ['jquery'], QUASAR_VERSION, true);
-    wp_localize_script('quasar-admin', 'quasarData', [
-        'apiUrl'      => QUASAR_API_URL,
-        'frontendUrl' => QUASAR_FRONTEND_URL,
-        'siteUrl'     => home_url(),
-        'token'       => get_option('quasar_connection_token', ''),
-        'connected'   => get_option('quasar_connection_status', 'disconnected') === 'connected',
-        'nonce'       => wp_create_nonce('quasar_admin'),
-    ]);
+    // jQuery is needed for admin.js functionality
+    wp_enqueue_script('jquery');
+});
+
+// Inline CSS on admin head
+add_action('admin_head', function () {
+    $screen = get_current_screen();
+    if (!$screen || strpos($screen->id, 'quasar-') === false) {
+        return;
+    }
+    ?>
+    <style>
+    .quasar-wrap { max-width: 1200px; margin: 20px auto; }
+    .quasar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
+    .quasar-header h1 { font-size: 26px; font-weight: 800; color: #1a1a2e; margin: 0; }
+    .quasar-subtitle { color: #666; font-size: 14px; margin: 5px 0 0; }
+    .quasar-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; }
+    .quasar-badge-connected { background: #e8f5e9; color: #2e7d32; }
+    .quasar-badge-disconnected { background: #ffebee; color: #c62828; }
+    .quasar-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .quasar-dot-green { background: #4caf50; box-shadow: 0 0 6px rgba(76,175,80,0.5); }
+    .quasar-dot-red { background: #f44336; }
+    .quasar-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; margin-bottom: 24px; overflow: hidden; }
+    .quasar-card-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #f0f0f0; }
+    .quasar-card-header h2 { margin: 0; font-size: 17px; font-weight: 700; color: #1a1a2e; }
+    .quasar-connect-card { text-align: center; padding: 60px 40px; }
+    .quasar-connect-icon { width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, #d946ef, #8b5cf6); border-radius: 20px; display: flex; align-items: center; justify-content: center; }
+    .quasar-connect-icon .dashicons { font-size: 40px; width: 40px; height: 40px; color: #fff; }
+    .quasar-connect-card h2 { font-size: 24px; font-weight: 800; color: #1a1a2e; margin: 0 0 12px; }
+    .quasar-connect-card p { color: #666; font-size: 15px; max-width: 500px; margin: 0 auto 24px; line-height: 1.6; }
+    .quasar-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: none; transition: all 0.2s; }
+    .quasar-btn .dashicons { font-size: 16px; width: 16px; height: 16px; }
+    .quasar-btn-primary { background: linear-gradient(135deg, #d946ef, #8b5cf6); color: #fff; }
+    .quasar-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(217,70,239,0.3); color: #fff; }
+    .quasar-btn-outline { background: transparent; border: 2px solid #e0e0e0; color: #666; }
+    .quasar-btn-outline:hover { border-color: #d946ef; color: #d946ef; }
+    .quasar-btn-danger { background: #fee2e2; color: #dc2626; }
+    .quasar-btn-danger:hover { background: #fecaca; }
+    .quasar-btn-sm { padding: 6px 12px; font-size: 12px; }
+    .quasar-connect-help { margin-top: 20px; font-size: 13px; color: #999; }
+    .quasar-connect-help a { color: #d946ef; text-decoration: none; font-weight: 600; }
+    .quasar-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px; }
+    .quasar-stat-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 24px; display: flex; align-items: center; gap: 16px; }
+    .quasar-stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .quasar-stat-icon .dashicons { font-size: 24px; width: 24px; height: 24px; color: #fff; }
+    .quasar-stat-icon-blue { background: #3b82f6; }
+    .quasar-stat-icon-orange { background: #f59e0b; }
+    .quasar-stat-icon-purple { background: #8b5cf6; }
+    .quasar-stat-icon-green { background: #10b981; }
+    .quasar-stat-value { font-size: 28px; font-weight: 800; color: #1a1a2e; line-height: 1; }
+    .quasar-stat-label { font-size: 12px; color: #999; font-weight: 600; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .quasar-table { width: 100%; border-collapse: collapse; }
+    .quasar-table th { text-align: left; padding: 14px 24px; font-size: 12px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #f0f0f0; }
+    .quasar-table td { padding: 14px 24px; border-bottom: 1px solid #f5f5f5; font-size: 14px; }
+    .quasar-table tr:last-child td { border-bottom: none; }
+    .quasar-post-title a { font-weight: 600; color: #1a1a2e; text-decoration: none; }
+    .quasar-post-title a:hover { color: #d946ef; }
+    .quasar-status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+    .quasar-status-published { background: #e8f5e9; color: #2e7d32; }
+    .quasar-status-draft { background: #fff3e0; color: #e65100; }
+    .quasar-status-scheduled { background: #f3e5f5; color: #7b1fa2; }
+    .quasar-empty-state { text-align: center; padding: 60px 40px; }
+    .quasar-empty-state .dashicons { font-size: 48px; width: 48px; height: 48px; color: #ddd; margin-bottom: 16px; }
+    .quasar-empty-state h3 { font-size: 18px; font-weight: 700; color: #1a1a2e; margin: 0 0 8px; }
+    .quasar-empty-state p { color: #999; margin: 0 0 20px; }
+    .quasar-overview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 24px; }
+    .quasar-overview-item { text-align: center; padding: 20px; background: #f9f9f9; border-radius: 10px; }
+    .quasar-overview-item .dashicons { font-size: 28px; width: 28px; height: 28px; color: #d946ef; margin-bottom: 8px; }
+    .quasar-overview-value { display: block; font-size: 24px; font-weight: 800; color: #1a1a2e; }
+    .quasar-overview-label { display: block; font-size: 12px; color: #999; font-weight: 600; margin-top: 4px; }
+    .quasar-token { font-size: 12px; word-break: break-all; background: #f5f5f5; padding: 8px 12px; border-radius: 6px; display: inline-block; }
+    .quasar-token-box { background: #f9f9f9; border: 1px dashed #ddd; border-radius: 10px; padding: 16px; margin: 20px auto; max-width: 500px; text-align: left; }
+    .quasar-token-box label { display: block; font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .quasar-token-box .quasar-token { display: block; width: 100%; margin-bottom: 12px; box-sizing: border-box; background: #fff; border: 1px solid #e0e0e0; font-family: monospace; font-size: 13px; }
+    .quasar-loading { display: inline-block; border: 2px solid #f3f3f3; border-top: 2px solid #d946ef; border-radius: 50%; width: 16px; height: 16px; animation: quasar-spin 1s linear infinite; }
+    @keyframes quasar-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .quasar-toast { position: fixed; top: 32px; right: 32px; padding: 14px 24px; border-radius: 10px; font-size: 14px; font-weight: 600; z-index: 9999; animation: quasar-slide-in 0.3s ease; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    .quasar-toast-success { background: #10b981; color: #fff; }
+    .quasar-toast-error { background: #ef4444; color: #fff; }
+    @keyframes quasar-slide-in { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @media (max-width: 768px) {
+        .quasar-stats-grid { grid-template-columns: repeat(2, 1fr); }
+        .quasar-overview-grid { grid-template-columns: 1fr; }
+        .quasar-header { flex-direction: column; gap: 16px; align-items: flex-start; }
+    }
+    </style>
+    <?php
+});
+
+// Inline JS on admin footer
+add_action('admin_footer', function () {
+    $screen = get_current_screen();
+    if (!$screen || strpos($screen->id, 'quasar-') === false) {
+        return;
+    }
+    $token = get_option('quasar_connection_token', '');
+    $site_url = home_url();
+    ?>
+    <script>
+    (function($) {
+        'use strict';
+        var quasarData = {
+            siteUrl: '<?php echo esc_js($site_url); ?>',
+            token: '<?php echo esc_js($token); ?>'
+        };
+        function showToast(message, type) {
+            var toast = $('<div class="quasar-toast quasar-toast-' + (type || 'success') + '">' + message + '</div>');
+            $('body').append(toast);
+            setTimeout(function() { toast.fadeOut(300, function() { $(this).remove(); }); }, 4000);
+        }
+        $(document).on('click', '#quasar-copy-token', function(e) {
+            e.preventDefault();
+            var token = $(this).data('token');
+            if (navigator.clipboard && token) {
+                navigator.clipboard.writeText(token).then(function() {
+                    showToast('Token copied to clipboard!', 'success');
+                }, function() { showToast('Failed to copy token.', 'error'); });
+            } else {
+                var $temp = $('<textarea>'); $('body').append($temp); $temp.val(token).select();
+                try { document.execCommand('copy'); showToast('Token copied!', 'success'); }
+                catch(err) { showToast('Failed to copy.', 'error'); }
+                $temp.remove();
+            }
+        });
+        $(document).on('click', '#quasar-disconnect-btn', function(e) {
+            e.preventDefault();
+            if (!confirm('Are you sure you want to disconnect from Quasar AI SEO?')) return;
+            var btn = $(this);
+            btn.prop('disabled', true).html('<span class="quasar-loading"></span> Disconnecting...');
+            $.ajax({
+                url: quasarData.siteUrl + '/wp-json/quasar-ai-seo/v1/disconnect',
+                method: 'POST',
+                beforeSend: function(xhr) { xhr.setRequestHeader('X-Quasar-Token', quasarData.token); },
+                success: function() { showToast('Disconnected successfully.', 'success'); setTimeout(function() { window.location.reload(); }, 1500); },
+                error: function() { btn.prop('disabled', false).html('Disconnect from Quasar AI SEO'); showToast('Failed to disconnect.', 'error'); }
+            });
+        });
+    })(jQuery);
+    </script>
+    <?php
 });
 
 // Helper functions
