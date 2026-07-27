@@ -5,6 +5,19 @@ function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const base64 = result.split(",")[1] || result;
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export interface WordPressSite {
   id: string;
   siteUrl: string;
@@ -48,7 +61,155 @@ export interface GeneratedContent {
   headings: string[];
 }
 
+export interface PostSkillRecord {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  fileName: string;
+  fileSize: number;
+  fileCount: number;
+  mainFile: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WordPressSiteData {
+  siteUrl: string;
+  siteName: string;
+  siteDesc: string;
+  wpVersion: string;
+  language: string;
+  timezone: string;
+  adminEmail: string;
+  categories: Array<{ id: number; name: string; slug: string; count: number }>;
+  tags: Array<{ id: number; name: string; slug: string; count: number }>;
+  recentPosts: Array<{ id: number; title: string; status: string; date: string; excerpt: string }>;
+  totalPages: number;
+  totalPosts: number;
+  totalDrafts: number;
+}
+
+export interface ModelRecord {
+  id: string;
+  label?: string;
+}
+
+export type GenerationStatus = "idle" | "generating" | "completed" | "failed";
+
+export interface GenerationJob {
+  id: string;
+  prompt: string;
+  status: GenerationStatus;
+  result: GeneratedContent | null;
+  errorMessage: string | null;
+  skillId: string | null;
+  skill?: PostSkillRecord | null;
+  siteId: string | null;
+  model: string;
+  createdAt: string;
+  completedAt: string | null;
+}
+
 export const wordpressApi = {
+  // ─── Skills ───
+  async listPostSkills(): Promise<{ skills: PostSkillRecord[] }> {
+    const res = await fetch(`${BACKEND_URL}/api/wordpress/skills`, {
+      headers: { ...authHeaders() },
+    });
+    if (!res.ok) throw new Error("Failed to fetch skills");
+    return res.json();
+  },
+
+  async uploadPostSkill(file: File): Promise<{ skill: PostSkillRecord }> {
+    const base64Data = await fileToBase64(file);
+    const res = await fetch(`${BACKEND_URL}/api/wordpress/skills/upload`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ filename: file.name, data: base64Data }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message ?? "Upload failed");
+    }
+    return res.json();
+  },
+
+  async deletePostSkill(id: string): Promise<{ success: boolean }> {
+    const res = await fetch(`${BACKEND_URL}/api/wordpress/skills/${id}`, {
+      method: "DELETE",
+      headers: { ...authHeaders() },
+    });
+    if (!res.ok) throw new Error("Delete failed");
+    return res.json();
+  },
+
+  // ─── AI Models ───
+  async listModels(): Promise<{ models: ModelRecord[] }> {
+    const res = await fetch(`${BACKEND_URL}/api/agent/models`, {
+      headers: { ...authHeaders() },
+    });
+    if (!res.ok) return { models: [] };
+    return res.json();
+  },
+
+  // ─── WordPress Data Sync ───
+  async syncSiteData(siteId: string): Promise<{ success: boolean; data: WordPressSiteData }> {
+    const res = await fetch(`${BACKEND_URL}/api/wordpress/sites/${siteId}/sync-data`, {
+      method: "POST",
+      headers: { ...authHeaders() },
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message ?? "Failed to sync site data");
+    }
+    return res.json();
+  },
+
+  async getSiteData(siteId: string): Promise<{ data: WordPressSiteData | null }> {
+    const res = await fetch(`${BACKEND_URL}/api/wordpress/sites/${siteId}/data`, {
+      headers: { ...authHeaders() },
+    });
+    if (!res.ok) return { data: null };
+    return res.json();
+  },
+
+  // ─── AI Content Generation (Windsurf API) ───
+  async generateWithWindsurf(params: {
+    prompt: string;
+    skillId?: string;
+    model?: string;
+    siteId?: string;
+  }): Promise<{ job: GenerationJob }> {
+    const res = await fetch(`${BACKEND_URL}/api/wordpress/generate-windsurf`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message ?? "Failed to start generation");
+    }
+    return res.json();
+  },
+
+  async getGenerationJob(jobId: string): Promise<{ job: GenerationJob }> {
+    const res = await fetch(`${BACKEND_URL}/api/wordpress/generation-jobs/${jobId}`, {
+      headers: { ...authHeaders() },
+    });
+    if (!res.ok) throw new Error("Failed to fetch job status");
+    return res.json();
+  },
+
+  async listGenerationJobs(): Promise<{ jobs: GenerationJob[] }> {
+    const res = await fetch(`${BACKEND_URL}/api/wordpress/generation-jobs`, {
+      headers: { ...authHeaders() },
+    });
+    if (!res.ok) return { jobs: [] };
+    return res.json();
+  },
+
+  // ─── Legacy OpenAI generation ───
   async generateContent(params: {
     prompt: string;
     contentType?: string;
