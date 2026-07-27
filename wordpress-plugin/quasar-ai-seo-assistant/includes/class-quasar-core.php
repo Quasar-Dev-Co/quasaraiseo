@@ -31,7 +31,7 @@ class Quasar_Core {
     public function activate() {
         $token = get_option('quasar_connection_token', '');
         if (empty($token)) {
-            $token = bin2hex(random_bytes(32));
+            $token = wp_generate_password(64, false, false);
             update_option('quasar_connection_token', $token);
         }
         update_option('quasar_connection_status', 'disconnected');
@@ -58,7 +58,7 @@ class Quasar_Core {
         // Check if the app password still exists
         if (!empty($existing) && $existing_id) {
             $user_id = (int) get_option('quasar_user_id', 0);
-            if ($user_id) {
+            if ($user_id && class_exists('WP_Application_Passwords')) {
                 $app_passwords = WP_Application_Passwords::get_user_application_passwords($user_id);
                 $found = false;
                 foreach ($app_passwords as $ap) {
