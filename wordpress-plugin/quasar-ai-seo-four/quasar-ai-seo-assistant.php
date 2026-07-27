@@ -19,7 +19,7 @@ define('QUASAR_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('QUASAR_API_URL', 'https://seo.teamcmp.cloud');
 define('QUASAR_FRONTEND_URL', 'https://seo.quasarasoft.com');
 
-// Activation: generate token
+// Activation: generate token and store admin user ID
 register_activation_hook(__FILE__, function () {
     $token = get_option('quasar_connection_token', '');
     if (empty($token)) {
@@ -27,6 +27,11 @@ register_activation_hook(__FILE__, function () {
         update_option('quasar_connection_token', $token);
     }
     update_option('quasar_connection_status', 'disconnected');
+    // Store the activating admin user's ID for REST API app password creation
+    $user_id = get_current_user_id();
+    if ($user_id) {
+        update_option('quasar_user_id', $user_id);
+    }
 });
 
 // Deactivation: cleanup
@@ -440,7 +445,18 @@ function quasar_get_or_create_app_password() {
         }
     }
 
-    $user_id = get_current_user_id();
+    // Use stored admin user ID (REST API has no logged-in user)
+    $user_id = (int) get_option('quasar_user_id', 0);
+    if (!$user_id) {
+        // Fallback: try current user, then admin user (ID 1)
+        $user_id = get_current_user_id();
+        if (!$user_id) {
+            $admin = get_users(['role' => 'administrator', 'number' => 1]);
+            if (!empty($admin)) {
+                $user_id = $admin[0]->ID;
+            }
+        }
+    }
     if (!$user_id) {
         return false;
     }
