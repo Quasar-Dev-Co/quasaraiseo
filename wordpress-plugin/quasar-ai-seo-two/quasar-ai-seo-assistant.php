@@ -26,3 +26,6 @@ require_once QUASAR_PLUGIN_DIR . 'includes/class-quasar-admin.php';
 Quasar_Core::get_instance();
 Quasar_REST::get_instance();
 Quasar_Admin::get_instance();
+
+register_activation_hook(__FILE__, ['Quasar_Core', 'activate']);
+register_deactivation_hook(__FILE__, ['Quasar_Core', 'deactivate']);

@@ -8,6 +8,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (!class_exists('Quasar_REST')) {
 class Quasar_REST {
 
     private static $instance = null;
@@ -419,3 +420,4 @@ class Quasar_REST {
         }
     }
 }
+} // end class_exists guard

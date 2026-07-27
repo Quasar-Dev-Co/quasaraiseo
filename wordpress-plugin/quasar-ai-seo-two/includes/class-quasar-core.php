@@ -8,6 +8,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (!class_exists('Quasar_Core')) {
 class Quasar_Core {
 
     private static $instance = null;
@@ -20,8 +21,6 @@ class Quasar_Core {
     }
 
     private function __construct() {
-        register_activation_hook(__FILE__, [$this, 'activate']);
-        register_deactivation_hook(__FILE__, [$this, 'deactivate']);
         add_action('rest_api_init', [$this, 'maybe_generate_app_password']);
     }
 
@@ -169,4 +168,4 @@ class Quasar_Core {
             $this->get_or_create_app_password();
         }
     }
-}
+} // end class_exists guard

@@ -7,6 +7,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (!class_exists('Quasar_Admin')) {
 class Quasar_Admin {
 
     private static $instance = null;
@@ -66,6 +67,7 @@ class Quasar_Admin {
         $core = Quasar_Core::get_instance();
         $connected = $core->get_connection_status() === 'connected';
         $site_info = $core->get_site_info();
+        $token = $core->get_connection_token();
 
         // Fetch posts from WP REST API
         $app_password = get_option('quasar_app_password', '');
@@ -361,3 +363,4 @@ class Quasar_Admin {
         <?php
     }
 }
+} // end class_exists guard
