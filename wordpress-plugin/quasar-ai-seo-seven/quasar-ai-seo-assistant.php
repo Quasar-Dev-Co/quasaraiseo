@@ -19,6 +19,9 @@ define('QUASAR_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('QUASAR_API_URL', 'https://seo.teamcmp.cloud');
 define('QUASAR_FRONTEND_URL', 'https://seo.quasarasoft.com');
 
+// Force-enable Application Passwords (some hosts disable them by default)
+add_filter('wp_is_application_passwords_available', '__return_true');
+
 // Activation: generate token and store admin user ID
 register_activation_hook(__FILE__, function () {
     $token = get_option('quasar_connection_token', '');
@@ -354,10 +357,18 @@ add_action('rest_api_init', function () {
 
             $password = quasar_get_or_create_app_password();
 
+            if (is_wp_error($password)) {
+                return new WP_Error(
+                    'app_password_failed',
+                    $password->get_error_message(),
+                    ['status' => 500]
+                );
+            }
+
             if (!$password) {
                 return new WP_Error(
                     'app_password_failed',
-                    'Failed to create Application Password. Diagnostics: ' . json_encode($diagnostics),
+                    'Failed to create Application Password. Unknown error.',
                     ['status' => 500]
                 );
             }
@@ -513,7 +524,6 @@ function quasar_get_or_create_app_password() {
     // Use stored admin user ID (REST API has no logged-in user)
     $user_id = (int) get_option('quasar_user_id', 0);
     if (!$user_id) {
-        // Fallback: try current user, then admin user (ID 1)
         $user_id = get_current_user_id();
         if (!$user_id) {
             $admin = get_users(['role' => 'administrator', 'number' => 1]);
@@ -523,11 +533,21 @@ function quasar_get_or_create_app_password() {
         }
     }
     if (!$user_id) {
-        return false;
+        return new WP_Error('no_user', 'No admin user found to create application password.');
     }
 
     if (!class_exists('WP_Application_Passwords')) {
-        return false;
+        return new WP_Error('no_class', 'WP_Application_Passwords class not found. WordPress 5.6+ required.');
+    }
+
+    // Check if Application Passwords are available
+    if (function_exists('wp_is_application_passwords_available') && !wp_is_application_passwords_available()) {
+        // Try to force-enable by adding the filter
+        add_filter('wp_is_application_passwords_available', '__return_true');
+        // Check again
+        if (!wp_is_application_passwords_available()) {
+            return new WP_Error('app_passwords_disabled', 'Application Passwords are disabled on this site. Add this to wp-config.php: add_filter(\'wp_is_application_passwords_available\', \'__return_true\');');
+        }
     }
 
     $result = WP_Application_Passwords::create_new_application_password($user_id, [
@@ -535,7 +555,7 @@ function quasar_get_or_create_app_password() {
     ]);
 
     if (is_wp_error($result)) {
-        return false;
+        return $result; // Return the actual error
     }
 
     $password = $result[1];
