@@ -315,74 +315,19 @@ add_action('rest_api_init', function () {
     register_rest_route($namespace, '/connect', [
         'methods'  => 'POST',
         'callback' => function ($request) {
-            $diagnostics = [];
-
-            // Check WP version
-            global $wp_version;
-            $diagnostics['wp_version'] = $wp_version;
-            $diagnostics['app_passwords_class'] = class_exists('WP_Application_Passwords') ? 'yes' : 'no';
-            $diagnostics['app_passwords_function'] = function_exists('wp_create_application_password') ? 'yes' : 'no';
-
-            // Get user ID
-            $user_id = (int) get_option('quasar_user_id', 0);
-            if (!$user_id) {
-                $user_id = get_current_user_id();
-            }
-            if (!$user_id) {
-                $admin = get_users(['role' => 'administrator', 'number' => 1]);
-                if (!empty($admin)) {
-                    $user_id = $admin[0]->ID;
-                    update_option('quasar_user_id', $user_id);
-                }
-            }
-
-            $diagnostics['user_id'] = $user_id;
-            $diagnostics['user_exists'] = $user_id ? (get_userdata($user_id) ? 'yes' : 'no') : 'no';
-
-            if (!$user_id) {
-                return new WP_Error(
-                    'no_user',
-                    'No admin user found. Diagnostics: ' . json_encode($diagnostics),
-                    ['status' => 500]
-                );
-            }
-
-            if (!class_exists('WP_Application_Passwords')) {
-                return new WP_Error(
-                    'no_app_passwords',
-                    'Application Passwords not available (WordPress 5.6+ required). Diagnostics: ' . json_encode($diagnostics),
-                    ['status' => 500]
-                );
-            }
-
-            $password = quasar_get_or_create_app_password();
-
-            if (is_wp_error($password)) {
-                return new WP_Error(
-                    'app_password_failed',
-                    $password->get_error_message(),
-                    ['status' => 500]
-                );
-            }
-
-            if (!$password) {
-                return new WP_Error(
-                    'app_password_failed',
-                    'Failed to create Application Password. Unknown error.',
-                    ['status' => 500]
-                );
-            }
-
+            // Mark as connected - no Application Passwords needed
+            // Post operations go through our custom REST endpoints with token auth
             update_option('quasar_connection_status', 'connected');
 
-            $user = get_userdata($user_id);
+            $user_id = (int) get_option('quasar_user_id', 0);
+            $user = $user_id ? get_userdata($user_id) : null;
 
             return rest_ensure_response([
                 'success'      => true,
                 'site_url'     => home_url(),
                 'site_name'    => get_bloginfo('name'),
                 'username'     => $user ? $user->user_login : '',
-                'app_password' => $password,
+                'app_password' => '', // No longer needed - using token auth
             ]);
         },
         'permission_callback' => function ($request) {
