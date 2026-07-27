@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Loader2, AlertCircle, Globe, Plus, Link2, Check,
   ExternalLink, Trash2, RefreshCw, FileText, Clock,
@@ -18,7 +19,7 @@ import {
   type WordPressSite,
 } from "@/lib/wordpress-api";
 
-export default function WordPressPage() {
+function WordPressContent() {
   const [sites, setSites] = useState<WordPressSite[]>([]);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
@@ -26,6 +27,17 @@ export default function WordPressPage() {
   const [showConnectForm, setShowConnectForm] = useState(false);
   const [siteUrl, setSiteUrl] = useState("");
   const [token, setToken] = useState("");
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const urlFromQuery = searchParams.get("siteUrl");
+    const tokenFromQuery = searchParams.get("token");
+    if (urlFromQuery) setSiteUrl(decodeURIComponent(urlFromQuery));
+    if (tokenFromQuery) setToken(decodeURIComponent(tokenFromQuery));
+    if (urlFromQuery || tokenFromQuery) {
+      setShowConnectForm(true);
+    }
+  }, [searchParams]);
 
   const fetchSites = useCallback(async () => {
     try {
@@ -365,12 +377,20 @@ export default function WordPressPage() {
               <li><strong>1.</strong> Download the Quasar AI SEO Assistant plugin</li>
               <li><strong>2.</strong> Install and activate it on your WordPress site (Plugins → Add New → Upload)</li>
               <li><strong>3.</strong> Go to Quasar AI SEO in your WordPress admin menu</li>
-              <li><strong>4.</strong> Click "Connect to Quasar AI SEO" — this generates your connection token</li>
-              <li><strong>5.</strong> Copy the token from Settings and paste it here to connect</li>
+              <li><strong>4.</strong> Click "Connect to Quasar AI SEO" — it opens this page with the token pre-filled</li>
+              <li><strong>5.</strong> Click Connect here to complete the connection</li>
             </ol>
           </div>
         </div>
       </DashboardLayout>
     </RequireAuth>
+  );
+}
+
+export default function WordPressPage() {
+  return (
+    <Suspense fallback={<RequireAuth><DashboardLayout><div className="flex h-[60vh] items-center justify-center"><Loader2 className="size-8 animate-spin text-fuchsia-500" /></div></DashboardLayout></RequireAuth>}>
+      <WordPressContent />
+    </Suspense>
   );
 }

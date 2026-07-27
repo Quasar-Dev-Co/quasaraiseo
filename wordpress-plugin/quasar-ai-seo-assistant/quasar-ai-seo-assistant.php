@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
 define('QUASAR_VERSION', '1.0.0');
 define('QUASAR_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('QUASAR_PLUGIN_URL', plugin_dir_url(__FILE__));
-define('QUASAR_API_URL', 'https://api.seo.quasarasoft.com');
+define('QUASAR_API_URL', 'https://seo.teamcmp.cloud');
 define('QUASAR_FRONTEND_URL', 'https://seo.quasarasoft.com');
 
 require_once QUASAR_PLUGIN_DIR . 'includes/class-quasar-core.php';

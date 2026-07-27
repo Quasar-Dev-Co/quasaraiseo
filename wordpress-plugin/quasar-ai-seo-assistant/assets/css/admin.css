@@ -377,6 +377,37 @@
     display: inline-block;
 }
 
+.quasar-token-box {
+    background: #f9f9f9;
+    border: 1px dashed #ddd;
+    border-radius: 10px;
+    padding: 16px;
+    margin: 20px auto;
+    max-width: 500px;
+    text-align: left;
+}
+
+.quasar-token-box label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.quasar-token-box .quasar-token {
+    display: block;
+    width: 100%;
+    margin-bottom: 12px;
+    box-sizing: border-box;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    font-family: monospace;
+    font-size: 13px;
+}
+
 .quasar-loading {
     display: inline-block;
     border: 2px solid #f3f3f3;

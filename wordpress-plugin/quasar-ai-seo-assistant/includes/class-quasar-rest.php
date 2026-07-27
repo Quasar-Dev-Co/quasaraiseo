@@ -80,6 +80,13 @@ class Quasar_REST {
             'callback' => [$this, 'establish_connection'],
             'permission_callback' => [$this, 'check_token'],
         ]);
+
+        // Disconnect
+        register_rest_route($this->namespace, '/disconnect', [
+            'methods'  => 'POST',
+            'callback' => [$this, 'disconnect_connection'],
+            'permission_callback' => [$this, 'check_token'],
+        ]);
     }
 
     /**
@@ -140,6 +147,30 @@ class Quasar_REST {
             'username'     => $user ? $user->user_login : '',
             'app_password' => $password,
         ]);
+    }
+
+    /**
+     * Disconnect - remove app password and connection status.
+     */
+    public function disconnect_connection($request) {
+        $core = Quasar_Core::get_instance();
+        $core->set_connection_status('disconnected');
+
+        $user_id = (int) get_option('quasar_user_id', 0);
+        $user = get_userdata($user_id);
+
+        if ($user && function_exists('wp_delete_application_password')) {
+            $passwords = WP_Application_Passwords::get_user_application_passwords($user_id);
+            foreach ($passwords as $pass) {
+                if (strpos($pass['name'], 'Quasar AI SEO') !== false) {
+                    wp_delete_application_password($user_id, $pass['uuid']);
+                }
+            }
+        }
+
+        delete_option('quasar_app_password');
+
+        return rest_ensure_response(['success' => true]);
     }
 
     /**

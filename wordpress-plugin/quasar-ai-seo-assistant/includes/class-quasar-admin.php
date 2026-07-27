@@ -139,11 +139,26 @@ class Quasar_Admin {
                         <span class="dashicons dashicons-admin-links"></span>
                     </div>
                     <h2>Connect to Quasar AI SEO</h2>
-                    <p>Click the button below to connect your WordPress site with your Quasar AI SEO account. This will enable one-click publishing of AI-generated content directly to your site.</p>
-                    <button id="quasar-connect-btn" class="quasar-btn quasar-btn-primary">
+                    <p>Click the button below to open Quasar AI SEO and complete the connection. This will enable one-click publishing of AI-generated content directly to your site.</p>
+
+                    <div class="quasar-token-box">
+                        <label>Connection Token</label>
+                        <code class="quasar-token"><?php echo esc_html($token); ?></code>
+                        <button type="button" class="quasar-btn quasar-btn-outline quasar-btn-sm" id="quasar-copy-token" data-token="<?php echo esc_attr($token); ?>">
+                            Copy Token
+                        </button>
+                    </div>
+
+                    <?php
+                    $connect_url = add_query_arg([
+                        'siteUrl' => rawurlencode(home_url()),
+                        'token'   => rawurlencode($token),
+                    ], QUASAR_FRONTEND_URL . '/wordpress');
+                    ?>
+                    <a id="quasar-connect-btn" href="<?php echo esc_url($connect_url); ?>" target="_blank" class="quasar-btn quasar-btn-primary">
                         <span class="dashicons dashicons-admin-plugins"></span>
                         Connect to Quasar AI SEO
-                    </button>
+                    </a>
                     <p class="quasar-connect-help">
                         Don't have a Quasar AI SEO account? <a href="<?php echo esc_url(QUASAR_FRONTEND_URL . '/signup'); ?>" target="_blank">Sign up free</a>
                     </p>
