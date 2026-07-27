@@ -1,10 +1,13 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
+import { useSearchParams } from "next/navigation";
 import {
   PenLine, Sparkles, FileText, Clock, Eye, Copy, Download,
   Check, ChevronRight, History, Type, Target,
+  Globe, Loader2, AlertCircle, Send, Newspaper,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -20,9 +23,96 @@ import {
 import {
   Table, TableHeader, TableBody, TableHead, TableRow, TableCell,
 } from "@/components/ui/table";
+import {
+  wordpressApi,
+  type WordPressSite,
+  type WordPressPost,
+} from "@/lib/wordpress-api";
 
 export default function PostCreatePage() {
   const post = useSelector((state: RootState) => state.post);
+  const searchParams = useSearchParams();
+
+  const [wpSites, setWpSites] = useState<WordPressSite[]>([]);
+  const [selectedSiteId, setSelectedSiteId] = useState<string>("");
+  const [wpPosts, setWpPosts] = useState<WordPressPost[]>([]);
+  const [publishing, setPublishing] = useState(false);
+  const [publishStatus, setPublishStatus] = useState<"draft" | "publish" | "future">("draft");
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const [publishSuccess, setPublishSuccess] = useState<string | null>(null);
+  const [postTitle, setPostTitle] = useState("");
+  const [postContent, setPostContent] = useState("");
+  const [postExcerpt, setPostExcerpt] = useState("");
+  const [postCategories, setPostCategories] = useState("");
+  const [postTags, setPostTags] = useState("");
+
+  const fetchSites = useCallback(async () => {
+    try {
+      const sites = await wordpressApi.getSites();
+      setWpSites(sites.filter((s) => s.connected));
+      const siteIdFromUrl = searchParams.get("siteId");
+      if (siteIdFromUrl && sites.some((s) => s.id === siteIdFromUrl)) {
+        setSelectedSiteId(siteIdFromUrl);
+      } else if (sites.length > 0) {
+        setSelectedSiteId(sites[0].id);
+      }
+    } catch {
+      // Silently fail - user may not have WordPress connected
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    fetchSites();
+  }, [fetchSites]);
+
+  const fetchPosts = useCallback(async () => {
+    if (!selectedSiteId) return;
+    try {
+      const posts = await wordpressApi.getPosts(selectedSiteId);
+      setWpPosts(posts);
+    } catch {
+      // ignore
+    }
+  }, [selectedSiteId]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
+
+  useEffect(() => {
+    if (post.generatedContent) {
+      setPostTitle(post.generatedContent.title);
+      setPostContent(post.generatedContent.body);
+      setPostExcerpt(post.generatedContent.metaDescription);
+    }
+  }, [post.generatedContent]);
+
+  const handlePublish = async () => {
+    if (!selectedSiteId || !postTitle || !postContent) return;
+    setPublishing(true);
+    setPublishError(null);
+    setPublishSuccess(null);
+    try {
+      const result = await wordpressApi.publishPost(selectedSiteId, {
+        title: postTitle,
+        content: postContent,
+        excerpt: postExcerpt,
+        status: publishStatus,
+        categories: postCategories ? postCategories.split(",").map((c) => c.trim()).filter(Boolean) : [],
+        tags: postTags ? postTags.split(",").map((t) => t.trim()).filter(Boolean) : [],
+      });
+      setPublishSuccess(`Post published successfully! View at: ${result.post.permalink}`);
+      await fetchPosts();
+    } catch (e) {
+      setPublishError(e instanceof Error ? e.message : "Failed to publish post");
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const publishedCount = wpPosts.filter((p) => p.status === "publish").length;
+  const draftCount = wpPosts.filter((p) => p.status === "draft").length;
+  const scheduledCount = wpPosts.filter((p) => p.status === "future").length;
 
   return (
     <RequireAuth>
@@ -48,19 +138,19 @@ export default function PostCreatePage() {
       <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <article className="rounded-[18px] border border-slate-200 bg-white/80 p-5.5 shadow-[0_14px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-slate-900/60">
           <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400"><FileText className="size-4" /> Total Posts</div>
-          <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{post.contentHistory.length}</div>
+          <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{wpPosts.length}</div>
         </article>
         <article className="rounded-[18px] border border-slate-200 bg-white/80 p-5.5 shadow-[0_14px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-slate-900/60">
           <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400"><Check className="size-4" /> Published</div>
-          <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{post.contentHistory.filter(p => p.status === "published").length}</div>
+          <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{publishedCount}</div>
         </article>
         <article className="rounded-[18px] border border-slate-200 bg-white/80 p-5.5 shadow-[0_14px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-slate-900/60">
           <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400"><History className="size-4" /> Drafts</div>
-          <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{post.contentHistory.filter(p => p.status === "draft").length}</div>
+          <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{draftCount}</div>
         </article>
         <article className="rounded-[18px] border border-slate-200 bg-white/80 p-5.5 shadow-[0_14px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-slate-900/60">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400"><Target className="size-4" /> Avg. Words</div>
-          <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">1,847</div>
+          <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400"><Clock className="size-4" /> Scheduled</div>
+          <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{scheduledCount}</div>
         </article>
       </div>
 
@@ -176,6 +266,107 @@ export default function PostCreatePage() {
               </Button>
             </div>
           </article>
+
+          {/* WordPress Publishing Panel */}
+          {wpSites.length > 0 ? (
+            <article className="overflow-hidden rounded-3xl border border-fuchsia-200 bg-white dark:border-fuchsia-400/20 dark:bg-slate-900/50">
+              <header className="flex items-center justify-between gap-4 border-b border-fuchsia-100 px-6 py-5.5 dark:border-fuchsia-400/10">
+                <div className="flex gap-2.75">
+                  <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Newspaper className="size-[18px]" /></span>
+                  <div>
+                    <h3 className="m-0 text-base text-slate-900 dark:text-white">Publish to WordPress</h3>
+                    <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Send your content directly to your WordPress site</p>
+                  </div>
+                </div>
+              </header>
+              <div className="p-5 space-y-4">
+                <div>
+                  <label className="text-xs font-bold uppercase text-slate-500">WordPress Site</label>
+                  <Select value={selectedSiteId} onValueChange={setSelectedSiteId}>
+                    <SelectTrigger className="mt-2 w-full"><SelectValue placeholder="Select a site" /></SelectTrigger>
+                    <SelectContent>
+                      {wpSites.map((site) => (
+                        <SelectItem key={site.id} value={site.id}>
+                          {site.siteName || site.siteUrl}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold uppercase text-slate-500">Post Title</label>
+                  <Input className="mt-2" value={postTitle} onChange={(e) => setPostTitle(e.target.value)} placeholder="Enter post title" />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold uppercase text-slate-500">Excerpt / Meta Description</label>
+                  <Textarea className="mt-2" value={postExcerpt} onChange={(e) => setPostExcerpt(e.target.value)} placeholder="Brief description..." rows={2} />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold uppercase text-slate-500">Categories (comma-separated)</label>
+                  <Input className="mt-2" value={postCategories} onChange={(e) => setPostCategories(e.target.value)} placeholder="SEO, Marketing, AI" />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold uppercase text-slate-500">Tags (comma-separated)</label>
+                  <Input className="mt-2" value={postTags} onChange={(e) => setPostTags(e.target.value)} placeholder="seo, ai, content" />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold uppercase text-slate-500">Publish Status</label>
+                  <Select value={publishStatus} onValueChange={(v) => setPublishStatus(v as "draft" | "publish" | "future")}>
+                    <SelectTrigger className="mt-2 w-full"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="publish">Publish Immediately</SelectItem>
+                      <SelectItem value="future">Schedule for Later</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {publishError && (
+                  <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-400">
+                    <AlertCircle className="size-4 shrink-0" />
+                    {publishError}
+                  </div>
+                )}
+
+                {publishSuccess && (
+                  <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-green-700 dark:border-green-400/20 dark:bg-green-400/10 dark:text-green-400">
+                    <Check className="size-4 shrink-0" />
+                    {publishSuccess}
+                  </div>
+                )}
+
+                <Separator />
+
+                <Button
+                  className="w-full"
+                  size="lg"
+                  onClick={handlePublish}
+                  disabled={publishing || !selectedSiteId || !postTitle || !postContent}
+                >
+                  {publishing ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+                  {publishing ? "Publishing..." : `Publish as ${publishStatus}`}
+                </Button>
+              </div>
+            </article>
+          ) : (
+            <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
+              <div className="p-6 text-center">
+                <Globe className="mx-auto size-10 text-slate-300 dark:text-slate-600" />
+                <h3 className="mt-3 text-sm font-bold text-slate-900 dark:text-white">No WordPress Site Connected</h3>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Connect a WordPress site to publish content directly from here.
+                </p>
+                <Button className="mt-4" size="sm" onClick={() => (window.location.href = "/wordpress")}>
+                  Connect WordPress Site
+                </Button>
+              </div>
+            </article>
+          )}
         </div>
 
         {/* Preview column */}
@@ -237,6 +428,74 @@ export default function PostCreatePage() {
               )}
             </div>
           </article>
+
+          {/* WordPress Posts History */}
+          {wpSites.length > 0 && wpPosts.length > 0 && (
+            <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
+              <header className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5.5 dark:border-white/5">
+                <div className="flex gap-2.75">
+                  <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Newspaper className="size-[18px]" /></span>
+                  <div>
+                    <h3 className="m-0 text-base text-slate-900 dark:text-white">Published Posts</h3>
+                    <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Posts published to WordPress via Quasar</p>
+                  </div>
+                </div>
+              </header>
+              <div className="p-5">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {wpPosts.slice(0, 10).map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-semibold text-slate-800 dark:text-slate-200 max-w-[280px] truncate">
+                          {item.permalink ? (
+                            <a href={item.permalink} target="_blank" rel="noopener noreferrer" className="hover:text-fuchsia-500">
+                              {item.title}
+                            </a>
+                          ) : (
+                            item.title
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={item.status === "publish" ? "default" : "secondary"}
+                            className={
+                              item.status === "publish"
+                                ? "bg-green-100 text-green-700"
+                                : item.status === "future"
+                                  ? "bg-purple-100 text-purple-700"
+                                  : "bg-orange-100 text-orange-700"
+                            }
+                          >
+                            {item.status === "publish" ? "Published" : item.status === "future" ? "Scheduled" : "Draft"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-slate-500">
+                          {new Date(item.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        </TableCell>
+                        <TableCell>
+                          {item.permalink && (
+                            <Button size="icon-xs" variant="ghost" asChild>
+                              <a href={item.permalink} target="_blank" rel="noopener noreferrer">
+                                <ChevronRight className="size-3.5" />
+                              </a>
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </article>
+          )}
 
           {/* Content history */}
           <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
