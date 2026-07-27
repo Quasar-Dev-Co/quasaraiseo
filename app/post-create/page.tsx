@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { useSearchParams } from "next/navigation";
@@ -29,7 +29,7 @@ import {
   type WordPressPost,
 } from "@/lib/wordpress-api";
 
-export default function PostCreatePage() {
+function PostCreateContent() {
   const post = useSelector((state: RootState) => state.post);
   const searchParams = useSearchParams();
 
@@ -282,7 +282,7 @@ export default function PostCreatePage() {
               <div className="p-5 space-y-4">
                 <div>
                   <label className="text-xs font-bold uppercase text-slate-500">WordPress Site</label>
-                  <Select value={selectedSiteId} onValueChange={setSelectedSiteId}>
+                  <Select value={selectedSiteId} onValueChange={(v) => setSelectedSiteId(v ?? "")}>
                     <SelectTrigger className="mt-2 w-full"><SelectValue placeholder="Select a site" /></SelectTrigger>
                     <SelectContent>
                       {wpSites.map((site) => (
@@ -482,11 +482,9 @@ export default function PostCreatePage() {
                         </TableCell>
                         <TableCell>
                           {item.permalink && (
-                            <Button size="icon-xs" variant="ghost" asChild>
-                              <a href={item.permalink} target="_blank" rel="noopener noreferrer">
-                                <ChevronRight className="size-3.5" />
-                              </a>
-                            </Button>
+                            <a href={item.permalink} target="_blank" rel="noopener noreferrer">
+                              <Button size="icon-xs" variant="ghost"><ChevronRight className="size-3.5" /></Button>
+                            </a>
                           )}
                         </TableCell>
                       </TableRow>
@@ -541,5 +539,13 @@ export default function PostCreatePage() {
       </div>
     </DashboardLayout>
     </RequireAuth>
+  );
+}
+
+export default function PostCreatePage() {
+  return (
+    <Suspense fallback={<div className="flex h-[60vh] items-center justify-center"><Loader2 className="size-8 animate-spin text-fuchsia-500" /></div>}>
+      <PostCreateContent />
+    </Suspense>
   );
 }
