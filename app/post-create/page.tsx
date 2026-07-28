@@ -8,6 +8,8 @@ import {
   Trash2, Zap, CheckCircle2, XCircle, Clock, Package, Brain,
   ArrowRight, Newspaper, Send, RefreshCw, Globe, AlertCircle,
   Type, Eye, Copy, Layers, Image as ImageIcon, X, Tag, ListTree,
+  Bold, Italic, Underline, Link2, List, ListOrdered, Quote,
+  Heading2, Heading3, Pencil, Save, Undo2, Redo2,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -87,6 +89,63 @@ function PostCreateContent() {
   // Content preview modal
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewContent, setPreviewContent] = useState<GeneratedContent | null>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editMeta, setEditMeta] = useState("");
+  const [editSlug, setEditSlug] = useState("");
+  const bodyEditRef = useRef<HTMLDivElement | null>(null);
+
+  const openPreview = (content: GeneratedContent) => {
+    setPreviewContent(content);
+    setEditTitle(content.title);
+    setEditMeta(content.metaDescription);
+    setEditSlug(content.slug);
+    setEditMode(false);
+    setPreviewOpen(true);
+  };
+
+  const execCmd = (cmd: string, val?: string) => {
+    document.execCommand(cmd, false, val);
+    bodyEditRef.current?.focus();
+  };
+
+  const applyHeading = (tag: string) => {
+    document.execCommand("formatBlock", false, tag);
+    bodyEditRef.current?.focus();
+  };
+
+  const insertLink = () => {
+    const url = window.prompt("Enter URL:");
+    if (url) {
+      document.execCommand("createLink", false, url);
+      bodyEditRef.current?.focus();
+    }
+  };
+
+  const insertImage = () => {
+    const url = window.prompt("Enter image URL:");
+    if (url) {
+      document.execCommand("insertImage", false, url);
+      bodyEditRef.current?.focus();
+    }
+  };
+
+  const saveEdits = () => {
+    const editedBody = bodyEditRef.current?.innerHTML || previewContent?.body || "";
+    const wordCount = editedBody.replace(/<[^>]*>/g, "").split(/\s+/).filter(Boolean).length;
+    const updated: GeneratedContent = {
+      ...(previewContent as GeneratedContent),
+      title: editTitle,
+      metaDescription: editMeta,
+      slug: editSlug,
+      body: editedBody,
+      wordCount,
+      readingTime: Math.max(1, Math.round(wordCount / 200)),
+    };
+    setPreviewContent(updated);
+    setGeneratedContent(updated);
+    setEditMode(false);
+  };
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -470,7 +529,7 @@ function PostCreateContent() {
                   </div>
                   <div className="flex gap-1.5">
                     <Button size="sm" variant="outline" onClick={handleCopyContent}><Copy className="size-3.5" /> Copy</Button>
-                    <Button size="sm" className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700" onClick={() => { setPreviewContent(generatedContent); setPreviewOpen(true); }}><Eye className="size-3.5" /> View Content</Button>
+                    <Button size="sm" className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700" onClick={() => openPreview(generatedContent)}><Eye className="size-3.5" /> View Content</Button>
                   </div>
                 </header>
                 <div className="p-5">
@@ -623,10 +682,7 @@ function PostCreateContent() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => {
-                                    setPreviewContent(job.result);
-                                    setPreviewOpen(true);
-                                  }}
+                                  onClick={() => job.result && openPreview(job.result)}
                                 >
                                   <Eye className="size-3.5" /> View Content
                                 </Button>
@@ -861,45 +917,128 @@ function PostCreateContent() {
         </div>
       </DashboardLayout>
 
-      {/* Full content preview modal — Real WordPress post preview */}
+      {/* Full content preview modal — WordPress-style editor */}
       {previewOpen && previewContent && createPortal(
         <div className="fixed inset-0 z-[100] flex flex-col bg-[#f0f0f1]" onClick={(e) => { if (e.target === e.currentTarget) setPreviewOpen(false); }}>
-          {/* WordPress admin-style top bar */}
+          {/* Top bar */}
           <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-300 bg-[#1d2327] px-4 text-white md:px-6">
             <div className="flex items-center gap-3 min-w-0">
               <div className="flex size-7 shrink-0 items-center justify-center rounded bg-fuchsia-600">
                 <FileText className="size-3.5" />
               </div>
               <div className="min-w-0">
-                <h3 className="truncate text-sm font-semibold text-white">Preview: {previewContent.title}</h3>
-                <p className="truncate text-xs text-slate-400">Ready to publish · {previewContent.wordCount} words</p>
+                <h3 className="truncate text-sm font-semibold text-white">
+                  {editMode ? "Editing" : "Preview"}: {editMode ? editTitle : previewContent.title}
+                </h3>
+                <p className="truncate text-xs text-slate-400">
+                  {editMode ? "Make changes and save" : "Ready to publish"} · {previewContent.wordCount} words
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <Button size="sm" variant="outline" className="border-slate-600 text-white hover:bg-slate-700 hover:text-white" onClick={() => navigator.clipboard.writeText(`${previewContent.title}\n\n${previewContent.metaDescription}\n\n${previewContent.body}`)}>
-                <Copy className="size-3.5" /> Copy
-              </Button>
-              <Button size="sm" className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700" onClick={() => { setGeneratedContent(previewContent); setPreviewOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
-                <Send className="size-3.5" /> Use for Publishing
-              </Button>
+              {editMode ? (
+                <>
+                  <Button size="sm" variant="outline" className="border-slate-600 text-white hover:bg-slate-700 hover:text-white" onClick={() => setEditMode(false)}>
+                    Cancel
+                  </Button>
+                  <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={saveEdits}>
+                    <Save className="size-3.5" /> Save Changes
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button size="sm" variant="outline" className="border-slate-600 text-white hover:bg-slate-700 hover:text-white" onClick={() => setEditMode(true)}>
+                    <Pencil className="size-3.5" /> Edit
+                  </Button>
+                  <Button size="sm" variant="outline" className="border-slate-600 text-white hover:bg-slate-700 hover:text-white" onClick={() => navigator.clipboard.writeText(`${previewContent.title}\n\n${previewContent.metaDescription}\n\n${previewContent.body}`)}>
+                    <Copy className="size-3.5" /> Copy
+                  </Button>
+                  <Button size="sm" className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700" onClick={() => { setGeneratedContent(previewContent); setPreviewOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+                    <Send className="size-3.5" /> Publish
+                  </Button>
+                </>
+              )}
               <button className="grid size-8 place-items-center rounded text-slate-400 hover:bg-slate-700 hover:text-white" onClick={() => setPreviewOpen(false)}>
                 <X className="size-4" />
               </button>
             </div>
           </header>
 
-          {/* WordPress editor frame preview */}
+          {/* Formatting toolbar — only in edit mode */}
+          {editMode && (
+            <div className="flex flex-wrap items-center gap-1 border-b border-slate-300 bg-white px-3 py-2">
+              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Bold" onClick={() => execCmd("bold")}>
+                <Bold className="size-4" />
+              </button>
+              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Italic" onClick={() => execCmd("italic")}>
+                <Italic className="size-4" />
+              </button>
+              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Underline" onClick={() => execCmd("underline")}>
+                <Underline className="size-4" />
+              </button>
+              <div className="mx-1 h-5 w-px bg-slate-200" />
+              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Paragraph" onClick={() => applyHeading("p")}>
+                <span className="text-xs font-bold">P</span>
+              </button>
+              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Heading 2" onClick={() => applyHeading("h2")}>
+                <Heading2 className="size-4" />
+              </button>
+              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Heading 3" onClick={() => applyHeading("h3")}>
+                <Heading3 className="size-4" />
+              </button>
+              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Blockquote" onClick={() => applyHeading("blockquote")}>
+                <Quote className="size-4" />
+              </button>
+              <div className="mx-1 h-5 w-px bg-slate-200" />
+              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Bulleted List" onClick={() => execCmd("insertUnorderedList")}>
+                <List className="size-4" />
+              </button>
+              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Numbered List" onClick={() => execCmd("insertOrderedList")}>
+                <ListOrdered className="size-4" />
+              </button>
+              <div className="mx-1 h-5 w-px bg-slate-200" />
+              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Insert Link" onClick={insertLink}>
+                <Link2 className="size-4" />
+              </button>
+              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Insert Image" onClick={insertImage}>
+                <ImageIcon className="size-4" />
+              </button>
+              <div className="mx-1 h-5 w-px bg-slate-200" />
+              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Undo" onClick={() => execCmd("undo")}>
+                <Undo2 className="size-4" />
+              </button>
+              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Redo" onClick={() => execCmd("redo")}>
+                <Redo2 className="size-4" />
+              </button>
+              <div className="mx-1 h-5 w-px bg-slate-200" />
+              <button className="grid size-8 place-items-center rounded text-red-500 hover:bg-red-50" title="Clear Formatting" onClick={() => execCmd("removeFormat")}>
+                <XCircle className="size-4" />
+              </button>
+            </div>
+          )}
+
+          {/* Main content area */}
           <div className="flex flex-1 overflow-hidden">
-            {/* Left sidebar — tools */}
+            {/* Left sidebar */}
             <aside className="hidden w-72 shrink-0 overflow-y-auto border-r border-slate-300 bg-white p-5 lg:block">
               <div className="space-y-6">
+                {/* Slug — editable in edit mode */}
                 <div>
-                  <h4 className="text-xs font-bold uppercase text-slate-500">Publish Info</h4>
+                  <h4 className="text-xs font-bold uppercase text-slate-500">Slug</h4>
+                  {editMode ? (
+                    <input
+                      className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:border-fuchsia-400 focus:outline-none"
+                      value={editSlug}
+                      onChange={(e) => setEditSlug(e.target.value)}
+                    />
+                  ) : (
+                    <p className="mt-2 break-all text-sm text-slate-700">{previewContent.slug}</p>
+                  )}
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-bold uppercase text-slate-500">Stats</h4>
                   <div className="mt-3 space-y-2">
-                    <div className="rounded-md bg-slate-50 p-3">
-                      <p className="text-[11px] font-bold uppercase text-slate-400">Slug</p>
-                      <p className="mt-0.5 break-all text-sm text-slate-700">{previewContent.slug}</p>
-                    </div>
                     <div className="rounded-md bg-slate-50 p-3">
                       <p className="text-[11px] font-bold uppercase text-slate-400">Word Count</p>
                       <p className="mt-0.5 text-sm text-slate-700">{previewContent.wordCount} words</p>
@@ -944,25 +1083,44 @@ function PostCreateContent() {
               </div>
             </aside>
 
-            {/* Main preview canvas */}
+            {/* Main canvas */}
             <main className="flex flex-1 flex-col overflow-hidden bg-[#f0f0f1] p-4 md:p-6 lg:p-8">
               <div className="flex flex-1 flex-col overflow-y-auto rounded-lg border border-slate-300 bg-white shadow-xl">
                 <div className="flex-1 px-6 py-10 md:px-12 md:py-14 lg:px-20 lg:py-16">
                   <article className="mx-auto max-w-4xl">
-                    {/* Post title */}
-                    <h1 className="text-3xl font-extrabold leading-tight text-slate-900 md:text-4xl lg:text-5xl">
-                      {previewContent.title}
-                    </h1>
+                    {/* Title — editable or static */}
+                    {editMode ? (
+                      <input
+                        className="w-full border-none bg-transparent text-3xl font-extrabold leading-tight text-slate-900 outline-none md:text-4xl lg:text-5xl"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        placeholder="Post title..."
+                      />
+                    ) : (
+                      <h1 className="text-3xl font-extrabold leading-tight text-slate-900 md:text-4xl lg:text-5xl">
+                        {previewContent.title}
+                      </h1>
+                    )}
 
-                    {/* Meta description */}
-                    <p className="mt-4 text-lg text-slate-600 md:text-xl">
-                      {previewContent.metaDescription}
-                    </p>
+                    {/* Meta description — editable or static */}
+                    {editMode ? (
+                      <textarea
+                        className="mt-4 w-full resize-none border-none bg-transparent text-lg text-slate-600 outline-none md:text-xl"
+                        value={editMeta}
+                        onChange={(e) => setEditMeta(e.target.value)}
+                        rows={2}
+                        placeholder="Meta description..."
+                      />
+                    ) : (
+                      <p className="mt-4 text-lg text-slate-600 md:text-xl">
+                        {previewContent.metaDescription}
+                      </p>
+                    )}
 
-                    {/* Post meta row */}
+                    {/* Meta badges */}
                     <div className="mt-6 flex flex-wrap items-center gap-3 border-b border-slate-100 pb-6 text-sm text-slate-500">
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1">
-                        <Tag className="size-3.5" /> {previewContent.slug}
+                        <Tag className="size-3.5" /> {editMode ? editSlug : previewContent.slug}
                       </span>
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-blue-700">
                         <Type className="size-3.5" /> {previewContent.wordCount} words
@@ -975,11 +1133,21 @@ function PostCreateContent() {
                       </span>
                     </div>
 
-                    {/* Body — WordPress post content */}
-                    <div
-                      className="prose prose-xl max-w-none pt-8 text-slate-800 prose-headings:font-extrabold prose-headings:text-slate-900 prose-h2:mb-6 prose-h2:mt-12 prose-h2:text-3xl prose-h2:leading-tight prose-h2:border-b-0 prose-h3:mb-4 prose-h3:mt-8 prose-h3:text-2xl prose-p:mb-6 prose-p:leading-[1.8] prose-a:font-semibold prose-a:text-fuchsia-600 prose-a:no-underline hover:prose-a:underline prose-table:my-8 prose-table:overflow-hidden prose-table:w-full prose-table:rounded-lg prose-table:border prose-table:border-slate-200 prose-th:bg-slate-100 prose-th:px-4 prose-th:py-3 prose-th:text-left prose-th:text-sm prose-th:font-bold prose-td:px-4 prose-td:py-3 prose-td:text-sm prose-td:border-t prose-td:border-slate-100 prose-li:my-2 prose-blockquote:my-8 prose-blockquote:border-l-4 prose-blockquote:border-fuchsia-500 prose-blockquote:bg-fuchsia-50/50 prose-blockquote:px-6 prose-blockquote:py-4 prose-blockquote:italic prose-strong:font-bold"
-                      dangerouslySetInnerHTML={{ __html: previewContent.body.replace(/<!--\s*IMAGE:\s*[^>]+-->/g, "") }}
-                    />
+                    {/* Body — contentEditable in edit mode, static in preview */}
+                    {editMode ? (
+                      <div
+                        ref={bodyEditRef}
+                        contentEditable
+                        suppressContentEditableWarning
+                        className="prose prose-xl max-w-none pt-8 text-slate-800 outline-none prose-headings:font-extrabold prose-headings:text-slate-900 prose-h2:mb-6 prose-h2:mt-12 prose-h2:text-3xl prose-h2:leading-tight prose-h3:mb-4 prose-h3:mt-8 prose-h3:text-2xl prose-p:mb-6 prose-p:leading-[1.8] prose-a:font-semibold prose-a:text-fuchsia-600 prose-table:my-8 prose-table:overflow-hidden prose-table:w-full prose-table:rounded-lg prose-table:border prose-table:border-slate-200 prose-th:bg-slate-100 prose-th:px-4 prose-th:py-3 prose-th:text-left prose-th:text-sm prose-th:font-bold prose-td:px-4 prose-td:py-3 prose-td:text-sm prose-td:border-t prose-td:border-slate-100 prose-li:my-2 prose-blockquote:my-8 prose-blockquote:border-l-4 prose-blockquote:border-fuchsia-500 prose-blockquote:bg-fuchsia-50/50 prose-blockquote:px-6 prose-blockquote:py-4 prose-blockquote:italic prose-strong:font-bold focus:outline-none focus:ring-2 focus:ring-fuchsia-200 focus:rounded-lg"
+                        dangerouslySetInnerHTML={{ __html: previewContent.body.replace(/<!--\s*IMAGE:\s*[^>]+-->/g, "") }}
+                      />
+                    ) : (
+                      <div
+                        className="prose prose-xl max-w-none pt-8 text-slate-800 prose-headings:font-extrabold prose-headings:text-slate-900 prose-h2:mb-6 prose-h2:mt-12 prose-h2:text-3xl prose-h2:leading-tight prose-h3:mb-4 prose-h3:mt-8 prose-h3:text-2xl prose-p:mb-6 prose-p:leading-[1.8] prose-a:font-semibold prose-a:text-fuchsia-600 prose-table:my-8 prose-table:overflow-hidden prose-table:w-full prose-table:rounded-lg prose-table:border prose-table:border-slate-200 prose-th:bg-slate-100 prose-th:px-4 prose-th:py-3 prose-th:text-left prose-th:text-sm prose-th:font-bold prose-td:px-4 prose-td:py-3 prose-td:text-sm prose-td:border-t prose-td:border-slate-100 prose-li:my-2 prose-blockquote:my-8 prose-blockquote:border-l-4 prose-blockquote:border-fuchsia-500 prose-blockquote:bg-fuchsia-50/50 prose-blockquote:px-6 prose-blockquote:py-4 prose-blockquote:italic prose-strong:font-bold"
+                        dangerouslySetInnerHTML={{ __html: previewContent.body.replace(/<!--\s*IMAGE:\s*[^>]+-->/g, "") }}
+                      />
+                    )}
                   </article>
                 </div>
               </div>
