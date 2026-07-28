@@ -7,7 +7,7 @@ import {
   Upload, FileArchive, Sparkles, Loader2, FileText, Download,
   Trash2, Zap, CheckCircle2, XCircle, Clock, Package, Brain,
   ArrowRight, Newspaper, Send, RefreshCw, Globe, AlertCircle,
-  Type, Eye, Copy, Layers,
+  Type, Eye, Copy, Layers, Image as ImageIcon, X, Tag, ListTree,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -861,31 +861,119 @@ function PostCreateContent() {
         </div>
       </DashboardLayout>
 
-      {/* Full content preview modal */}
+      {/* Full content preview modal — WordPress-style */}
       {previewOpen && previewContent && createPortal(
-        <div className="fixed inset-0 z-[100] flex flex-col bg-slate-950/90 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setPreviewOpen(false); }}>
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <header className="flex items-center justify-between gap-4 border-b border-slate-800/50 bg-slate-950 px-4 py-3 md:px-6 md:py-4">
-              <div className="min-w-0 flex-1">
-                <h3 className="truncate text-sm font-bold text-white md:text-base">{previewContent.title}</h3>
-                <p className="truncate text-xs text-slate-400">{previewContent.wordCount} words · {previewContent.readingTime} min read · {previewContent.slug}</p>
+        <div className="fixed inset-0 z-[100] flex flex-col bg-slate-100 dark:bg-slate-950" onClick={(e) => { if (e.target === e.currentTarget) setPreviewOpen(false); }}>
+          {/* Top bar */}
+          <header className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-slate-900 md:px-6">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400">
+                <FileText className="size-4" />
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Button size="sm" variant="outline" className="border-slate-700 text-white hover:bg-slate-800 hover:text-white" onClick={() => navigator.clipboard.writeText(`${previewContent.title}\n\n${previewContent.metaDescription}\n\n${previewContent.body}`)}><Copy className="size-3.5" /> Copy</Button>
-                <Button size="sm" variant="outline" className="border-slate-700 text-white hover:bg-slate-800 hover:text-white" onClick={() => setPreviewOpen(false)}>Close</Button>
+              <div className="min-w-0">
+                <h3 className="truncate text-sm font-bold text-slate-900 dark:text-white">Content Preview</h3>
+                <p className="truncate text-xs text-slate-500 dark:text-slate-400">Ready for WordPress publishing</p>
               </div>
-            </header>
-            <div className="flex-1 overflow-y-auto p-4 md:p-8">
-              <article className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl md:p-10 dark:border-white/10 dark:bg-slate-900">
-                <h1 className="text-2xl font-extrabold leading-tight text-slate-900 md:text-4xl dark:text-white">{previewContent.title}</h1>
-                <p className="mt-3 text-base text-slate-600 md:text-lg dark:text-slate-300">{previewContent.metaDescription}</p>
-                <div className="mt-4 flex flex-wrap gap-3 border-b border-slate-100 pb-4 text-xs text-slate-500 dark:border-white/10">
-                  <span className="flex items-center gap-1"><Type className="size-3.5" /> {previewContent.wordCount} words</span>
-                  <span className="flex items-center gap-1"><Clock className="size-3.5" /> {previewContent.readingTime} min read</span>
-                  <span className="flex items-center gap-1"><Globe className="size-3.5" /> {previewContent.slug}</span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(`${previewContent.title}\n\n${previewContent.metaDescription}\n\n${previewContent.body}`)}>
+                <Copy className="size-3.5" /> Copy
+              </Button>
+              <Button size="sm" className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700" onClick={() => { setGeneratedContent(previewContent); setPreviewOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+                <Send className="size-3.5" /> Use for Publishing
+              </Button>
+              <button className="grid size-8 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-white" onClick={() => setPreviewOpen(false)}>
+                <X className="size-4" />
+              </button>
+            </div>
+          </header>
+
+          {/* Scrollable content area */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="mx-auto max-w-3xl px-4 py-6 md:px-8 md:py-10">
+              {/* WordPress-style article card */}
+              <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900">
+                {/* Article header */}
+                <div className="border-b border-slate-100 px-6 py-8 dark:border-white/5 md:px-10 md:py-10">
+                  {/* Meta tags row */}
+                  <div className="mb-4 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                      <Tag className="size-3" /> {previewContent.slug}
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-400/10 dark:text-blue-400">
+                      <Type className="size-3" /> {previewContent.wordCount} words
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400">
+                      <Clock className="size-3" /> {previewContent.readingTime} min read
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-fuchsia-50 px-2.5 py-1 text-xs font-medium text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400">
+                      <CheckCircle2 className="size-3" /> SEO-optimized
+                    </span>
+                  </div>
+
+                  {/* Title */}
+                  <h1 className="text-2xl font-extrabold leading-tight text-slate-900 dark:text-white md:text-3xl">
+                    {previewContent.title}
+                  </h1>
+
+                  {/* Meta description */}
+                  <p className="mt-3 text-base text-slate-600 dark:text-slate-300 md:text-lg">
+                    {previewContent.metaDescription}
+                  </p>
                 </div>
-                <div className="prose prose-lg max-w-none pt-6 dark:prose-invert prose-headings:font-bold prose-h2:text-2xl prose-h3:text-xl prose-a:text-fuchsia-600 prose-a:no-underline hover:prose-a:underline" dangerouslySetInnerHTML={{ __html: previewContent.body }} />
+
+                {/* Article body — WordPress-style */}
+                <div className="px-6 py-8 dark:text-slate-200 md:px-10 md:py-10">
+                  <div
+                    className="prose prose-lg max-w-none dark:prose-invert prose-headings:font-bold prose-headings:text-slate-900 prose-h2:mt-10 prose-h2:mb-4 prose-h2:text-2xl prose-h2:border-b prose-h2:border-slate-100 prose-h2:pb-2 dark:prose-h2:text-white dark:prose-h2:border-white/10 prose-h3:text-xl prose-a:text-fuchsia-600 prose-a:no-underline hover:prose-a:underline prose-table:overflow-hidden prose-table:rounded-lg prose-table:border prose-th:bg-slate-50 prose-th:text-sm prose-th:font-bold dark:prose-th:bg-slate-800 prose-blockquote:border-l-fuchsia-500 prose-blockquote:bg-fuchsia-50/50 dark:prose-blockquote:bg-fuchsia-400/5"
+                    dangerouslySetInnerHTML={{ __html: previewContent.body }}
+                  />
+                </div>
               </article>
+
+              {/* Image Prompts section */}
+              {previewContent.imagePrompts && previewContent.imagePrompts.length > 0 && (
+                <div className="mt-6 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <ImageIcon className="size-5 text-fuchsia-600 dark:text-fuchsia-400" />
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">Image Prompts</h2>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">({previewContent.imagePrompts.length} images)</span>
+                  </div>
+                  {previewContent.imagePrompts.map((img, i) => (
+                    <div key={i} className="rounded-xl border border-fuchsia-200 bg-fuchsia-50/40 p-4 dark:border-fuchsia-400/20 dark:bg-fuchsia-400/5">
+                      <div className="mb-2 flex items-center gap-2">
+                        <span className="grid size-6 place-items-center rounded-md bg-fuchsia-100 text-xs font-bold text-fuchsia-700 dark:bg-fuchsia-400/20 dark:text-fuchsia-400">{i + 1}</span>
+                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{img.placement}</span>
+                      </div>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">{img.prompt}</p>
+                      <button
+                        className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-fuchsia-600 hover:underline dark:text-fuchsia-400"
+                        onClick={() => navigator.clipboard.writeText(img.prompt)}
+                      >
+                        <Copy className="size-3" /> Copy prompt
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Headings outline */}
+              {previewContent.headings && previewContent.headings.length > 0 && (
+                <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900">
+                  <div className="mb-3 flex items-center gap-2">
+                    <ListTree className="size-4 text-slate-500" />
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Content Outline</h3>
+                  </div>
+                  <ul className="space-y-1.5">
+                    {previewContent.headings.map((h, i) => (
+                      <li key={i} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                        <span className="text-slate-300 dark:text-slate-600">H2</span>
+                        {h}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
         </div>,

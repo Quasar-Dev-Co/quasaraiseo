@@ -59,6 +59,7 @@ export interface GeneratedContent {
   readingTime: number;
   slug: string;
   headings: string[];
+  imagePrompts?: Array<{ placement: string; prompt: string }>;
 }
 
 export interface PostSkillRecord {
