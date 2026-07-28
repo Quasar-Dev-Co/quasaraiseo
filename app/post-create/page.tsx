@@ -964,56 +964,65 @@ function PostCreateContent() {
             </div>
           </header>
 
-          {/* Formatting toolbar — only in edit mode */}
+          {/* Formatting toolbar — clearly visible edit mode */}
           {editMode && (
-            <div className="flex flex-wrap items-center gap-1 border-b border-slate-300 bg-white px-3 py-2">
-              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Bold" onClick={() => execCmd("bold")}>
-                <Bold className="size-4" />
-              </button>
-              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Italic" onClick={() => execCmd("italic")}>
-                <Italic className="size-4" />
-              </button>
-              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Underline" onClick={() => execCmd("underline")}>
-                <Underline className="size-4" />
-              </button>
-              <div className="mx-1 h-5 w-px bg-slate-200" />
-              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Paragraph" onClick={() => applyHeading("p")}>
-                <span className="text-xs font-bold">P</span>
-              </button>
-              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Heading 2" onClick={() => applyHeading("h2")}>
-                <Heading2 className="size-4" />
-              </button>
-              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Heading 3" onClick={() => applyHeading("h3")}>
-                <Heading3 className="size-4" />
-              </button>
-              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Blockquote" onClick={() => applyHeading("blockquote")}>
-                <Quote className="size-4" />
-              </button>
-              <div className="mx-1 h-5 w-px bg-slate-200" />
-              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Bulleted List" onClick={() => execCmd("insertUnorderedList")}>
-                <List className="size-4" />
-              </button>
-              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Numbered List" onClick={() => execCmd("insertOrderedList")}>
-                <ListOrdered className="size-4" />
-              </button>
-              <div className="mx-1 h-5 w-px bg-slate-200" />
-              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Insert Link" onClick={insertLink}>
-                <Link2 className="size-4" />
-              </button>
-              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Insert Image" onClick={insertImage}>
-                <ImageIcon className="size-4" />
-              </button>
-              <div className="mx-1 h-5 w-px bg-slate-200" />
-              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Undo" onClick={() => execCmd("undo")}>
-                <Undo2 className="size-4" />
-              </button>
-              <button className="grid size-8 place-items-center rounded hover:bg-slate-100" title="Redo" onClick={() => execCmd("redo")}>
-                <Redo2 className="size-4" />
-              </button>
-              <div className="mx-1 h-5 w-px bg-slate-200" />
-              <button className="grid size-8 place-items-center rounded text-red-500 hover:bg-red-50" title="Clear Formatting" onClick={() => execCmd("removeFormat")}>
-                <XCircle className="size-4" />
-              </button>
+            <div className="flex flex-wrap items-center gap-3 border-b border-slate-300 bg-[#f6f7f7] px-4 py-3">
+              <div className="flex items-center gap-1 rounded-lg border border-slate-300 bg-white p-1 shadow-sm">
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Bold" onClick={() => execCmd("bold")}>
+                  <Bold className="size-4" /> <span className="hidden md:inline">Bold</span>
+                </button>
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Italic" onClick={() => execCmd("italic")}>
+                  <Italic className="size-4" /> <span className="hidden md:inline">Italic</span>
+                </button>
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Underline" onClick={() => execCmd("underline")}>
+                  <Underline className="size-4" /> <span className="hidden md:inline">Underline</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1 rounded-lg border border-slate-300 bg-white p-1 shadow-sm">
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Paragraph" onClick={() => applyHeading("p")}>
+                  <span className="text-xs font-bold">P</span> <span className="hidden md:inline">P</span>
+                </button>
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Heading 2" onClick={() => applyHeading("h2")}>
+                  <Heading2 className="size-4" /> <span className="hidden md:inline">H2</span>
+                </button>
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Heading 3" onClick={() => applyHeading("h3")}>
+                  <Heading3 className="size-4" /> <span className="hidden md:inline">H3</span>
+                </button>
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Blockquote" onClick={() => applyHeading("blockquote")}>
+                  <Quote className="size-4" /> <span className="hidden md:inline">Quote</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1 rounded-lg border border-slate-300 bg-white p-1 shadow-sm">
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Bulleted List" onClick={() => execCmd("insertUnorderedList")}>
+                  <List className="size-4" /> <span className="hidden md:inline">List</span>
+                </button>
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Numbered List" onClick={() => execCmd("insertOrderedList")}>
+                  <ListOrdered className="size-4" /> <span className="hidden md:inline">1,2</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1 rounded-lg border border-slate-300 bg-white p-1 shadow-sm">
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Insert Link" onClick={insertLink}>
+                  <Link2 className="size-4" /> <span className="hidden md:inline">Link</span>
+                </button>
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Insert Image" onClick={insertImage}>
+                  <ImageIcon className="size-4" /> <span className="hidden md:inline">Image</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1 rounded-lg border border-slate-300 bg-white p-1 shadow-sm">
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Undo" onClick={() => execCmd("undo")}>
+                  <Undo2 className="size-4" /> <span className="hidden md:inline">Undo</span>
+                </button>
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Redo" onClick={() => execCmd("redo")}>
+                  <Redo2 className="size-4" /> <span className="hidden md:inline">Redo</span>
+                </button>
+                <button className="flex items-center gap-1.5 rounded-md border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50" title="Clear Formatting" onClick={() => execCmd("removeFormat")}>
+                  <XCircle className="size-4" /> <span className="hidden md:inline">Clear</span>
+                </button>
+              </div>
             </div>
           )}
 
