@@ -20,6 +20,7 @@ import {
   type ModelRecord,
   type SkillRecord,
 } from "@/lib/agent-api";
+import { ModelSelector, usePersistentModel } from "@/components/ModelSelector";
 
 const STATUS_CONFIG: Record<AgentJobStatus, { label: string; color: string; icon: typeof Clock }> = {
   pending: { label: "Pending", color: "bg-amber-100 text-amber-700 border-amber-200", icon: Clock },
@@ -77,7 +78,7 @@ export default function AuditMcpPage() {
   const [skills, setSkills] = useState<SkillRecord[]>([]);
   const [jobs, setJobs] = useState<AgentJobRecord[]>([]);
   const [models, setModels] = useState<ModelRecord[]>([]);
-  const [selectedModel, setSelectedModel] = useState<string>("glm-5.2");
+  const { selectedModel, setModel } = usePersistentModel(models);
   const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -287,21 +288,13 @@ export default function AuditMcpPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 whitespace-nowrap">AI Model</label>
-                  <select
+                  <ModelSelector
+                    models={models}
                     value={selectedModel}
-                    onChange={(e) => setSelectedModel(e.target.value)}
-                    className="w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white outline-none transition-colors focus-visible:border-blue-500 focus-visible:ring-3 focus-visible:ring-blue-500/30"
-                    style={{ colorScheme: "dark" }}
-                  >
-                    {models.length === 0 && (
-                      <option value={selectedModel}>{selectedModel}</option>
-                    )}
-                    {models.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.label || m.id}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setModel}
+                    dark
+                    className="flex-1"
+                  />
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-xs text-slate-500 dark:text-slate-400">
