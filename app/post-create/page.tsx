@@ -93,11 +93,13 @@ function PostCreateContent() {
 
   const loadData = useCallback(async () => {
     try {
-      const [skillsRes, sitesRes] = await Promise.all([
+      const [skillsRes, sitesRes, jobsRes] = await Promise.all([
         wordpressApi.listPostSkills(),
         wordpressApi.getSites(),
+        wordpressApi.listGenerationJobs(),
       ]);
       setSkills(skillsRes.skills);
+      setGenJobs(jobsRes.jobs || []);
       const connected = sitesRes.filter((s) => s.connected);
       setWpSites(connected);
       const siteIdFromUrl = searchParams.get("siteId");
@@ -622,11 +624,21 @@ function PostCreateContent() {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => {
+                                    setPreviewContent(job.result);
+                                    setPreviewOpen(true);
+                                  }}
+                                >
+                                  <Eye className="size-3.5" /> View Content
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700"
+                                  onClick={() => {
                                     setGeneratedContent(job.result);
                                     window.scrollTo({ top: 0, behavior: "smooth" });
                                   }}
                                 >
-                                  <Eye className="size-3.5" /> View Content
+                                  <Send className="size-3.5" /> Use for Publishing
                                 </Button>
                               </div>
                             )}
