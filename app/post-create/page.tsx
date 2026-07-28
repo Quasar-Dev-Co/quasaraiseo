@@ -861,120 +861,129 @@ function PostCreateContent() {
         </div>
       </DashboardLayout>
 
-      {/* Full content preview modal — WordPress-style */}
+      {/* Full content preview modal — Real WordPress post preview */}
       {previewOpen && previewContent && createPortal(
-        <div className="fixed inset-0 z-[100] flex flex-col bg-slate-100 dark:bg-slate-950" onClick={(e) => { if (e.target === e.currentTarget) setPreviewOpen(false); }}>
-          {/* Top bar */}
-          <header className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-slate-900 md:px-6">
-            <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400">
-                <FileText className="size-4" />
+        <div className="fixed inset-0 z-[100] flex flex-col bg-[#f0f0f1]" onClick={(e) => { if (e.target === e.currentTarget) setPreviewOpen(false); }}>
+          {/* WordPress admin-style top bar */}
+          <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-300 bg-[#1d2327] px-4 text-white md:px-6">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded bg-fuchsia-600">
+                <FileText className="size-3.5" />
               </div>
               <div className="min-w-0">
-                <h3 className="truncate text-sm font-bold text-slate-900 dark:text-white">Content Preview</h3>
-                <p className="truncate text-xs text-slate-500 dark:text-slate-400">Ready for WordPress publishing</p>
+                <h3 className="truncate text-sm font-semibold text-white">Preview: {previewContent.title}</h3>
+                <p className="truncate text-xs text-slate-400">Ready to publish · {previewContent.wordCount} words</p>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <Button size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(`${previewContent.title}\n\n${previewContent.metaDescription}\n\n${previewContent.body}`)}>
+              <Button size="sm" variant="outline" className="border-slate-600 text-white hover:bg-slate-700 hover:text-white" onClick={() => navigator.clipboard.writeText(`${previewContent.title}\n\n${previewContent.metaDescription}\n\n${previewContent.body}`)}>
                 <Copy className="size-3.5" /> Copy
               </Button>
               <Button size="sm" className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700" onClick={() => { setGeneratedContent(previewContent); setPreviewOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
                 <Send className="size-3.5" /> Use for Publishing
               </Button>
-              <button className="grid size-8 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-white" onClick={() => setPreviewOpen(false)}>
+              <button className="grid size-8 place-items-center rounded text-slate-400 hover:bg-slate-700 hover:text-white" onClick={() => setPreviewOpen(false)}>
                 <X className="size-4" />
               </button>
             </div>
           </header>
 
-          {/* Scrollable content area */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="mx-auto max-w-3xl px-4 py-6 md:px-8 md:py-10">
-              {/* WordPress-style article card */}
-              <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900">
-                {/* Article header */}
-                <div className="border-b border-slate-100 px-6 py-8 dark:border-white/5 md:px-10 md:py-10">
-                  {/* Meta tags row */}
-                  <div className="mb-4 flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                      <Tag className="size-3" /> {previewContent.slug}
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-400/10 dark:text-blue-400">
-                      <Type className="size-3" /> {previewContent.wordCount} words
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400">
-                      <Clock className="size-3" /> {previewContent.readingTime} min read
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-fuchsia-50 px-2.5 py-1 text-xs font-medium text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400">
-                      <CheckCircle2 className="size-3" /> SEO-optimized
-                    </span>
-                  </div>
-
-                  {/* Title */}
-                  <h1 className="text-2xl font-extrabold leading-tight text-slate-900 dark:text-white md:text-3xl">
-                    {previewContent.title}
-                  </h1>
-
-                  {/* Meta description */}
-                  <p className="mt-3 text-base text-slate-600 dark:text-slate-300 md:text-lg">
-                    {previewContent.metaDescription}
-                  </p>
-                </div>
-
-                {/* Article body — WordPress-style */}
-                <div className="px-6 py-8 dark:text-slate-200 md:px-10 md:py-10">
-                  <div
-                    className="prose prose-lg max-w-none dark:prose-invert prose-headings:font-bold prose-headings:text-slate-900 prose-h2:mt-10 prose-h2:mb-4 prose-h2:text-2xl prose-h2:border-b prose-h2:border-slate-100 prose-h2:pb-2 dark:prose-h2:text-white dark:prose-h2:border-white/10 prose-h3:text-xl prose-a:text-fuchsia-600 prose-a:no-underline hover:prose-a:underline prose-table:overflow-hidden prose-table:rounded-lg prose-table:border prose-th:bg-slate-50 prose-th:text-sm prose-th:font-bold dark:prose-th:bg-slate-800 prose-blockquote:border-l-fuchsia-500 prose-blockquote:bg-fuchsia-50/50 dark:prose-blockquote:bg-fuchsia-400/5"
-                    dangerouslySetInnerHTML={{ __html: previewContent.body }}
-                  />
-                </div>
-              </article>
-
-              {/* Image Prompts section */}
-              {previewContent.imagePrompts && previewContent.imagePrompts.length > 0 && (
-                <div className="mt-6 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <ImageIcon className="size-5 text-fuchsia-600 dark:text-fuchsia-400" />
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">Image Prompts</h2>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">({previewContent.imagePrompts.length} images)</span>
-                  </div>
-                  {previewContent.imagePrompts.map((img, i) => (
-                    <div key={i} className="rounded-xl border border-fuchsia-200 bg-fuchsia-50/40 p-4 dark:border-fuchsia-400/20 dark:bg-fuchsia-400/5">
-                      <div className="mb-2 flex items-center gap-2">
-                        <span className="grid size-6 place-items-center rounded-md bg-fuchsia-100 text-xs font-bold text-fuchsia-700 dark:bg-fuchsia-400/20 dark:text-fuchsia-400">{i + 1}</span>
-                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{img.placement}</span>
-                      </div>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">{img.prompt}</p>
-                      <button
-                        className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-fuchsia-600 hover:underline dark:text-fuchsia-400"
-                        onClick={() => navigator.clipboard.writeText(img.prompt)}
-                      >
-                        <Copy className="size-3" /> Copy prompt
-                      </button>
+          {/* WordPress editor frame preview */}
+          <div className="flex flex-1 overflow-hidden">
+            {/* Left sidebar — tools */}
+            <aside className="hidden w-72 shrink-0 overflow-y-auto border-r border-slate-300 bg-white p-5 lg:block">
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-xs font-bold uppercase text-slate-500">Publish Info</h4>
+                  <div className="mt-3 space-y-2">
+                    <div className="rounded-md bg-slate-50 p-3">
+                      <p className="text-[11px] font-bold uppercase text-slate-400">Slug</p>
+                      <p className="mt-0.5 break-all text-sm text-slate-700">{previewContent.slug}</p>
                     </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Headings outline */}
-              {previewContent.headings && previewContent.headings.length > 0 && (
-                <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900">
-                  <div className="mb-3 flex items-center gap-2">
-                    <ListTree className="size-4 text-slate-500" />
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Content Outline</h3>
+                    <div className="rounded-md bg-slate-50 p-3">
+                      <p className="text-[11px] font-bold uppercase text-slate-400">Word Count</p>
+                      <p className="mt-0.5 text-sm text-slate-700">{previewContent.wordCount} words</p>
+                    </div>
+                    <div className="rounded-md bg-slate-50 p-3">
+                      <p className="text-[11px] font-bold uppercase text-slate-400">Reading Time</p>
+                      <p className="mt-0.5 text-sm text-slate-700">{previewContent.readingTime} min</p>
+                    </div>
                   </div>
-                  <ul className="space-y-1.5">
-                    {previewContent.headings.map((h, i) => (
-                      <li key={i} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                        <span className="text-slate-300 dark:text-slate-600">H2</span>
-                        {h}
-                      </li>
-                    ))}
-                  </ul>
                 </div>
-              )}
-            </div>
+
+                {previewContent.headings && previewContent.headings.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-bold uppercase text-slate-500">Headings</h4>
+                    <ul className="mt-3 space-y-2">
+                      {previewContent.headings.map((h, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
+                          <span className="mt-1 block h-1.5 w-1.5 shrink-0 rounded-full bg-fuchsia-500" />
+                          <span className="line-clamp-2">{h}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {previewContent.imagePrompts && previewContent.imagePrompts.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-bold uppercase text-slate-500">Image Prompts ({previewContent.imagePrompts.length})</h4>
+                    <div className="mt-3 space-y-3">
+                      {previewContent.imagePrompts.map((img, i) => (
+                        <div key={i} className="rounded-md border border-fuchsia-200 bg-fuchsia-50/50 p-3">
+                          <p className="text-xs font-bold text-fuchsia-700">{img.placement}</p>
+                          <p className="mt-1 text-xs text-slate-600 line-clamp-4">{img.prompt}</p>
+                          <button className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-fuchsia-600 hover:underline" onClick={() => navigator.clipboard.writeText(img.prompt)}>
+                            <Copy className="size-3" /> Copy
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </aside>
+
+            {/* Main preview canvas */}
+            <main className="flex flex-1 flex-col overflow-hidden bg-[#f0f0f1] p-4 md:p-6 lg:p-8">
+              <div className="flex flex-1 flex-col overflow-y-auto rounded-lg border border-slate-300 bg-white shadow-xl">
+                <div className="flex-1 px-6 py-10 md:px-12 md:py-14 lg:px-20 lg:py-16">
+                  <article className="mx-auto max-w-4xl">
+                    {/* Post title */}
+                    <h1 className="text-3xl font-extrabold leading-tight text-slate-900 md:text-4xl lg:text-5xl">
+                      {previewContent.title}
+                    </h1>
+
+                    {/* Meta description */}
+                    <p className="mt-4 text-lg text-slate-600 md:text-xl">
+                      {previewContent.metaDescription}
+                    </p>
+
+                    {/* Post meta row */}
+                    <div className="mt-6 flex flex-wrap items-center gap-3 border-b border-slate-100 pb-6 text-sm text-slate-500">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1">
+                        <Tag className="size-3.5" /> {previewContent.slug}
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-blue-700">
+                        <Type className="size-3.5" /> {previewContent.wordCount} words
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
+                        <Clock className="size-3.5" /> {previewContent.readingTime} min read
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-fuchsia-50 px-3 py-1 text-fuchsia-700">
+                        <CheckCircle2 className="size-3.5" /> SEO optimized
+                      </span>
+                    </div>
+
+                    {/* Body — WordPress post content */}
+                    <div
+                      className="prose prose-xl max-w-none pt-8 text-slate-800 prose-headings:font-extrabold prose-headings:text-slate-900 prose-h2:mb-6 prose-h2:mt-12 prose-h2:text-3xl prose-h2:leading-tight prose-h2:border-b-0 prose-h3:mb-4 prose-h3:mt-8 prose-h3:text-2xl prose-p:mb-6 prose-p:leading-[1.8] prose-a:font-semibold prose-a:text-fuchsia-600 prose-a:no-underline hover:prose-a:underline prose-table:my-8 prose-table:overflow-hidden prose-table:w-full prose-table:rounded-lg prose-table:border prose-table:border-slate-200 prose-th:bg-slate-100 prose-th:px-4 prose-th:py-3 prose-th:text-left prose-th:text-sm prose-th:font-bold prose-td:px-4 prose-td:py-3 prose-td:text-sm prose-td:border-t prose-td:border-slate-100 prose-li:my-2 prose-blockquote:my-8 prose-blockquote:border-l-4 prose-blockquote:border-fuchsia-500 prose-blockquote:bg-fuchsia-50/50 prose-blockquote:px-6 prose-blockquote:py-4 prose-blockquote:italic prose-strong:font-bold"
+                      dangerouslySetInnerHTML={{ __html: previewContent.body.replace(/<!--\s*IMAGE:\s*[^>]+-->/g, "") }}
+                    />
+                  </article>
+                </div>
+              </div>
+            </main>
           </div>
         </div>,
         document.body
