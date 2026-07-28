@@ -2,13 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
-import {
-  OpenAI, Claude, Anthropic, Gemini, DeepSeek, Grok, Qwen,
-  ZAI, ChatGLM, Meta, Mistral, Cohere, Microsoft, Yi, Dbrx,
-  Nova, Nvidia, Moonshot, Hunyuan, Baichuan, Spark, Stepfun,
-  Minimax, Perplexity, Ai21, Arcee, Upstage, InternLM, OpenChat,
-  Aya, Inflection, Phind,
-} from "@lobehub/icons";
+import { ModelIcon } from "@lobehub/icons";
 
 export interface ModelRecord {
   id: string;
@@ -18,67 +12,38 @@ export interface ModelRecord {
 const DEFAULT_MODEL = "glm-5.2";
 const STORAGE_KEY = "quasar_selected_model";
 
-type IconComponent = React.ComponentType<{ size?: number; [key: string]: any }> & {
-  Color?: React.ComponentType<{ size?: number }>;
-  Avatar?: React.ComponentType<any>;
-};
-
-interface ModelBrand {
-  Icon: IconComponent;
-  name: string;
-}
-
-function getModelBrand(modelId: string): ModelBrand {
+function getModelProviderName(modelId: string): string {
   const id = modelId.toLowerCase();
-  if (id.includes("gpt-4")) return { Icon: OpenAI as any, name: "OpenAI" };
-  if (id.includes("gpt-5")) return { Icon: OpenAI as any, name: "OpenAI" };
-  if (id.includes("gpt-3")) return { Icon: OpenAI as any, name: "OpenAI" };
-  if (id.includes("o1") || id.includes("o3") || id.includes("o4")) return { Icon: OpenAI as any, name: "OpenAI" };
-  if (id.includes("gpt") || id.includes("openai")) return { Icon: OpenAI as any, name: "OpenAI" };
-  if (id.includes("dalle")) return { Icon: OpenAI as any, name: "OpenAI" };
-  if (id.includes("claude")) return { Icon: Claude as any, name: "Anthropic" };
-  if (id.includes("anthropic")) return { Icon: Anthropic as any, name: "Anthropic" };
-  if (id.includes("gemini")) return { Icon: Gemini as any, name: "Google" };
-  if (id.includes("gemma")) return { Icon: Gemini as any, name: "Google" };
-  if (id.includes("deepseek")) return { Icon: DeepSeek as any, name: "DeepSeek" };
-  if (id.includes("grok")) return { Icon: Grok as any, name: "xAI" };
-  if (id.includes("qwen") || id.includes("qwq") || id.includes("qvq")) return { Icon: Qwen as any, name: "Alibaba" };
-  if (id.includes("glm-5") || id.includes("glm-4") || id.includes("glm5") || id.includes("glm4")) return { Icon: ZAI as any, name: "Zhipu AI" };
-  if (id.includes("glm")) return { Icon: ChatGLM as any, name: "Zhipu AI" };
-  if (id.includes("chatglm")) return { Icon: ChatGLM as any, name: "Zhipu AI" };
-  if (id.includes("llama") || id.includes("/l3")) return { Icon: Meta as any, name: "Meta" };
-  if (id.includes("mistral") || id.includes("mixtral") || id.includes("codestral")) return { Icon: Mistral as any, name: "Mistral" };
-  if (id.includes("command") || id.includes("cohere")) return { Icon: Cohere as any, name: "Cohere" };
-  if (id.includes("phi") || id.includes("wizardlm")) return { Icon: Microsoft as any, name: "Microsoft" };
-  if (id.includes("yi-") || id.includes("/yi-")) return { Icon: Yi as any, name: "01.AI" };
-  if (id.includes("dbrx")) return { Icon: Dbrx as any, name: "Databricks" };
-  if (id.includes("nova")) return { Icon: Nova as any, name: "Amazon" };
-  if (id.includes("nemotron") || id.includes("nvidia")) return { Icon: Nvidia as any, name: "NVIDIA" };
-  if (id.includes("kimi") || id.includes("moonshot")) return { Icon: Moonshot as any, name: "Moonshot" };
-  if (id.includes("hunyuan")) return { Icon: Hunyuan as any, name: "Tencent" };
-  if (id.includes("baichuan")) return { Icon: Baichuan as any, name: "Baichuan" };
-  if (id.includes("spark")) return { Icon: Spark as any, name: "iFlytek" };
-  if (id.includes("step")) return { Icon: Stepfun as any, name: "StepFun" };
-  if (id.includes("minimax") || id.includes("abab")) return { Icon: Minimax as any, name: "MiniMax" };
-  if (id.includes("pplx") || id.includes("sonar")) return { Icon: Perplexity as any, name: "Perplexity" };
-  if (id.includes("jamba") || id.includes("ai21")) return { Icon: Ai21 as any, name: "AI21" };
-  if (id.includes("solar")) return { Icon: Upstage as any, name: "Upstage" };
-  if (id.includes("internlm") || id.includes("internvl")) return { Icon: InternLM as any, name: "InternLM" };
-  if (id.includes("openchat")) return { Icon: OpenChat as any, name: "OpenChat" };
-  if (id.includes("aya")) return { Icon: Aya as any, name: "Cohere" };
-  if (id.includes("inflection")) return { Icon: Inflection as any, name: "Inflection" };
-  if (id.includes("phind")) return { Icon: Phind as any, name: "Phind" };
-  if (id.includes("arcee") || id.includes("trinity")) return { Icon: Arcee as any, name: "Arcee" };
-  return { Icon: OpenAI as any, name: "AI" };
-}
-
-function ModelIcon({ modelId, size = 20 }: { modelId: string; size?: number }) {
-  const { Icon } = getModelBrand(modelId);
-  try {
-    return <Icon size={size} />;
-  } catch {
-    return <span className="inline-flex items-center justify-center rounded-md bg-slate-400 text-white font-bold" style={{ width: size, height: size, fontSize: size * 0.5 }}>AI</span>;
-  }
+  if (id.includes("gpt") || id.includes("o1") || id.includes("o3") || id.includes("o4") || id.includes("openai") || id.includes("dalle")) return "OpenAI";
+  if (id.includes("claude") || id.includes("anthropic")) return "Anthropic";
+  if (id.includes("gemini") || id.includes("gemma")) return "Google";
+  if (id.includes("deepseek")) return "DeepSeek";
+  if (id.includes("grok")) return "xAI";
+  if (id.includes("qwen") || id.includes("qwq") || id.includes("qvq")) return "Alibaba";
+  if (id.includes("glm")) return "Zhipu AI";
+  if (id.includes("llama") || id.includes("/l3")) return "Meta";
+  if (id.includes("mistral") || id.includes("mixtral") || id.includes("codestral")) return "Mistral";
+  if (id.includes("command") || id.includes("cohere") || id.includes("aya")) return "Cohere";
+  if (id.includes("phi") || id.includes("wizardlm") || id.includes("microsoft")) return "Microsoft";
+  if (id.includes("yi-") || id.includes("/yi-")) return "01.AI";
+  if (id.includes("dbrx")) return "Databricks";
+  if (id.includes("nova")) return "Amazon";
+  if (id.includes("nemotron") || id.includes("nvidia")) return "NVIDIA";
+  if (id.includes("kimi") || id.includes("moonshot")) return "Moonshot";
+  if (id.includes("hunyuan")) return "Tencent";
+  if (id.includes("baichuan")) return "Baichuan";
+  if (id.includes("spark")) return "iFlytek";
+  if (id.includes("step")) return "StepFun";
+  if (id.includes("minimax") || id.includes("abab")) return "MiniMax";
+  if (id.includes("pplx") || id.includes("sonar")) return "Perplexity";
+  if (id.includes("jamba") || id.includes("ai21")) return "AI21";
+  if (id.includes("solar")) return "Upstage";
+  if (id.includes("internlm") || id.includes("internvl")) return "InternLM";
+  if (id.includes("openchat")) return "OpenChat";
+  if (id.includes("inflection")) return "Inflection";
+  if (id.includes("phind")) return "Phind";
+  if (id.includes("arcee") || id.includes("trinity")) return "Arcee";
+  return "AI";
 }
 
 interface ModelSelectorProps {
@@ -121,7 +86,7 @@ export function ModelSelector({ models, value, onChange, className = "", dark = 
             : "border-slate-300 bg-white text-slate-900 hover:border-fuchsia-500 dark:border-white/15 dark:bg-slate-800 dark:text-white"
         }`}
       >
-        <ModelIcon modelId={value} />
+        <ModelIcon model={value} size={20} type="avatar" shape="circle" />
         <span className="flex-1 truncate text-left">
           {selectedModel?.label || selectedModel?.id || value}
         </span>
@@ -156,10 +121,10 @@ export function ModelSelector({ models, value, onChange, className = "", dark = 
                   m.id === value ? "bg-blue-50 dark:bg-blue-900/30" : ""
                 }`}
               >
-                <ModelIcon modelId={m.id} size={22} />
+                <ModelIcon model={m.id} size={22} type="avatar" shape="circle" />
                 <div className="flex-1 truncate">
                   <div className="font-medium text-slate-900 dark:text-white">{m.label || m.id}</div>
-                  <div className="text-xs text-slate-400">{getModelBrand(m.id).name}</div>
+                  <div className="text-xs text-slate-400">{getModelProviderName(m.id)}</div>
                 </div>
                 {m.id === value && <Check className="size-4 text-blue-500" />}
               </button>
@@ -200,4 +165,4 @@ export function usePersistentModel(models: ModelRecord[]) {
   return { selectedModel, setModel };
 }
 
-export { DEFAULT_MODEL, ModelIcon, getModelBrand };
+export { DEFAULT_MODEL, getModelProviderName };
