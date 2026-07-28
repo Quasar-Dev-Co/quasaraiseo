@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, Suspense } from "react";
+import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
 import {
   Upload, FileArchive, Sparkles, Loader2, FileText, Download,
@@ -82,6 +83,10 @@ function PostCreateContent() {
   const [postCategories, setPostCategories] = useState("");
   const [postTags, setPostTags] = useState("");
   const [wpPosts, setWpPosts] = useState<WordPressPost[]>([]);
+
+  // Content preview modal
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewContent, setPreviewContent] = useState<GeneratedContent | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -450,34 +455,34 @@ function PostCreateContent() {
               </div>
             </article>
 
-            {/* Generated content preview */}
+            {/* Generated content summary */}
             {generatedContent && (
               <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
                 <header className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5 dark:border-white/5">
                   <div className="flex gap-2.75">
-                    <span className="grid size-9 place-items-center rounded-[12px] bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400"><Eye className="size-[18px]" /></span>
+                    <span className="grid size-9 place-items-center rounded-[12px] bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400"><CheckCircle2 className="size-[18px]" /></span>
                     <div>
-                      <h3 className="m-0 text-base text-slate-900 dark:text-white">Content Preview</h3>
-                      <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">AI-generated content ready to publish</p>
+                      <h3 className="m-0 text-base text-slate-900 dark:text-white">Generation Complete</h3>
+                      <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">AI-generated content ready to review</p>
                     </div>
                   </div>
                   <div className="flex gap-1.5">
                     <Button size="sm" variant="outline" onClick={handleCopyContent}><Copy className="size-3.5" /> Copy</Button>
+                    <Button size="sm" className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700" onClick={() => { setPreviewContent(generatedContent); setPreviewOpen(true); }}><Eye className="size-3.5" /> View Content</Button>
                   </div>
                 </header>
                 <div className="p-5">
                   <div className="space-y-4">
                     <div>
-                      <h2 className="text-xl font-bold text-slate-900 dark:text-white">{generatedContent.title}</h2>
+                      <h2 className="text-lg font-bold text-slate-900 dark:text-white">{generatedContent.title}</h2>
                       <p className="mt-1 text-sm text-slate-500">{generatedContent.metaDescription}</p>
                     </div>
-                    <div className="flex gap-4 text-xs text-slate-500">
+                    <div className="flex flex-wrap gap-4 text-xs text-slate-500">
                       <span className="flex items-center gap-1"><Type className="size-3.5" /> {generatedContent.wordCount} words</span>
                       <span className="flex items-center gap-1"><Clock className="size-3.5" /> {generatedContent.readingTime} min read</span>
-                      <span className="flex items-center gap-1"><Eye className="size-3.5" /> SEO-optimized</span>
+                      <span className="flex items-center gap-1"><Globe className="size-3.5" /> Slug: {generatedContent.slug}</span>
+                      <span className="flex items-center gap-1"><CheckCircle2 className="size-3.5" /> SEO-optimized</span>
                     </div>
-                    <Separator />
-                    <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: generatedContent.body }} />
                   </div>
                 </div>
               </article>
@@ -843,6 +848,37 @@ function PostCreateContent() {
           </aside>
         </div>
       </DashboardLayout>
+
+      {/* Full content preview modal */}
+      {previewOpen && previewContent && createPortal(
+        <div className="fixed inset-0 z-[100] flex flex-col bg-slate-950/90 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setPreviewOpen(false); }}>
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <header className="flex items-center justify-between gap-4 border-b border-slate-800/50 bg-slate-950 px-4 py-3 md:px-6 md:py-4">
+              <div className="min-w-0 flex-1">
+                <h3 className="truncate text-sm font-bold text-white md:text-base">{previewContent.title}</h3>
+                <p className="truncate text-xs text-slate-400">{previewContent.wordCount} words · {previewContent.readingTime} min read · {previewContent.slug}</p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button size="sm" variant="outline" className="border-slate-700 text-white hover:bg-slate-800 hover:text-white" onClick={() => navigator.clipboard.writeText(`${previewContent.title}\n\n${previewContent.metaDescription}\n\n${previewContent.body}`)}><Copy className="size-3.5" /> Copy</Button>
+                <Button size="sm" variant="outline" className="border-slate-700 text-white hover:bg-slate-800 hover:text-white" onClick={() => setPreviewOpen(false)}>Close</Button>
+              </div>
+            </header>
+            <div className="flex-1 overflow-y-auto p-4 md:p-8">
+              <article className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl md:p-10 dark:border-white/10 dark:bg-slate-900">
+                <h1 className="text-2xl font-extrabold leading-tight text-slate-900 md:text-4xl dark:text-white">{previewContent.title}</h1>
+                <p className="mt-3 text-base text-slate-600 md:text-lg dark:text-slate-300">{previewContent.metaDescription}</p>
+                <div className="mt-4 flex flex-wrap gap-3 border-b border-slate-100 pb-4 text-xs text-slate-500 dark:border-white/10">
+                  <span className="flex items-center gap-1"><Type className="size-3.5" /> {previewContent.wordCount} words</span>
+                  <span className="flex items-center gap-1"><Clock className="size-3.5" /> {previewContent.readingTime} min read</span>
+                  <span className="flex items-center gap-1"><Globe className="size-3.5" /> {previewContent.slug}</span>
+                </div>
+                <div className="prose prose-lg max-w-none pt-6 dark:prose-invert prose-headings:font-bold prose-h2:text-2xl prose-h3:text-xl prose-a:text-fuchsia-600 prose-a:no-underline hover:prose-a:underline" dangerouslySetInnerHTML={{ __html: previewContent.body }} />
+              </article>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </RequireAuth>
   );
 }
