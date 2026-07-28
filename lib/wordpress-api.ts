@@ -146,7 +146,7 @@ export const wordpressApi = {
 
   // ─── AI Models ───
   async listModels(): Promise<{ models: ModelRecord[] }> {
-    const res = await fetch(`${BACKEND_URL}/api/agent/models`, {
+    const res = await fetch(`${BACKEND_URL}/api/wordpress/models`, {
       headers: { ...authHeaders() },
     });
     if (!res.ok) return { models: [] };
