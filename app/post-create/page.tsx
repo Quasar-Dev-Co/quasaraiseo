@@ -29,6 +29,7 @@ import {
   type ModelRecord,
   type GenerationJob,
   type GeneratedContent,
+  type GeneratedImage,
 } from "@/lib/wordpress-api";
 import { ModelSelector, usePersistentModel } from "@/components/ModelSelector";
 
@@ -86,6 +87,12 @@ function PostCreateContent() {
   const [postCategories, setPostCategories] = useState("");
   const [postTags, setPostTags] = useState("");
   const [wpPosts, setWpPosts] = useState<WordPressPost[]>([]);
+
+  // Image generation
+  const [generatingImages, setGeneratingImages] = useState(false);
+  const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [imagesInserted, setImagesInserted] = useState(false);
 
   // Content preview modal
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -279,6 +286,9 @@ function PostCreateContent() {
     setGenerating(true);
     setGenError(null);
     setGeneratedContent(null);
+    setGeneratedImages([]);
+    setImageError(null);
+    setImagesInserted(false);
     setGenerationStep("Starting AI generation...");
 
     try {
@@ -297,12 +307,70 @@ function PostCreateContent() {
     }
   };
 
+  const insertImagesIntoBody = (body: string, images: GeneratedImage[]): string => {
+    let updatedBody = body;
+    for (const img of images) {
+      if (img.placement === "featured") continue;
+      const fullUrl = wordpressApi.imageUrl(img.url);
+      const imgTag = `<figure class="wp-block-image"><img src="${fullUrl}" alt="${img.placement}" class="wp-image-generated" /><figcaption>${img.placement.replace(/-/g, " ")}</figcaption></figure>`;
+
+      if (img.placement === "after-intro") {
+        const firstP = updatedBody.indexOf("</p>");
+        if (firstP !== -1) {
+          updatedBody = updatedBody.slice(0, firstP + 4) + "\n" + imgTag + updatedBody.slice(firstP + 4);
+        }
+      } else {
+        const sectionMatch = img.placement.match(/after-section-(\d+)/);
+        if (sectionMatch) {
+          const sectionNum = parseInt(sectionMatch[1], 10);
+          let h2Count = 0;
+          let insertPos = -1;
+          let searchStart = 0;
+          while (true) {
+            const h2Start = updatedBody.indexOf("<h2", searchStart);
+            if (h2Start === -1) break;
+            const h2End = updatedBody.indexOf("</h2>", h2Start);
+            if (h2End === -1) break;
+            h2Count++;
+            if (h2Count === sectionNum) {
+              insertPos = h2End + 5;
+              break;
+            }
+            searchStart = h2End + 5;
+          }
+          if (insertPos !== -1) {
+            updatedBody = updatedBody.slice(0, insertPos) + "\n" + imgTag + updatedBody.slice(insertPos);
+          }
+        }
+      }
+    }
+    return updatedBody;
+  };
+
+  const handleGenerateImages = async () => {
+    if (!generatedContent?.imagePrompts || generatedContent.imagePrompts.length === 0) return;
+    setGeneratingImages(true);
+    setImageError(null);
+    try {
+      const result = await wordpressApi.generateImages(generatedContent.imagePrompts);
+      setGeneratedImages(result.images);
+      const updatedBody = insertImagesIntoBody(generatedContent.body, result.images);
+      setGeneratedContent({ ...generatedContent, body: updatedBody });
+      setImagesInserted(true);
+    } catch (err) {
+      setImageError(err instanceof Error ? err.message : "Failed to generate images");
+    } finally {
+      setGeneratingImages(false);
+    }
+  };
+
   const handlePublish = async () => {
     if (!selectedSiteId || !generatedContent) return;
     setPublishing(true);
     setPublishError(null);
     setPublishSuccess(null);
     try {
+      const featuredImage = generatedImages.find((img) => img.placement === "featured");
       const result = await wordpressApi.publishPost(selectedSiteId, {
         title: generatedContent.title,
         content: generatedContent.body,
@@ -310,6 +378,7 @@ function PostCreateContent() {
         status: publishStatus,
         categories: postCategories ? postCategories.split(",").map((c) => c.trim()).filter(Boolean) : [],
         tags: postTags ? postTags.split(",").map((t) => t.trim()).filter(Boolean) : [],
+        featuredImage: featuredImage ? wordpressApi.imageUrl(featuredImage.url) : undefined,
       });
       setPublishSuccess(`Post published! View at: ${result.post.permalink}`);
       wordpressApi.getPosts(selectedSiteId).then(setWpPosts).catch(() => {});
@@ -645,6 +714,129 @@ function PostCreateContent() {
                       <span className="flex items-center gap-1"><CheckCircle2 className="size-3.5" /> SEO-optimized</span>
                     </div>
                   </div>
+                </div>
+              </article>
+            )}
+
+            {/* Image Generation Panel */}
+            {generatedContent && generatedContent.imagePrompts && generatedContent.imagePrompts.length > 0 && (
+              <article className="overflow-hidden rounded-3xl border border-blue-200 bg-white dark:border-blue-400/20 dark:bg-slate-900/50">
+                <header className="flex items-center justify-between gap-4 border-b border-blue-100 px-6 py-5 dark:border-blue-400/10">
+                  <div className="flex gap-2.75">
+                    <span className="grid size-9 place-items-center rounded-[12px] bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400"><ImageIcon className="size-[18px]" /></span>
+                    <div>
+                      <h3 className="m-0 text-base text-slate-900 dark:text-white">AI Image Generation</h3>
+                      <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                        {generatedImages.length > 0
+                          ? `${generatedImages.length} image${generatedImages.length > 1 ? "s" : ""} generated and inserted`
+                          : `${generatedContent.imagePrompts.length} image prompt${generatedContent.imagePrompts.length > 1 ? "s" : ""} ready to generate`}
+                      </p>
+                    </div>
+                  </div>
+                  {generatedImages.length === 0 && !generatingImages && (
+                    <Button
+                      size="sm"
+                      className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700"
+                      onClick={handleGenerateImages}
+                    >
+                      <ImageIcon className="size-3.5" /> Generate Images
+                    </Button>
+                  )}
+                </header>
+                <div className="p-5 space-y-4">
+                  {/* Image generation loading */}
+                  <AnimatePresence>
+                    {generatingImages && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        className="flex items-center gap-4 rounded-xl border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-400/20 dark:bg-blue-400/5"
+                      >
+                        <motion.div
+                          className="grid size-12 place-items-center rounded-xl bg-gradient-to-br from-blue-600 to-cyan-600 shadow-lg shadow-blue-500/30"
+                          animate={{ scale: [1, 1.08, 1] }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                        >
+                          <ImageIcon className="size-6 text-white" />
+                        </motion.div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Generating images with GPT Image 2...</h4>
+                            <span className="flex gap-1">
+                              {[0, 1, 2].map((i) => (
+                                <motion.span
+                                  key={i}
+                                  className="size-1.5 rounded-full bg-blue-500"
+                                  animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
+                                  transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+                                />
+                              ))}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            Creating {generatedContent.imagePrompts?.length || 0} images. This may take 30-60 seconds per image.
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Image error */}
+                  {imageError && (
+                    <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-400">
+                      <AlertCircle className="size-4 shrink-0" /> {imageError}
+                    </div>
+                  )}
+
+                  {/* Generated images gallery */}
+                  {generatedImages.length > 0 && (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {generatedImages.map((img, i) => (
+                        <motion.div
+                          key={img.filename}
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.4, delay: i * 0.1 }}
+                          className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-white/10"
+                        >
+                          <img
+                            src={wordpressApi.imageUrl(img.url)}
+                            alt={img.placement}
+                            className="aspect-video w-full object-cover"
+                          />
+                          <div className="p-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold uppercase tracking-wide text-blue-600 dark:text-blue-400">
+                                {img.placement.replace(/-/g, " ")}
+                              </span>
+                              <CheckCircle2 className="size-4 text-emerald-500" />
+                            </div>
+                            <p className="mt-1 text-[11px] text-slate-500 line-clamp-2">{img.prompt.slice(0, 100)}...</p>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Image prompts preview (before generation) */}
+                  {generatedImages.length === 0 && !generatingImages && (
+                    <div className="space-y-2">
+                      {generatedContent.imagePrompts.map((ip, i) => (
+                        <div key={i} className="rounded-lg border border-slate-200 bg-slate-50/60 p-3 dark:border-white/10 dark:bg-slate-800/30">
+                          <span className="text-xs font-bold uppercase tracking-wide text-blue-600 dark:text-blue-400">{ip.placement.replace(/-/g, " ")}</span>
+                          <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 line-clamp-2">{ip.prompt}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Success message */}
+                  {imagesInserted && (
+                    <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-400">
+                      <CheckCircle2 className="size-4 shrink-0" /> Images inserted into content. Review with "View Content" above.
+                    </div>
+                  )}
                 </div>
               </article>
             )}

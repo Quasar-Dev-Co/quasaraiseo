@@ -96,6 +96,13 @@ export interface ModelRecord {
   label?: string;
 }
 
+export interface GeneratedImage {
+  placement: string;
+  prompt: string;
+  url: string;
+  filename: string;
+}
+
 export type GenerationStatus = "idle" | "generating" | "completed" | "failed";
 
 export interface GenerationJob {
@@ -152,6 +159,25 @@ export const wordpressApi = {
     });
     if (!res.ok) return { models: [] };
     return res.json();
+  },
+
+  // ─── Image Generation ───
+  async generateImages(imagePrompts: Array<{ placement: string; prompt: string }>): Promise<{ images: GeneratedImage[] }> {
+    const res = await fetch(`${BACKEND_URL}/api/wordpress/generate-images`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ imagePrompts }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message ?? "Failed to generate images");
+    }
+    return res.json();
+  },
+
+  imageUrl(url: string): string {
+    if (url.startsWith("http")) return url;
+    return `${BACKEND_URL}${url}`;
   },
 
   // ─── WordPress Data Sync ───
