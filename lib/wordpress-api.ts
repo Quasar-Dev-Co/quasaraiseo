@@ -236,6 +236,33 @@ export const wordpressApi = {
     return res.json();
   },
 
+  async deleteGenerationJob(jobId: string): Promise<{ success: boolean }> {
+    const res = await fetch(`${BACKEND_URL}/api/wordpress/generation-jobs/${jobId}`, {
+      method: "DELETE",
+      headers: { ...authHeaders() },
+    });
+    if (!res.ok) throw new Error("Failed to delete job");
+    return res.json();
+  },
+
+  async deleteAllGenerationJobs(): Promise<{ success: boolean; count: number }> {
+    const res = await fetch(`${BACKEND_URL}/api/wordpress/generation-jobs/all`, {
+      method: "DELETE",
+      headers: { ...authHeaders() },
+    });
+    if (!res.ok) throw new Error("Failed to delete all jobs");
+    return res.json();
+  },
+
+  async deletePost(siteId: string, postId: string): Promise<{ success: boolean }> {
+    const res = await fetch(`${BACKEND_URL}/api/wordpress/sites/${siteId}/posts/${postId}`, {
+      method: "DELETE",
+      headers: { ...authHeaders() },
+    });
+    if (!res.ok) throw new Error("Failed to delete post");
+    return res.json();
+  },
+
   // ─── Legacy OpenAI generation ───
   async generateContent(params: {
     prompt: string;

@@ -395,6 +395,34 @@ function PostCreateContent() {
     navigator.clipboard.writeText(fullText);
   };
 
+  const handleDeleteJob = async (jobId: string) => {
+    try {
+      await wordpressApi.deleteGenerationJob(jobId);
+      setGenJobs((prev) => prev.filter((j) => j.id !== jobId));
+    } catch (e) {
+      console.error("Delete failed:", e);
+    }
+  };
+
+  const handleDeleteAllJobs = async () => {
+    try {
+      await wordpressApi.deleteAllGenerationJobs();
+      setGenJobs([]);
+    } catch (e) {
+      console.error("Delete all failed:", e);
+    }
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    if (!selectedSiteId) return;
+    try {
+      await wordpressApi.deletePost(selectedSiteId, postId);
+      setWpPosts((prev) => prev.filter((p) => p.id !== postId));
+    } catch (e) {
+      console.error("Delete post failed:", e);
+    }
+  };
+
   return (
     <RequireAuth>
       <DashboardLayout>
@@ -956,7 +984,16 @@ function PostCreateContent() {
                               <Badge className={status.color}>{status.label}</Badge>
                               {job.skill && <Badge variant="outline" className="text-[10px]"><Package className="size-2.5" /> {job.skill.name}</Badge>}
                             </div>
-                            <span className="text-xs text-slate-400">{formatDate(job.completedAt || job.createdAt)}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-slate-400">{formatDate(job.completedAt || job.createdAt)}</span>
+                              <button
+                                onClick={() => handleDeleteJob(job.id)}
+                                className="grid size-7 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-400/10 dark:hover:text-red-400"
+                                title="Delete"
+                              >
+                                <Trash2 className="size-3.5" />
+                              </button>
+                            </div>
                           </header>
                           <div className="p-5">
                             <p className="text-sm font-medium text-slate-700 dark:text-slate-300 line-clamp-1">{job.prompt}</p>
@@ -1007,7 +1044,13 @@ function PostCreateContent() {
                       <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">No generation history yet.</p>
                     </article>
                   ) : (
-                    genJobs.map((job) => {
+                    <>
+                      <div className="flex justify-end">
+                        <Button size="sm" variant="outline" onClick={handleDeleteAllJobs} className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-400/10">
+                          <Trash2 className="size-3.5" /> Clear All
+                        </Button>
+                      </div>
+                      {genJobs.map((job) => {
                       const status = STATUS_CONFIG[job.status] || STATUS_CONFIG.idle;
                       const StatusIcon = status.icon;
                       return (
@@ -1018,9 +1061,17 @@ function PostCreateContent() {
                             <p className="text-xs text-slate-400">{formatDate(job.createdAt)}</p>
                           </div>
                           <Badge className={`shrink-0 ${status.color}`}>{status.label}</Badge>
+                          <button
+                            onClick={() => handleDeleteJob(job.id)}
+                            className="grid size-7 shrink-0 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-400/10 dark:hover:text-red-400"
+                            title="Delete"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
                         </div>
                       );
-                    })
+                      })}
+                    </>
                   )}
                 </div>
               </TabsContent>
@@ -1049,6 +1100,13 @@ function PostCreateContent() {
                             <ArrowRight className="size-4" />
                           </a>
                         )}
+                        <button
+                          onClick={() => handleDeletePost(post.id)}
+                          className="grid size-7 shrink-0 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-400/10 dark:hover:text-red-400"
+                          title="Delete"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
                       </div>
                     ))
                   )}
