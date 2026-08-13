@@ -490,8 +490,8 @@ function PostCreateContent() {
                   <Button
                     size="lg"
                     onClick={handleGenerate}
-                    disabled={!prompt.trim() || generating}
-                    className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700"
+                    disabled={!prompt.trim() || generating || !selectedSkillId}
+                    className="bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white hover:from-fuchsia-700 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {generating ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
                     {generating ? "Generating..." : "Generate Post"}
