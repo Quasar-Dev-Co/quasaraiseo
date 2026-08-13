@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload, FileArchive, Sparkles, Loader2, FileText, Download,
   Trash2, Zap, CheckCircle2, XCircle, Clock, Package, Brain,
@@ -498,15 +499,114 @@ function PostCreateContent() {
                   </Button>
                 </div>
 
-                {/* Generation progress */}
-                {generating && (
-                  <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-4 dark:border-blue-400/20 dark:bg-blue-400/5">
-                    <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
-                      <Sparkles className="size-4 text-fuchsia-500 animate-pulse" />
-                      {generationStep}
-                    </div>
-                  </div>
-                )}
+                {/* Generation progress — premium animated loader */}
+                <AnimatePresence>
+                  {generating && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 12, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                      className="relative overflow-hidden rounded-2xl border border-fuchsia-200/60 bg-gradient-to-br from-fuchsia-50/80 via-purple-50/40 to-blue-50/30 p-6 dark:border-fuchsia-400/20 dark:from-fuchsia-400/5 dark:via-purple-400/5 dark:to-blue-400/5"
+                    >
+                      {/* Animated shimmer bar at top */}
+                      <motion.div
+                        className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-fuchsia-500 via-purple-500 to-blue-500"
+                        initial={{ scaleX: 0, originX: 0 }}
+                        animate={{ scaleX: [0, 0.3, 0.6, 0.85, 1] }}
+                        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                      />
+
+                      <div className="flex items-start gap-5">
+                        {/* Animated AI brain icon with pulsing rings */}
+                        <div className="relative grid size-16 shrink-0 place-items-center">
+                          <motion.div
+                            className="absolute inset-0 rounded-2xl bg-fuchsia-500/20"
+                            animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
+                          />
+                          <motion.div
+                            className="absolute inset-0 rounded-2xl bg-purple-500/20"
+                            animate={{ scale: [1, 1.5, 1], opacity: [0.4, 0, 0.4] }}
+                            transition={{ duration: 2.5, repeat: Infinity, ease: "easeOut", delay: 0.3 }}
+                          />
+                          <motion.div
+                            className="relative grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-fuchsia-600 to-purple-600 shadow-lg shadow-fuchsia-500/30"
+                            animate={{ rotate: [0, 5, -5, 0] }}
+                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                          >
+                            <Brain className="size-7 text-white" />
+                          </motion.div>
+                        </div>
+
+                        {/* Step text + animated dots */}
+                        <div className="flex-1 pt-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                              {generationStep}
+                            </h4>
+                            <span className="flex gap-1">
+                              {[0, 1, 2].map((i) => (
+                                <motion.span
+                                  key={i}
+                                  className="size-1.5 rounded-full bg-fuchsia-500"
+                                  animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
+                                  transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+                                />
+                              ))}
+                            </span>
+                          </div>
+
+                          {/* Progress steps timeline */}
+                          <div className="mt-4 flex items-center gap-2">
+                            {[
+                              { label: "Sending", icon: Send },
+                              { label: "Processing", icon: Brain },
+                              { label: "Writing", icon: Sparkles },
+                              { label: "Finalizing", icon: CheckCircle2 },
+                            ].map((step, i) => {
+                              const stepIndex = generationStep.includes("Sending") ? 0
+                                : generationStep.includes("processing") ? 1
+                                : generationStep.includes("Content ready") ? 3
+                                : 2;
+                              const isActive = i === stepIndex;
+                              const isDone = i < stepIndex;
+                              const Icon = step.icon;
+                              return (
+                                <div key={step.label} className="flex items-center gap-2">
+                                  <motion.div
+                                    className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${
+                                      isActive
+                                        ? "bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-300"
+                                        : isDone
+                                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300"
+                                        : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
+                                    }`}
+                                    animate={isActive ? { scale: [1, 1.05, 1] } : { scale: 1 }}
+                                    transition={{ duration: 1.5, repeat: isActive ? Infinity : 0 }}
+                                  >
+                                    <Icon className={`size-3.5 ${isActive ? "animate-pulse" : ""}`} />
+                                    {step.label}
+                                  </motion.div>
+                                  {i < 3 && (
+                                    <motion.div
+                                      className="h-px w-4 bg-slate-200 dark:bg-slate-700"
+                                      animate={{ opacity: isDone ? 1 : 0.3 }}
+                                    />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                            This may take 1-3 minutes. The AI is crafting high-quality, SEO-optimized content for you.
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {genError && (
                   <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-400">
