@@ -973,11 +973,18 @@ function PostCreateContent() {
                       <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">No results yet. Generate a post to see AI output here.</p>
                     </article>
                   ) : (
-                    completedJobs.map((job) => {
+                    <AnimatePresence mode="popLayout">
+                    {completedJobs.map((job) => {
                       const status = STATUS_CONFIG[job.status] || STATUS_CONFIG.completed;
                       const StatusIcon = status.icon;
                       return (
-                        <article key={job.id} className="rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
+                        <motion.article
+                          key={job.id}
+                          layout
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                          className="rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
                           <header className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4 dark:border-white/5">
                             <div className="flex items-center gap-2.5">
                               <StatusIcon className={`size-4 ${job.status === "completed" ? "text-emerald-600" : "text-red-500"}`} />
@@ -1028,9 +1035,10 @@ function PostCreateContent() {
                               </div>
                             )}
                           </div>
-                        </article>
+                        </motion.article>
                       );
-                    })
+                    })}
+                    </AnimatePresence>
                   )}
                 </div>
               </TabsContent>
@@ -1050,11 +1058,18 @@ function PostCreateContent() {
                           <Trash2 className="size-3.5" /> Clear All
                         </Button>
                       </div>
+                      <AnimatePresence mode="popLayout">
                       {genJobs.map((job) => {
                       const status = STATUS_CONFIG[job.status] || STATUS_CONFIG.idle;
                       const StatusIcon = status.icon;
                       return (
-                        <div key={job.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-slate-900/50">
+                        <motion.div
+                          key={job.id}
+                          layout
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 60, transition: { duration: 0.25 } }}
+                          className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-slate-900/50">
                           <StatusIcon className={`size-4 shrink-0 ${job.status === "generating" ? "animate-spin text-blue-500" : job.status === "completed" ? "text-emerald-500" : job.status === "failed" ? "text-red-500" : "text-amber-500"}`} />
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-slate-700 dark:text-slate-300">{job.prompt}</p>
@@ -1068,9 +1083,10 @@ function PostCreateContent() {
                           >
                             <Trash2 className="size-3.5" />
                           </button>
-                        </div>
+                        </motion.div>
                       );
                       })}
+                      </AnimatePresence>
                     </>
                   )}
                 </div>
@@ -1085,8 +1101,15 @@ function PostCreateContent() {
                       <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">No posts published yet.</p>
                     </article>
                   ) : (
-                    wpPosts.map((post) => (
-                      <div key={post.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-slate-900/50">
+                    <AnimatePresence mode="popLayout">
+                    {wpPosts.map((post) => (
+                      <motion.div
+                        key={post.id}
+                        layout
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 60, transition: { duration: 0.25 } }}
+                        className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-slate-900/50">
                         <Newspaper className="size-4 shrink-0 text-slate-400" />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium text-slate-700 dark:text-slate-300">{post.title}</p>
@@ -1107,8 +1130,9 @@ function PostCreateContent() {
                         >
                           <Trash2 className="size-3.5" />
                         </button>
-                      </div>
-                    ))
+                      </motion.div>
+                    ))}
+                    </AnimatePresence>
                   )}
                 </div>
               </TabsContent>
