@@ -158,6 +158,46 @@ function PostCreateContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const insertImagesIntoBody = (body: string, images: GeneratedImage[]): string => {
+    let updatedBody = body;
+    for (const img of images) {
+      if (img.placement === "featured") continue;
+      const fullUrl = wordpressApi.imageUrl(img.url);
+      const imgTag = `<figure class="wp-block-image"><img src="${fullUrl}" alt="${img.placement}" class="wp-image-generated" /><figcaption>${img.placement.replace(/-/g, " ")}</figcaption></figure>`;
+
+      if (img.placement === "after-intro") {
+        const firstP = updatedBody.indexOf("</p>");
+        if (firstP !== -1) {
+          updatedBody = updatedBody.slice(0, firstP + 4) + "\n" + imgTag + updatedBody.slice(firstP + 4);
+        }
+      } else {
+        const sectionMatch = img.placement.match(/after-section-(\d+)/);
+        if (sectionMatch) {
+          const sectionNum = parseInt(sectionMatch[1], 10);
+          let h2Count = 0;
+          let insertPos = -1;
+          let searchStart = 0;
+          while (true) {
+            const h2Start = updatedBody.indexOf("<h2", searchStart);
+            if (h2Start === -1) break;
+            const h2End = updatedBody.indexOf("</h2>", h2Start);
+            if (h2End === -1) break;
+            h2Count++;
+            if (h2Count === sectionNum) {
+              insertPos = h2End + 5;
+              break;
+            }
+            searchStart = h2End + 5;
+          }
+          if (insertPos !== -1) {
+            updatedBody = updatedBody.slice(0, insertPos) + "\n" + imgTag + updatedBody.slice(insertPos);
+          }
+        }
+      }
+    }
+    return updatedBody;
+  };
+
   const loadData = useCallback(async () => {
     try {
       const [skillsRes, sitesRes, jobsRes] = await Promise.all([
@@ -215,6 +255,24 @@ function PostCreateContent() {
               setGeneratedContent(res.job.result);
               setGenerating(false);
               setGenerationStep("Content ready!");
+              if (res.job.result.imagePrompts && res.job.result.imagePrompts.length > 0) {
+                setGenerationStep("Generating images with AI...");
+                setGeneratingImages(true);
+                try {
+                  const imgResult = await wordpressApi.generateImages(res.job.result.imagePrompts);
+                  setGeneratedImages(imgResult.images);
+                  const updatedBody = insertImagesIntoBody(res.job.result.body, imgResult.images);
+                  const updatedContent = { ...res.job.result, body: updatedBody };
+                  setGeneratedContent(updatedContent);
+                  setImagesInserted(true);
+                  setGenerationStep("Content & images ready!");
+                } catch (err) {
+                  setImageError(err instanceof Error ? err.message : "Failed to generate images");
+                  setGenerationStep("Content ready (image generation failed)");
+                } finally {
+                  setGeneratingImages(false);
+                }
+              }
             } else if (res.job.status === "failed") {
               setGenError(res.job.errorMessage || "Generation failed");
               setGenerating(false);
@@ -305,46 +363,6 @@ function PostCreateContent() {
       setGenError(err instanceof Error ? err.message : "Failed to start generation");
       setGenerating(false);
     }
-  };
-
-  const insertImagesIntoBody = (body: string, images: GeneratedImage[]): string => {
-    let updatedBody = body;
-    for (const img of images) {
-      if (img.placement === "featured") continue;
-      const fullUrl = wordpressApi.imageUrl(img.url);
-      const imgTag = `<figure class="wp-block-image"><img src="${fullUrl}" alt="${img.placement}" class="wp-image-generated" /><figcaption>${img.placement.replace(/-/g, " ")}</figcaption></figure>`;
-
-      if (img.placement === "after-intro") {
-        const firstP = updatedBody.indexOf("</p>");
-        if (firstP !== -1) {
-          updatedBody = updatedBody.slice(0, firstP + 4) + "\n" + imgTag + updatedBody.slice(firstP + 4);
-        }
-      } else {
-        const sectionMatch = img.placement.match(/after-section-(\d+)/);
-        if (sectionMatch) {
-          const sectionNum = parseInt(sectionMatch[1], 10);
-          let h2Count = 0;
-          let insertPos = -1;
-          let searchStart = 0;
-          while (true) {
-            const h2Start = updatedBody.indexOf("<h2", searchStart);
-            if (h2Start === -1) break;
-            const h2End = updatedBody.indexOf("</h2>", h2Start);
-            if (h2End === -1) break;
-            h2Count++;
-            if (h2Count === sectionNum) {
-              insertPos = h2End + 5;
-              break;
-            }
-            searchStart = h2End + 5;
-          }
-          if (insertPos !== -1) {
-            updatedBody = updatedBody.slice(0, insertPos) + "\n" + imgTag + updatedBody.slice(insertPos);
-          }
-        }
-      }
-    }
-    return updatedBody;
   };
 
   const handleGenerateImages = async () => {
@@ -598,17 +616,17 @@ function PostCreateContent() {
 
                 {/* Generation progress — premium animated loader */}
                 <AnimatePresence>
-                  {generating && (
+                  {(generating || generatingImages) && (
                     <motion.div
                       initial={{ opacity: 0, y: 12, scale: 0.98 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -8, scale: 0.98 }}
                       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                      className="relative overflow-hidden rounded-2xl border border-fuchsia-200/60 bg-gradient-to-br from-fuchsia-50/80 via-purple-50/40 to-blue-50/30 p-6 dark:border-fuchsia-400/20 dark:from-fuchsia-400/5 dark:via-purple-400/5 dark:to-blue-400/5"
+                      className={`relative overflow-hidden rounded-2xl border p-6 ${generatingImages ? "border-blue-200/60 bg-gradient-to-br from-blue-50/80 via-cyan-50/40 to-teal-50/30 dark:border-blue-400/20 dark:from-blue-400/5 dark:via-cyan-400/5 dark:to-teal-400/5" : "border-fuchsia-200/60 bg-gradient-to-br from-fuchsia-50/80 via-purple-50/40 to-blue-50/30 dark:border-fuchsia-400/20 dark:from-fuchsia-400/5 dark:via-purple-400/5 dark:to-blue-400/5"}`}
                     >
                       {/* Animated shimmer bar at top */}
                       <motion.div
-                        className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-fuchsia-500 via-purple-500 to-blue-500"
+                        className={`absolute inset-x-0 top-0 h-1 ${generatingImages ? "bg-gradient-to-r from-blue-500 via-cyan-500 to-teal-500" : "bg-gradient-to-r from-fuchsia-500 via-purple-500 to-blue-500"}`}
                         initial={{ scaleX: 0, originX: 0 }}
                         animate={{ scaleX: [0, 0.3, 0.6, 0.85, 1] }}
                         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
@@ -618,21 +636,21 @@ function PostCreateContent() {
                         {/* Animated AI brain icon with pulsing rings */}
                         <div className="relative grid size-16 shrink-0 place-items-center">
                           <motion.div
-                            className="absolute inset-0 rounded-2xl bg-fuchsia-500/20"
+                            className={`absolute inset-0 rounded-2xl ${generatingImages ? "bg-blue-500/20" : "bg-fuchsia-500/20"}`}
                             animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
                             transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
                           />
                           <motion.div
-                            className="absolute inset-0 rounded-2xl bg-purple-500/20"
+                            className={`absolute inset-0 rounded-2xl ${generatingImages ? "bg-cyan-500/20" : "bg-purple-500/20"}`}
                             animate={{ scale: [1, 1.5, 1], opacity: [0.4, 0, 0.4] }}
                             transition={{ duration: 2.5, repeat: Infinity, ease: "easeOut", delay: 0.3 }}
                           />
                           <motion.div
-                            className="relative grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-fuchsia-600 to-purple-600 shadow-lg shadow-fuchsia-500/30"
+                            className={`relative grid size-14 place-items-center rounded-2xl shadow-lg ${generatingImages ? "bg-gradient-to-br from-blue-600 to-cyan-600 shadow-blue-500/30" : "bg-gradient-to-br from-fuchsia-600 to-purple-600 shadow-fuchsia-500/30"}`}
                             animate={{ rotate: [0, 5, -5, 0] }}
                             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                           >
-                            <Brain className="size-7 text-white" />
+                            {generatingImages ? <ImageIcon className="size-7 text-white" /> : <Brain className="size-7 text-white" />}
                           </motion.div>
                         </div>
 
@@ -646,7 +664,7 @@ function PostCreateContent() {
                               {[0, 1, 2].map((i) => (
                                 <motion.span
                                   key={i}
-                                  className="size-1.5 rounded-full bg-fuchsia-500"
+                                  className={`size-1.5 rounded-full ${generatingImages ? "bg-blue-500" : "bg-fuchsia-500"}`}
                                   animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
                                   transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
                                 />
@@ -655,16 +673,18 @@ function PostCreateContent() {
                           </div>
 
                           {/* Progress steps timeline */}
-                          <div className="mt-4 flex items-center gap-2">
+                          <div className="mt-4 flex flex-wrap items-center gap-2">
                             {[
                               { label: "Sending", icon: Send },
                               { label: "Processing", icon: Brain },
                               { label: "Writing", icon: Sparkles },
-                              { label: "Finalizing", icon: CheckCircle2 },
+                              { label: "Images", icon: ImageIcon },
+                              { label: "Done", icon: CheckCircle2 },
                             ].map((step, i) => {
                               const stepIndex = generationStep.includes("Sending") ? 0
                                 : generationStep.includes("processing") ? 1
-                                : generationStep.includes("Content ready") ? 3
+                                : generationStep.includes("Generating images") ? 3
+                                : generationStep.includes("ready") ? 4
                                 : 2;
                               const isActive = i === stepIndex;
                               const isDone = i < stepIndex;
@@ -674,7 +694,9 @@ function PostCreateContent() {
                                   <motion.div
                                     className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${
                                       isActive
-                                        ? "bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-300"
+                                        ? generatingImages && i === 3
+                                          ? "bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300"
+                                          : "bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-300"
                                         : isDone
                                         ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300"
                                         : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
@@ -685,7 +707,7 @@ function PostCreateContent() {
                                     <Icon className={`size-3.5 ${isActive ? "animate-pulse" : ""}`} />
                                     {step.label}
                                   </motion.div>
-                                  {i < 3 && (
+                                  {i < 4 && (
                                     <motion.div
                                       className="h-px w-4 bg-slate-200 dark:bg-slate-700"
                                       animate={{ opacity: isDone ? 1 : 0.3 }}
@@ -697,7 +719,9 @@ function PostCreateContent() {
                           </div>
 
                           <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-                            This may take 1-3 minutes. The AI is crafting high-quality, SEO-optimized content for you.
+                            {generatingImages
+                              ? "Generating AI images with GPT Image 2. This may take 30-60 seconds per image."
+                              : "This may take 1-3 minutes. The AI is crafting high-quality, SEO-optimized content for you."}
                           </p>
                         </div>
                       </div>
@@ -746,123 +770,49 @@ function PostCreateContent() {
               </article>
             )}
 
-            {/* Image Generation Panel */}
-            {generatedContent && generatedContent.imagePrompts && generatedContent.imagePrompts.length > 0 && (
+            {/* Generated images gallery (auto-generated, shown after images are ready) */}
+            {generatedImages.length > 0 && (
               <article className="overflow-hidden rounded-3xl border border-blue-200 bg-white dark:border-blue-400/20 dark:bg-slate-900/50">
                 <header className="flex items-center justify-between gap-4 border-b border-blue-100 px-6 py-5 dark:border-blue-400/10">
                   <div className="flex gap-2.75">
                     <span className="grid size-9 place-items-center rounded-[12px] bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400"><ImageIcon className="size-[18px]" /></span>
                     <div>
-                      <h3 className="m-0 text-base text-slate-900 dark:text-white">AI Image Generation</h3>
-                      <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                        {generatedImages.length > 0
-                          ? `${generatedImages.length} image${generatedImages.length > 1 ? "s" : ""} generated and inserted`
-                          : `${generatedContent.imagePrompts.length} image prompt${generatedContent.imagePrompts.length > 1 ? "s" : ""} ready to generate`}
-                      </p>
+                      <h3 className="m-0 text-base text-slate-900 dark:text-white">AI Generated Images</h3>
+                      <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{generatedImages.length} image{generatedImages.length > 1 ? "s" : ""} auto-generated and inserted into content</p>
                     </div>
                   </div>
-                  {generatedImages.length === 0 && !generatingImages && (
-                    <Button
-                      size="sm"
-                      className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700"
-                      onClick={handleGenerateImages}
-                    >
-                      <ImageIcon className="size-3.5" /> Generate Images
-                    </Button>
-                  )}
+                  <CheckCircle2 className="size-5 text-emerald-500" />
                 </header>
-                <div className="p-5 space-y-4">
-                  {/* Image generation loading */}
-                  <AnimatePresence>
-                    {generatingImages && (
+                <div className="p-5">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {generatedImages.map((img, i) => (
                       <motion.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        className="flex items-center gap-4 rounded-xl border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-400/20 dark:bg-blue-400/5"
+                        key={img.filename}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.4, delay: i * 0.1 }}
+                        className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-white/10"
                       >
-                        <motion.div
-                          className="grid size-12 place-items-center rounded-xl bg-gradient-to-br from-blue-600 to-cyan-600 shadow-lg shadow-blue-500/30"
-                          animate={{ scale: [1, 1.08, 1] }}
-                          transition={{ duration: 1.5, repeat: Infinity }}
-                        >
-                          <ImageIcon className="size-6 text-white" />
-                        </motion.div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Generating images with GPT Image 2...</h4>
-                            <span className="flex gap-1">
-                              {[0, 1, 2].map((i) => (
-                                <motion.span
-                                  key={i}
-                                  className="size-1.5 rounded-full bg-blue-500"
-                                  animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
-                                  transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
-                                />
-                              ))}
+                        <img
+                          src={wordpressApi.imageUrl(img.url)}
+                          alt={img.placement}
+                          className="aspect-video w-full object-cover"
+                        />
+                        <div className="p-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold uppercase tracking-wide text-blue-600 dark:text-blue-400">
+                              {img.placement.replace(/-/g, " ")}
                             </span>
+                            <CheckCircle2 className="size-4 text-emerald-500" />
                           </div>
-                          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                            Creating {generatedContent.imagePrompts?.length || 0} images. This may take 30-60 seconds per image.
-                          </p>
+                          <p className="mt-1 text-[11px] text-slate-500 line-clamp-2">{img.prompt.slice(0, 100)}...</p>
                         </div>
                       </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* Image error */}
+                    ))}
+                  </div>
                   {imageError && (
-                    <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-400">
+                    <div className="mt-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-400">
                       <AlertCircle className="size-4 shrink-0" /> {imageError}
-                    </div>
-                  )}
-
-                  {/* Generated images gallery */}
-                  {generatedImages.length > 0 && (
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      {generatedImages.map((img, i) => (
-                        <motion.div
-                          key={img.filename}
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 0.4, delay: i * 0.1 }}
-                          className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-white/10"
-                        >
-                          <img
-                            src={wordpressApi.imageUrl(img.url)}
-                            alt={img.placement}
-                            className="aspect-video w-full object-cover"
-                          />
-                          <div className="p-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold uppercase tracking-wide text-blue-600 dark:text-blue-400">
-                                {img.placement.replace(/-/g, " ")}
-                              </span>
-                              <CheckCircle2 className="size-4 text-emerald-500" />
-                            </div>
-                            <p className="mt-1 text-[11px] text-slate-500 line-clamp-2">{img.prompt.slice(0, 100)}...</p>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Image prompts preview (before generation) */}
-                  {generatedImages.length === 0 && !generatingImages && (
-                    <div className="space-y-2">
-                      {generatedContent.imagePrompts.map((ip, i) => (
-                        <div key={i} className="rounded-lg border border-slate-200 bg-slate-50/60 p-3 dark:border-white/10 dark:bg-slate-800/30">
-                          <span className="text-xs font-bold uppercase tracking-wide text-blue-600 dark:text-blue-400">{ip.placement.replace(/-/g, " ")}</span>
-                          <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 line-clamp-2">{ip.prompt}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Success message */}
-                  {imagesInserted && (
-                    <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-400">
-                      <CheckCircle2 className="size-4 shrink-0" /> Images inserted into content. Review with "View Content" above.
                     </div>
                   )}
                 </div>
