@@ -266,6 +266,8 @@ function PostCreateContent() {
                   setGeneratedContent(updatedContent);
                   setImagesInserted(true);
                   setGenerationStep("Content & images ready!");
+                  await wordpressApi.updateJobResult(res.job.id, updatedContent);
+                  setGenJobs((prev) => prev.map((j) => (j.id === res.job.id ? { ...j, result: updatedContent } : j)));
                 } catch (err) {
                   setImageError(err instanceof Error ? err.message : "Failed to generate images");
                   setGenerationStep("Content ready (image generation failed)");

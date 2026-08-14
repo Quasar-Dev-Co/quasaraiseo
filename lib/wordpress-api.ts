@@ -245,6 +245,16 @@ export const wordpressApi = {
     return res.json();
   },
 
+  async updateJobResult(jobId: string, result: GeneratedContent): Promise<{ success: boolean }> {
+    const res = await fetch(`${BACKEND_URL}/api/wordpress/generation-jobs/${jobId}/result`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ result }),
+    });
+    if (!res.ok) throw new Error("Failed to update job result");
+    return res.json();
+  },
+
   async deleteAllGenerationJobs(): Promise<{ success: boolean; count: number }> {
     const res = await fetch(`${BACKEND_URL}/api/wordpress/generation-jobs/all`, {
       method: "DELETE",
