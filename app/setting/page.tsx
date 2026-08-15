@@ -7,6 +7,7 @@ import {
   Globe2, BarChart3, FileSpreadsheet, Smartphone, Bell,
   Shield, Mail, Download, RefreshCw, ExternalLink, Plug, Zap,
   Monitor, Tablet, KeyRound, Clock, MapPin, Trash2, LogOut, AlertCircle,
+  Building2, Plus, Pencil, Star, X, Link2, Phone, MapPin as MapPinIcon,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { googleApi, type GoogleStatus, type DeviceInfo } from "@/lib/google-api";
+import { brandingApi, type Branding, type BrandingInput } from "@/lib/branding-api";
 
 const GIcon = ({ c }: { c?: string }) => (
   <svg className={c} viewBox="0 0 24 24">
@@ -46,6 +48,27 @@ function SettingsInner() {
   const [twoFAOn, setTwoFAOn] = useState(false);
   const [devices, setDevices] = useState<DeviceInfo[]>([]);
 
+  // Branding state
+  const [brandings, setBrandings] = useState<Branding[]>([]);
+  const [brandingLoading, setBrandingLoading] = useState(false);
+  const [brandingSaving, setBrandingSaving] = useState(false);
+  const [showBrandingForm, setShowBrandingForm] = useState(false);
+  const [editingBranding, setEditingBranding] = useState<Branding | null>(null);
+  const [brandingForm, setBrandingForm] = useState<BrandingInput>({
+    companyName: "",
+    description: "",
+    website: "",
+    defaultColor: "#d946ef",
+    logoUrl: "",
+    industry: "",
+    tagline: "",
+    email: "",
+    phone: "",
+    address: "",
+    socialLinks: {},
+    isDefault: false,
+  });
+
   const fetchStatus = useCallback(async () => {
     try {
       const [s, devs] = await Promise.all([
@@ -68,6 +91,98 @@ function SettingsInner() {
   useEffect(() => {
     fetchStatus();
   }, [fetchStatus]);
+
+  // Branding handlers
+  const fetchBrandings = useCallback(async () => {
+    setBrandingLoading(true);
+    try {
+      const list = await brandingApi.getAll();
+      setBrandings(list);
+    } catch {
+      // ignore
+    } finally {
+      setBrandingLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchBrandings();
+  }, [fetchBrandings]);
+
+  const resetBrandingForm = () => {
+    setBrandingForm({
+      companyName: "",
+      description: "",
+      website: "",
+      defaultColor: "#d946ef",
+      logoUrl: "",
+      industry: "",
+      tagline: "",
+      email: "",
+      phone: "",
+      address: "",
+      socialLinks: {},
+      isDefault: false,
+    });
+    setEditingBranding(null);
+    setShowBrandingForm(false);
+  };
+
+  const handleEditBranding = (b: Branding) => {
+    setEditingBranding(b);
+    setBrandingForm({
+      companyName: b.companyName,
+      description: b.description,
+      website: b.website,
+      defaultColor: b.defaultColor,
+      logoUrl: b.logoUrl ?? "",
+      industry: b.industry,
+      tagline: b.tagline,
+      email: b.email,
+      phone: b.phone,
+      address: b.address,
+      socialLinks: b.socialLinks,
+      isDefault: b.isDefault,
+    });
+    setShowBrandingForm(true);
+  };
+
+  const handleSaveBranding = async () => {
+    if (!brandingForm.companyName.trim()) return;
+    setBrandingSaving(true);
+    setError(null);
+    try {
+      if (editingBranding) {
+        await brandingApi.update(editingBranding.id, brandingForm);
+      } else {
+        await brandingApi.create(brandingForm);
+      }
+      await fetchBrandings();
+      resetBrandingForm();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save branding");
+    } finally {
+      setBrandingSaving(false);
+    }
+  };
+
+  const handleDeleteBranding = async (id: string) => {
+    try {
+      await brandingApi.delete(id);
+      await fetchBrandings();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to delete branding");
+    }
+  };
+
+  const handleSetDefault = async (b: Branding) => {
+    try {
+      await brandingApi.update(b.id, { isDefault: true });
+      await fetchBrandings();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to set default branding");
+    }
+  };
 
   useEffect(() => {
     const googleParam = searchParams.get("google");
@@ -196,6 +311,7 @@ function SettingsInner() {
             <TabsTrigger value="notifications" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Bell className="size-4" /> Notifications</TabsTrigger>
             <TabsTrigger value="security" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Shield className="size-4" /> Security</TabsTrigger>
             <TabsTrigger value="workspace" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Settings className="size-4" /> Workspace</TabsTrigger>
+            <TabsTrigger value="branding" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Building2 className="size-4" /> Branding</TabsTrigger>
           </TabsList>
 
           {/* GOOGLE TAB */}
@@ -463,6 +579,273 @@ function SettingsInner() {
                   </div>
                 </div>
               </article>
+            </div>
+          </TabsContent>
+
+          {/* BRANDING TAB */}
+          <TabsContent value="branding">
+            <div className="space-y-5">
+              {/* Header with Add button */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">Brand Profiles</h3>
+                  <p className="mt-1 text-[13px] text-slate-600 dark:text-slate-400">Create and manage brand identities for your content generation.</p>
+                </div>
+                {!showBrandingForm && (
+                  <Button size="sm" className="gap-1.5" onClick={() => { resetBrandingForm(); setShowBrandingForm(true); }}>
+                    <Plus className="size-4" /> Add Brand
+                  </Button>
+                )}
+              </div>
+
+              {/* Branding Form */}
+              {showBrandingForm && (
+                <article className={card}>
+                  <header className={hdr}>
+                    <div className="flex gap-2.75">
+                      <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Building2 className="size-[18px]" /></span>
+                      <div><h3 className="m-0 text-base text-slate-900 dark:text-white">{editingBranding ? "Edit Brand" : "New Brand"}</h3><p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Fill in your company details</p></div>
+                    </div>
+                    <Button size="sm" variant="outline" className="gap-1.5" onClick={resetBrandingForm}><X className="size-3.5" /> Cancel</Button>
+                  </header>
+                  <div className="space-y-4 p-6">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Company Name *</label>
+                        <input
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                          value={brandingForm.companyName}
+                          onChange={(e) => setBrandingForm({ ...brandingForm, companyName: e.target.value })}
+                          placeholder="Acme Inc."
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Industry</label>
+                        <input
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                          value={brandingForm.industry}
+                          onChange={(e) => setBrandingForm({ ...brandingForm, industry: e.target.value })}
+                          placeholder="Technology, Healthcare, Finance..."
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Description</label>
+                      <textarea
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                        rows={2}
+                        value={brandingForm.description}
+                        onChange={(e) => setBrandingForm({ ...brandingForm, description: e.target.value })}
+                        placeholder="A brief description of the company..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Tagline</label>
+                      <input
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                        value={brandingForm.tagline}
+                        onChange={(e) => setBrandingForm({ ...brandingForm, tagline: e.target.value })}
+                        placeholder="Your company tagline..."
+                      />
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Website</label>
+                        <input
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                          value={brandingForm.website}
+                          onChange={(e) => setBrandingForm({ ...brandingForm, website: e.target.value })}
+                          placeholder="https://example.com"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Logo URL</label>
+                        <input
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                          value={brandingForm.logoUrl ?? ""}
+                          onChange={(e) => setBrandingForm({ ...brandingForm, logoUrl: e.target.value })}
+                          placeholder="https://example.com/logo.png"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <div>
+                        <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Email</label>
+                        <input
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                          value={brandingForm.email}
+                          onChange={(e) => setBrandingForm({ ...brandingForm, email: e.target.value })}
+                          placeholder="contact@example.com"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Phone</label>
+                        <input
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                          value={brandingForm.phone}
+                          onChange={(e) => setBrandingForm({ ...brandingForm, phone: e.target.value })}
+                          placeholder="+1 234 567 890"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Default Color</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            className="h-10 w-12 cursor-pointer rounded-lg border border-slate-200 dark:border-white/10"
+                            value={brandingForm.defaultColor}
+                            onChange={(e) => setBrandingForm({ ...brandingForm, defaultColor: e.target.value })}
+                          />
+                          <input
+                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                            value={brandingForm.defaultColor}
+                            onChange={(e) => setBrandingForm({ ...brandingForm, defaultColor: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Address</label>
+                      <input
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                        value={brandingForm.address}
+                        onChange={(e) => setBrandingForm({ ...brandingForm, address: e.target.value })}
+                        placeholder="123 Main St, City, Country"
+                      />
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <div>
+                        <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Twitter / X</label>
+                        <input
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                          value={brandingForm.socialLinks?.twitter ?? ""}
+                          onChange={(e) => setBrandingForm({ ...brandingForm, socialLinks: { ...brandingForm.socialLinks, twitter: e.target.value } })}
+                          placeholder="@username"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">LinkedIn</label>
+                        <input
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                          value={brandingForm.socialLinks?.linkedin ?? ""}
+                          onChange={(e) => setBrandingForm({ ...brandingForm, socialLinks: { ...brandingForm.socialLinks, linkedin: e.target.value } })}
+                          placeholder="company/link"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Facebook</label>
+                        <input
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                          value={brandingForm.socialLinks?.facebook ?? ""}
+                          onChange={(e) => setBrandingForm({ ...brandingForm, socialLinks: { ...brandingForm.socialLinks, facebook: e.target.value } })}
+                          placeholder="page/name"
+                        />
+                      </div>
+                    </div>
+
+                    <label className="flex items-center gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="size-4 rounded border-slate-300 text-fuchsia-600 focus:ring-fuchsia-400/20"
+                        checked={brandingForm.isDefault ?? false}
+                        onChange={(e) => setBrandingForm({ ...brandingForm, isDefault: e.target.checked })}
+                      />
+                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Set as default brand</span>
+                    </label>
+
+                    <div className="flex justify-end gap-2.5 pt-2">
+                      <Button size="sm" variant="outline" className="gap-1.5" onClick={resetBrandingForm}>Cancel</Button>
+                      <Button size="sm" className="gap-1.5" onClick={handleSaveBranding} disabled={brandingSaving || !brandingForm.companyName.trim()}>
+                        {brandingSaving ? <><Loader2 className="size-3.5 animate-spin" /> Saving...</> : <><CheckCircle2 className="size-3.5" /> {editingBranding ? "Update" : "Create"}</>}
+                      </Button>
+                    </div>
+                  </div>
+                </article>
+              )}
+
+              {/* Branding List */}
+              {brandingLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="size-6 animate-spin text-slate-400" />
+                </div>
+              ) : brandings.length === 0 ? (
+                <article className={`${card} p-12 text-center`}>
+                  <Building2 className="mx-auto size-10 text-slate-300 dark:text-slate-600" />
+                  <h4 className="mt-3 text-sm font-bold text-slate-700 dark:text-slate-300">No brands yet</h4>
+                  <p className="mt-1 text-[12px] text-slate-500 dark:text-slate-400">Create your first brand profile to get started.</p>
+                  {!showBrandingForm && (
+                    <Button size="sm" className="mt-4 gap-1.5" onClick={() => setShowBrandingForm(true)}>
+                      <Plus className="size-4" /> Add Brand
+                    </Button>
+                  )}
+                </article>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {brandings.map((b) => (
+                    <article key={b.id} className={card}>
+                      <div className="p-5">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <span
+                              className="grid size-11 shrink-0 place-items-center rounded-xl text-sm font-black text-white"
+                              style={{ backgroundColor: b.defaultColor }}
+                            >
+                              {b.companyName.charAt(0).toUpperCase()}
+                            </span>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h4 className="text-[14px] font-bold text-slate-900 dark:text-white">{b.companyName}</h4>
+                                {b.isDefault && (
+                                  <Badge className="bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-400">
+                                    <Star className="size-3" /> Default
+                                  </Badge>
+                                )}
+                              </div>
+                              {b.industry && <p className="mt-0.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400">{b.industry}</p>}
+                            </div>
+                          </div>
+                        </div>
+
+                        {b.description && <p className="mt-3 text-[12px] leading-relaxed text-slate-600 dark:text-slate-400">{b.description}</p>}
+
+                        {b.tagline && <p className="mt-2 text-[11px] italic text-slate-500 dark:text-slate-400">"{b.tagline}"</p>}
+
+                        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                          {b.website && <span className="flex items-center gap-1"><Link2 className="size-3" /> {b.website.replace(/^https?:\/\//, "")}</span>}
+                          {b.email && <span className="flex items-center gap-1"><Mail className="size-3" /> {b.email}</span>}
+                          {b.phone && <span className="flex items-center gap-1"><Phone className="size-3" /> {b.phone}</span>}
+                        </div>
+
+                        {b.logoUrl && (
+                          <div className="mt-3">
+                            <img src={b.logoUrl} alt={b.companyName} className="h-8 rounded-lg object-contain" />
+                          </div>
+                        )}
+
+                        <div className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-3 dark:border-white/5">
+                          {!b.isDefault && (
+                            <Button size="xs" variant="outline" className="gap-1" onClick={() => handleSetDefault(b)}>
+                              <Star className="size-3" /> Set Default
+                            </Button>
+                          )}
+                          <Button size="xs" variant="outline" className="gap-1" onClick={() => handleEditBranding(b)}>
+                            <Pencil className="size-3" /> Edit
+                          </Button>
+                          <Button size="xs" variant="destructive" className="ml-auto gap-1" onClick={() => handleDeleteBranding(b.id)}>
+                            <Trash2 className="size-3" /> Delete
+                          </Button>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>
