@@ -7,7 +7,7 @@ import {
   Globe2, BarChart3, FileSpreadsheet, Smartphone, Bell,
   Shield, Mail, Download, RefreshCw, ExternalLink, Plug, Zap,
   Monitor, Tablet, KeyRound, Clock, MapPin, Trash2, LogOut, AlertCircle,
-  Building2, Plus, Pencil, Star, X, Link2, Phone, MapPin as MapPinIcon,
+  Building2, Plus, Pencil, Star, X, Link2, Phone, MapPin as MapPinIcon, Upload,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -52,6 +52,7 @@ function SettingsInner() {
   const [brandings, setBrandings] = useState<Branding[]>([]);
   const [brandingLoading, setBrandingLoading] = useState(false);
   const [brandingSaving, setBrandingSaving] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
   const [showBrandingForm, setShowBrandingForm] = useState(false);
   const [editingBranding, setEditingBranding] = useState<Branding | null>(null);
   const [brandingForm, setBrandingForm] = useState<BrandingInput>({
@@ -181,6 +182,21 @@ function SettingsInner() {
       await fetchBrandings();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to set default branding");
+    }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoUploading(true);
+    setError(null);
+    try {
+      const logoUrl = await brandingApi.uploadLogo(file);
+      setBrandingForm((prev) => ({ ...prev, logoUrl }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload logo");
+    } finally {
+      setLogoUploading(false);
     }
   };
 
@@ -662,13 +678,38 @@ function SettingsInner() {
                         />
                       </div>
                       <div>
-                        <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Logo URL</label>
-                        <input
-                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
-                          value={brandingForm.logoUrl ?? ""}
-                          onChange={(e) => setBrandingForm({ ...brandingForm, logoUrl: e.target.value })}
-                          placeholder="https://example.com/logo.png"
-                        />
+                        <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Logo</label>
+                        <div className="flex items-center gap-3">
+                          {brandingForm.logoUrl ? (
+                            <img
+                              src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}${brandingForm.logoUrl}`}
+                              alt="Logo preview"
+                              className="size-12 rounded-xl border border-slate-200 object-contain dark:border-white/10"
+                            />
+                          ) : (
+                            <div className="grid size-12 place-items-center rounded-xl border border-dashed border-slate-300 text-slate-400 dark:border-white/10 dark:text-slate-500">
+                              <Building2 className="size-5" />
+                            </div>
+                          )}
+                          <label className="cursor-pointer">
+                            <span className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-bold text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200">
+                              {logoUploading ? <><Loader2 className="size-3.5 animate-spin" /> Uploading...</> : <><Upload className="size-3.5" /> Upload Logo</>}
+                            </span>
+                            <input
+                              type="file"
+                              accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                              className="hidden"
+                              onChange={handleLogoUpload}
+                              disabled={logoUploading}
+                            />
+                          </label>
+                          {brandingForm.logoUrl && (
+                            <Button size="xs" variant="outline" className="gap-1" onClick={() => setBrandingForm({ ...brandingForm, logoUrl: "" })}>
+                              <X className="size-3" /> Remove
+                            </Button>
+                          )}
+                        </div>
+                        <p className="mt-1.5 text-[11px] text-slate-400">PNG, JPG, SVG, WebP — max 5MB</p>
                       </div>
                     </div>
 
@@ -824,7 +865,7 @@ function SettingsInner() {
 
                         {b.logoUrl && (
                           <div className="mt-3">
-                            <img src={b.logoUrl} alt={b.companyName} className="h-8 rounded-lg object-contain" />
+                            <img src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}${b.logoUrl}`} alt={b.companyName} className="h-8 rounded-lg object-contain" />
                           </div>
                         )}
 

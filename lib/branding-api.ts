@@ -87,4 +87,28 @@ export const brandingApi = {
   async delete(id: string): Promise<void> {
     await apiRequest(`/api/branding/${id}`, { method: "DELETE" });
   },
+
+  async uploadLogo(file: File): Promise<string> {
+    const token = getToken();
+    if (!token) throw new Error("Not authenticated");
+
+    const formData = new FormData();
+    formData.append("logo", file);
+
+    const res = await fetch(`${BACKEND_URL}/api/branding/upload-logo`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ message: "Upload failed" }));
+      throw new Error(data.message || `Upload failed with ${res.status}`);
+    }
+
+    const data = await res.json();
+    return data.logoUrl;
+  },
 };
