@@ -208,6 +208,7 @@ export const wordpressApi = {
     model?: string;
     siteId?: string;
     images?: string[];
+    url?: string;
   }): Promise<{ job: GenerationJob }> {
     const res = await fetch(`${BACKEND_URL}/api/wordpress/generate-windsurf`, {
       method: "POST",

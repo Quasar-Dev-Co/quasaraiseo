@@ -88,6 +88,9 @@ function PostCreateContent() {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
 
+  // Website URL for AI-only generation
+  const [sourceUrl, setSourceUrl] = useState("");
+
   // Content preview modal
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewContent, setPreviewContent] = useState<GeneratedContent | null>(null);
@@ -378,7 +381,7 @@ function PostCreateContent() {
   };
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) return;
+    if (!prompt.trim() && !sourceUrl.trim()) return;
     setGenerating(true);
     setGenError(null);
     setGeneratedContent(null);
@@ -395,6 +398,7 @@ function PostCreateContent() {
         model: selectedModel,
         siteId: selectedSiteId || undefined,
         images: uploadedImages.length > 0 ? uploadedImages : undefined,
+        url: sourceUrl.trim() || undefined,
       });
       setGenJobs((prev) => [res.job, ...prev]);
       setGenerationStep("AI is processing your request...");
@@ -631,9 +635,22 @@ function PostCreateContent() {
                   </div>
                 )}
 
+                {/* Source URL */}
+                <div>
+                  <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Website URL</label>
+                  <Input
+                    className="mt-2"
+                    placeholder="https://example.com"
+                    value={sourceUrl}
+                    onChange={(e) => setSourceUrl(e.target.value)}
+                    disabled={generating}
+                  />
+                  <p className="mt-1 text-[11px] text-slate-400">Paste any website link. AI will crawl it and infer business type, topic, and post style. You can leave the prompt empty.</p>
+                </div>
+
                 {/* Prompt */}
                 <div>
-                  <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Your Prompt</label>
+                  <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Your Prompt <span className="text-slate-400 font-normal lowercase">(optional if URL is given)</span></label>
                   <Textarea
                     className="mt-2 min-h-[120px] resize-y"
                     placeholder="e.g. Write a pillar page about 'Nederlandstalige makelaar Costa del Sol gratis' with answer-first intro, quick facts table, TOC, entity-driven H2s, FAQ, and CTA..."
@@ -705,7 +722,7 @@ function PostCreateContent() {
                   <Button
                     size="lg"
                     onClick={handleGenerate}
-                    disabled={!prompt.trim() || generating || !selectedSkillId}
+                    disabled={(!prompt.trim() && !sourceUrl.trim()) || generating}
                     className="bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white hover:from-fuchsia-700 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {generating ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
