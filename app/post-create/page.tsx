@@ -112,6 +112,16 @@ function PostCreateContent() {
     setPreviewOpen(true);
   };
 
+  const cleanBodyForPreview = (body: string): string => {
+    return body
+      .replace(/<script[^>]*type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi, "")
+      .replace(/\{[\s]*"@context"[\s\S]*?\}(?:\s*\{[\s\S]*?\})*/g, (match) => {
+        if (match.includes('"@type"')) return "";
+        return match;
+      })
+      .trim();
+  };
+
   const execCmd = (cmd: string, val?: string) => {
     document.execCommand(cmd, false, val);
     bodyEditRef.current?.focus();
@@ -1495,12 +1505,12 @@ function PostCreateContent() {
                         contentEditable
                         suppressContentEditableWarning
                         className="prose prose-lg max-w-none space-y-6 pt-8 text-slate-800 outline-none [&>*]:mb-6 [&_h2]:mt-10 [&_h2]:mb-5 [&_h2]:border-b [&_h2]:border-fuchsia-100 [&_h2]:pb-2 [&_h2]:text-2xl [&_h2]:font-extrabold [&_h2]:text-slate-900 [&_h3]:mt-8 [&_h3]:mb-4 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-slate-800 [&_p]:mb-5 [&_p]:leading-[1.85] [&_a]:font-semibold [&_a]:text-fuchsia-600 [&_a]:underline [&_ul]:my-5 [&_ul]:space-y-2 [&_ul]:pl-6 [&_ol]:my-5 [&_ol]:space-y-2 [&_ol]:pl-6 [&_li]:my-1 [&_blockquote]:my-6 [&_blockquote]:rounded-md [&_blockquote]:border-l-4 [&_blockquote]:border-fuchsia-500 [&_blockquote]:bg-fuchsia-50/40 [&_blockquote]:p-5 [&_blockquote]:italic [&_strong]:font-bold [&_table]:my-6 [&_table]:w-full [&_table]:overflow-x-auto [&_table]:border-collapse [&_table]:border [&_table]:border-slate-300 [&_thead]:bg-slate-100 [&_th]:border [&_th]:border-slate-300 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-sm [&_th]:font-bold [&_td]:border [&_td]:border-slate-300 [&_td]:px-4 [&_td]:py-3 [&_td]:text-sm [&_tr:nth-child(even)]:bg-slate-50/60 focus:outline-none"
-                        dangerouslySetInnerHTML={{ __html: previewContent.body }}
+                        dangerouslySetInnerHTML={{ __html: cleanBodyForPreview(previewContent.body) }}
                       />
                     ) : (
                       <div
                         className="prose prose-lg max-w-none space-y-6 pt-8 text-slate-800 [&>*]:mb-6 [&_h2]:mt-10 [&_h2]:mb-5 [&_h2]:border-b [&_h2]:border-fuchsia-100 [&_h2]:pb-2 [&_h2]:text-2xl [&_h2]:font-extrabold [&_h2]:text-slate-900 [&_h3]:mt-8 [&_h3]:mb-4 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-slate-800 [&_p]:mb-5 [&_p]:leading-[1.85] [&_a]:font-semibold [&_a]:text-fuchsia-600 [&_a]:underline [&_ul]:my-5 [&_ul]:space-y-2 [&_ul]:pl-6 [&_ol]:my-5 [&_ol]:space-y-2 [&_ol]:pl-6 [&_li]:my-1 [&_blockquote]:my-6 [&_blockquote]:rounded-md [&_blockquote]:border-l-4 [&_blockquote]:border-fuchsia-500 [&_blockquote]:bg-fuchsia-50/40 [&_blockquote]:p-5 [&_blockquote]:italic [&_strong]:font-bold [&_table]:my-6 [&_table]:w-full [&_table]:overflow-x-auto [&_table]:border-collapse [&_table]:border [&_table]:border-slate-300 [&_thead]:bg-slate-100 [&_th]:border [&_th]:border-slate-300 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-sm [&_th]:font-bold [&_td]:border [&_td]:border-slate-300 [&_td]:px-4 [&_td]:py-3 [&_td]:text-sm [&_tr:nth-child(even)]:bg-slate-50/60 [&_figure]:my-8 [&_figure]:rounded-xl [&_figure]:overflow-hidden [&_figure]:border [&_figure]:border-slate-200 [&_img]:w-full [&_img]:h-auto [&_img]:rounded-xl [&_figcaption]:mt-2 [&_figcaption]:text-center [&_figcaption]:text-xs [&_figcaption]:text-slate-500 [&_figcaption]:italic"
-                        dangerouslySetInnerHTML={{ __html: previewContent.body }}
+                        dangerouslySetInnerHTML={{ __html: cleanBodyForPreview(previewContent.body) }}
                       />
                     )}
                   </article>
