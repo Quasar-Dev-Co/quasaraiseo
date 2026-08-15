@@ -204,11 +204,12 @@ export const wordpressApi = {
   // ─── AI Content Generation (Windsurf API) ───
   async generateWithWindsurf(params: {
     prompt: string;
+    companyName?: string;
+    url?: string;
     skillId?: string;
     model?: string;
     siteId?: string;
     images?: string[];
-    url?: string;
   }): Promise<{ job: GenerationJob }> {
     const res = await fetch(`${BACKEND_URL}/api/wordpress/generate-windsurf`, {
       method: "POST",

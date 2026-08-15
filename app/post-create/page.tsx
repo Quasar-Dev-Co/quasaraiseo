@@ -88,7 +88,8 @@ function PostCreateContent() {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  // Website URL for AI-only generation
+  // Simplified generation inputs
+  const [companyName, setCompanyName] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
 
   // Content preview modal
@@ -381,7 +382,7 @@ function PostCreateContent() {
   };
 
   const handleGenerate = async () => {
-    if (!prompt.trim() && !sourceUrl.trim()) return;
+    if (!companyName.trim() || !sourceUrl.trim()) return;
     setGenerating(true);
     setGenError(null);
     setGeneratedContent(null);
@@ -394,11 +395,12 @@ function PostCreateContent() {
       setGenerationStep("Sending prompt to AI model...");
       const res = await wordpressApi.generateWithWindsurf({
         prompt,
+        companyName: companyName.trim(),
         skillId: selectedSkillId || undefined,
         model: selectedModel,
         siteId: selectedSiteId || undefined,
         images: uploadedImages.length > 0 ? uploadedImages : undefined,
-        url: sourceUrl.trim() || undefined,
+        url: sourceUrl.trim(),
       });
       setGenJobs((prev) => [res.job, ...prev]);
       setGenerationStep("AI is processing your request...");
@@ -635,9 +637,21 @@ function PostCreateContent() {
                   </div>
                 )}
 
+                {/* Company Name */}
+                <div>
+                  <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Company Name *</label>
+                  <Input
+                    className="mt-2"
+                    placeholder="e.g. Acme Real Estate"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    disabled={generating}
+                  />
+                </div>
+
                 {/* Source URL */}
                 <div>
-                  <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Website URL</label>
+                  <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Website URL *</label>
                   <Input
                     className="mt-2"
                     placeholder="https://example.com"
@@ -645,15 +659,15 @@ function PostCreateContent() {
                     onChange={(e) => setSourceUrl(e.target.value)}
                     disabled={generating}
                   />
-                  <p className="mt-1 text-[11px] text-slate-400">Paste any website link. AI will crawl it and infer business type, topic, and post style. You can leave the prompt empty.</p>
+                  <p className="mt-1 text-[11px] text-slate-400">AI will crawl this link and infer the business type, topic, tone, and images.</p>
                 </div>
 
                 {/* Prompt */}
                 <div>
-                  <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Your Prompt <span className="text-slate-400 font-normal lowercase">(optional if URL is given)</span></label>
+                  <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Your Prompt <span className="text-slate-400 font-normal lowercase">(optional)</span></label>
                   <Textarea
-                    className="mt-2 min-h-[120px] resize-y"
-                    placeholder="e.g. Write a pillar page about 'Nederlandstalige makelaar Costa del Sol gratis' with answer-first intro, quick facts table, TOC, entity-driven H2s, FAQ, and CTA..."
+                    className="mt-2 min-h-[80px] resize-y"
+                    placeholder="Optional: add extra instructions like 'focus on Costa del Sol properties'..."
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     disabled={generating}
@@ -722,7 +736,7 @@ function PostCreateContent() {
                   <Button
                     size="lg"
                     onClick={handleGenerate}
-                    disabled={(!prompt.trim() && !sourceUrl.trim()) || generating}
+                    disabled={!companyName.trim() || !sourceUrl.trim() || generating}
                     className="bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white hover:from-fuchsia-700 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {generating ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
