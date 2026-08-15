@@ -259,6 +259,7 @@ function PostCreateContent() {
 
   // Poll for active generation jobs
   const hasActiveJob = genJobs.some((j) => j.status === "generating" || j.status === "idle");
+  const processedJobsRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (hasActiveJob) {
       if (pollRef.current) return;
@@ -269,6 +270,8 @@ function PostCreateContent() {
             const res = await wordpressApi.getGenerationJob(job.id);
             setGenJobs((prev) => prev.map((j) => (j.id === job.id ? res.job : j)));
             if (res.job.status === "completed" && res.job.result) {
+              if (processedJobsRef.current.has(res.job.id)) continue;
+              processedJobsRef.current.add(res.job.id);
               setGeneratedContent(res.job.result);
               setGenerating(false);
               setGenerationStep("Content ready!");
