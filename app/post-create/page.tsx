@@ -270,6 +270,7 @@ function PostCreateContent() {
   // Poll for active generation jobs
   const hasActiveJob = genJobs.some((j) => j.status === "generating" || j.status === "idle");
   const processedJobsRef = useRef<Set<string>>(new Set());
+  const imagePollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
     if (hasActiveJob) {
       if (pollRef.current) return;
@@ -284,26 +285,33 @@ function PostCreateContent() {
               processedJobsRef.current.add(res.job.id);
               setGeneratedContent(res.job.result);
               setGenerating(false);
-              setGenerationStep("Content ready!");
-              if (res.job.result.imagePrompts && res.job.result.imagePrompts.length > 0) {
-                setGenerationStep("Generating images with AI...");
+              const hasImagePrompts = res.job.result.imagePrompts && res.job.result.imagePrompts.length > 0;
+              const bodyHasImages = res.job.result.body && res.job.result.body.includes("<img");
+
+              if (hasImagePrompts && !bodyHasImages) {
+                // Images are being generated server-side — keep polling for the updated body
+                setGenerationStep("Generating images with AI (server-side)...");
                 setGeneratingImages(true);
-                try {
-                  const imgResult = await wordpressApi.generateImages(res.job.result.imagePrompts);
-                  setGeneratedImages(imgResult.images);
-                  const updatedBody = insertImagesIntoBody(res.job.result.body, imgResult.images);
-                  const updatedContent = { ...res.job.result, body: updatedBody };
-                  setGeneratedContent(updatedContent);
-                  setImagesInserted(true);
-                  setGenerationStep("Content & images ready!");
-                  await wordpressApi.updateJobResult(res.job.id, updatedContent);
-                  setGenJobs((prev) => prev.map((j) => (j.id === res.job.id ? { ...j, result: updatedContent } : j)));
-                } catch (err) {
-                  setImageError(err instanceof Error ? err.message : "Failed to generate images");
-                  setGenerationStep("Content ready (image generation failed)");
-                } finally {
-                  setGeneratingImages(false);
-                }
+                const imageJobId = res.job.id;
+                if (imagePollRef.current) clearInterval(imagePollRef.current);
+                imagePollRef.current = setInterval(async () => {
+                  try {
+                    const imgRes = await wordpressApi.getGenerationJob(imageJobId);
+                    if (imgRes.job.result && imgRes.job.result.body && imgRes.job.result.body.includes("<img")) {
+                      setGeneratedContent(imgRes.job.result);
+                      setGenJobs((prev) => prev.map((j) => (j.id === imageJobId ? imgRes.job : j)));
+                      setImagesInserted(true);
+                      setGeneratingImages(false);
+                      setGenerationStep("Content & images ready!");
+                      if (imagePollRef.current) { clearInterval(imagePollRef.current); imagePollRef.current = null; }
+                    }
+                  } catch {}
+                }, 5000);
+              } else if (bodyHasImages) {
+                setImagesInserted(true);
+                setGenerationStep("Content & images ready!");
+              } else {
+                setGenerationStep("Content ready!");
               }
             } else if (res.job.status === "failed") {
               setGenError(res.job.errorMessage || "Generation failed");
