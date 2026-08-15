@@ -637,12 +637,43 @@ function SettingsInner() {
                       </div>
                       <div>
                         <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Industry</label>
-                        <input
+                        <select
                           className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                           value={brandingForm.industry}
                           onChange={(e) => setBrandingForm({ ...brandingForm, industry: e.target.value })}
-                          placeholder="Technology, Healthcare, Finance..."
-                        />
+                        >
+                          <option value="">Select an industry...</option>
+                          <option value="Technology">Technology</option>
+                          <option value="Healthcare">Healthcare</option>
+                          <option value="Finance">Finance & Banking</option>
+                          <option value="Education">Education</option>
+                          <option value="E-commerce">E-commerce & Retail</option>
+                          <option value="Real Estate">Real Estate</option>
+                          <option value="Manufacturing">Manufacturing</option>
+                          <option value="Marketing & Advertising">Marketing & Advertising</option>
+                          <option value="Legal">Legal</option>
+                          <option value="Hospitality">Hospitality & Tourism</option>
+                          <option value="Construction">Construction</option>
+                          <option value="Automotive">Automotive</option>
+                          <option value="Media & Entertainment">Media & Entertainment</option>
+                          <option value="Food & Beverage">Food & Beverage</option>
+                          <option value="Agriculture">Agriculture</option>
+                          <option value="Energy">Energy & Utilities</option>
+                          <option value="Telecommunications">Telecommunications</option>
+                          <option value="Transportation & Logistics">Transportation & Logistics</option>
+                          <option value="Insurance">Insurance</option>
+                          <option value="Consulting">Consulting</option>
+                          <option value="Non-profit">Non-profit</option>
+                          <option value="Government">Government</option>
+                          <option value="Aerospace">Aerospace</option>
+                          <option value="Pharmaceutical">Pharmaceutical</option>
+                          <option value="Fashion & Apparel">Fashion & Apparel</option>
+                          <option value="Fitness & Wellness">Fitness & Wellness</option>
+                          <option value="Gaming">Gaming</option>
+                          <option value="SaaS & Software">SaaS & Software</option>
+                          <option value="AI & Automation">AI & Automation</option>
+                          <option value="Other">Other</option>
+                        </select>
                       </div>
                     </div>
 
