@@ -161,11 +161,26 @@ function PostCreateContent() {
   const insertImagesIntoBody = (body: string, images: GeneratedImage[]): string => {
     let updatedBody = body;
     for (const img of images) {
-      if (img.placement === "featured") continue;
       const fullUrl = wordpressApi.imageUrl(img.url);
       const imgTag = `<figure class="wp-block-image"><img src="${fullUrl}" alt="${img.placement}" class="wp-image-generated" /><figcaption>${img.placement.replace(/-/g, " ")}</figcaption></figure>`;
 
-      if (img.placement === "after-intro") {
+      if (img.placement === "featured") {
+        // Insert featured image right after the first heading/title (h1 or h2) or at the very start
+        const firstH1 = updatedBody.indexOf("</h1>");
+        const firstH2 = updatedBody.indexOf("</h2>");
+        let insertPos = -1;
+        if (firstH1 !== -1) insertPos = firstH1 + 5;
+        else if (firstH2 !== -1) insertPos = firstH2 + 5;
+        else {
+          const firstP = updatedBody.indexOf("</p>");
+          if (firstP !== -1) insertPos = firstP + 4;
+        }
+        if (insertPos !== -1) {
+          updatedBody = updatedBody.slice(0, insertPos) + "\n" + imgTag + updatedBody.slice(insertPos);
+        } else {
+          updatedBody = imgTag + "\n" + updatedBody;
+        }
+      } else if (img.placement === "after-intro") {
         const firstP = updatedBody.indexOf("</p>");
         if (firstP !== -1) {
           updatedBody = updatedBody.slice(0, firstP + 4) + "\n" + imgTag + updatedBody.slice(firstP + 4);
@@ -189,9 +204,11 @@ function PostCreateContent() {
             }
             searchStart = h2End + 5;
           }
-          if (insertPos !== -1) {
-            updatedBody = updatedBody.slice(0, insertPos) + "\n" + imgTag + updatedBody.slice(insertPos);
+          // Fallback: if section not found, append at the end of the body
+          if (insertPos === -1) {
+            insertPos = updatedBody.length;
           }
+          updatedBody = updatedBody.slice(0, insertPos) + "\n" + imgTag + updatedBody.slice(insertPos);
         }
       }
     }
