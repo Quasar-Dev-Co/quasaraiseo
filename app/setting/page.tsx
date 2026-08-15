@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Settings, CheckCircle2, Circle, Loader2, ChevronRight,
   Globe2, BarChart3, FileSpreadsheet, Smartphone, Bell,
   Shield, Mail, Download, RefreshCw, ExternalLink, Plug, Zap,
   Monitor, Tablet, KeyRound, Clock, MapPin, Trash2, LogOut, AlertCircle,
-  Building2, Plus, Pencil, Star, X, Link2, Phone, MapPin as MapPinIcon, Upload,
+  Building2, Plus, Pencil, Star, X, Link2, Phone, MapPin as MapPinIcon, Upload, ChevronDown, Search,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -32,6 +32,93 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${checked ? "bg-blue-500" : "bg-slate-200 dark:bg-slate-700"}`}>
       <span className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow transition ${checked ? "translate-x-5" : "translate-x-0"}`} />
     </button>
+  );
+}
+
+const INDUSTRIES = [
+  "Technology", "Healthcare", "Finance & Banking", "Education", "E-commerce & Retail",
+  "Real Estate", "Manufacturing", "Marketing & Advertising", "Legal", "Hospitality & Tourism",
+  "Construction", "Automotive", "Media & Entertainment", "Food & Beverage", "Agriculture",
+  "Energy & Utilities", "Telecommunications", "Transportation & Logistics", "Insurance",
+  "Consulting", "Non-profit", "Government", "Aerospace", "Pharmaceutical", "Fashion & Apparel",
+  "Fitness & Wellness", "Gaming", "SaaS & Software", "AI & Automation",
+];
+
+function IndustryCombobox({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState(value);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setSearch(value);
+  }, [value]);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    if (open) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  const filtered = INDUSTRIES.filter((i) => i.toLowerCase().includes(search.toLowerCase()));
+  const showCreate = search && !INDUSTRIES.some((i) => i.toLowerCase() === search.toLowerCase());
+
+  const select = (v: string) => {
+    setSearch(v);
+    onChange(v);
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-left text-sm text-slate-900 transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+      >
+        <span className={value ? "text-slate-900 dark:text-white" : "text-slate-400"}>{value || "Select or type an industry..."}</span>
+        <ChevronDown className={`size-4 shrink-0 text-slate-400 transition ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="absolute z-50 mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2 shadow-xl dark:border-white/10 dark:bg-slate-800">
+          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-slate-900/50">
+            <Search className="size-4 text-slate-400" />
+            <input
+              autoFocus
+              className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); onChange(e.target.value); }}
+              placeholder="Search or type industry..."
+            />
+          </div>
+          <div className="mt-1 max-h-52 overflow-y-auto rounded-lg">
+            {filtered.length === 0 && !showCreate && (
+              <div className="px-3 py-2 text-xs text-slate-400">No results</div>
+            )}
+            {filtered.map((i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => select(i)}
+                className={`w-full rounded-lg px-3 py-2 text-left text-sm transition hover:bg-fuchsia-50 dark:hover:bg-fuchsia-400/10 ${value === i ? "bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400" : "text-slate-700 dark:text-slate-200"}`}
+              >
+                {i}
+              </button>
+            ))}
+            {showCreate && (
+              <button
+                type="button"
+                onClick={() => select(search)}
+                className="w-full rounded-lg px-3 py-2 text-left text-sm text-fuchsia-700 transition hover:bg-fuchsia-50 dark:text-fuchsia-400 dark:hover:bg-fuchsia-400/10"
+              >
+                Use "{search}"
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -637,44 +724,10 @@ function SettingsInner() {
                       </div>
                       <div>
                         <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Industry</label>
-                        <input
-                          list="industry-list"
-                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
-                          value={brandingForm.industry}
-                          onChange={(e) => setBrandingForm({ ...brandingForm, industry: e.target.value })}
-                          placeholder="Select or type an industry..."
+                        <IndustryCombobox
+                          value={brandingForm.industry ?? ""}
+                          onChange={(value) => setBrandingForm({ ...brandingForm, industry: value })}
                         />
-                        <datalist id="industry-list">
-                          <option value="Technology" />
-                          <option value="Healthcare" />
-                          <option value="Finance & Banking" />
-                          <option value="Education" />
-                          <option value="E-commerce & Retail" />
-                          <option value="Real Estate" />
-                          <option value="Manufacturing" />
-                          <option value="Marketing & Advertising" />
-                          <option value="Legal" />
-                          <option value="Hospitality & Tourism" />
-                          <option value="Construction" />
-                          <option value="Automotive" />
-                          <option value="Media & Entertainment" />
-                          <option value="Food & Beverage" />
-                          <option value="Agriculture" />
-                          <option value="Energy & Utilities" />
-                          <option value="Telecommunications" />
-                          <option value="Transportation & Logistics" />
-                          <option value="Insurance" />
-                          <option value="Consulting" />
-                          <option value="Non-profit" />
-                          <option value="Government" />
-                          <option value="Aerospace" />
-                          <option value="Pharmaceutical" />
-                          <option value="Fashion & Apparel" />
-                          <option value="Fitness & Wellness" />
-                          <option value="Gaming" />
-                          <option value="SaaS & Software" />
-                          <option value="AI & Automation" />
-                        </datalist>
                       </div>
                     </div>
 
