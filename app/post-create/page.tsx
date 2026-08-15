@@ -113,11 +113,15 @@ function PostCreateContent() {
   };
 
   const cleanBodyForPreview = (body: string): string => {
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
     return body
       .replace(/<script[^>]*type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi, "")
       .replace(/\{[\s]*"@context"[\s\S]*?\}(?:\s*\{[\s\S]*?\})*/g, (match) => {
         if (match.includes('"@type"')) return "";
         return match;
+      })
+      .replace(/src=["'](\/api\/wordpress\/images\/[^"']+)["']/g, (match, path) => {
+        return `src="${backendUrl}${path}"`;
       })
       .trim();
   };
