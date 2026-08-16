@@ -589,129 +589,75 @@ function PostCreateContent() {
                 </div>
               </header>
               <div className="p-5 space-y-4">
-                {/* WordPress site selector */}
+                {/* Company Name + Website URL — side by side, only required fields */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Company Name *</label>
+                    <Input
+                      className="mt-2"
+                      placeholder="e.g. Acme Real Estate"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      disabled={generating}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Website URL *</label>
+                    <Input
+                      className="mt-2"
+                      placeholder="https://example.com"
+                      value={sourceUrl}
+                      onChange={(e) => setSourceUrl(e.target.value)}
+                      disabled={generating}
+                    />
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-400 -mt-2">Just enter company name and website — AI crawls the site and figures out the rest.</p>
+
+                {/* WordPress site selector — disabled */}
                 {wpSites.length > 0 && (
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 opacity-40 pointer-events-none">
                     <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 whitespace-nowrap">WP Site</label>
                     <select
                       value={selectedSiteId}
                       onChange={(e) => setSelectedSiteId(e.target.value)}
                       className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus-visible:border-fuchsia-500 dark:border-white/15 dark:bg-slate-800 dark:text-white"
+                      disabled
                     >
                       {wpSites.map((s) => (
                         <option key={s.id} value={s.id}>{s.siteName} — {s.siteUrl}</option>
                       ))}
                     </select>
-                    <Button size="sm" variant="outline" onClick={handleSyncData} disabled={syncing || !selectedSiteId}>
-                      {syncing ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
-                      Sync
+                    <Button size="sm" variant="outline" disabled>
+                      <RefreshCw className="size-3.5" /> Sync
                     </Button>
                   </div>
                 )}
 
-                {syncError && (
-                  <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-400">
-                    <AlertCircle className="size-4 shrink-0" /> {syncError}
-                  </div>
-                )}
-
-                {/* Site data preview */}
-                {siteData && (
-                  <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-white/10 dark:bg-slate-800/40">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400">
-                      <Layers className="size-3.5" /> Site Data
-                    </div>
-                    <div className="mt-2 grid grid-cols-3 gap-3 text-xs">
-                      <div><span className="font-bold text-slate-700 dark:text-slate-300">{siteData.totalPosts}</span> <span className="text-slate-400">posts</span></div>
-                      <div><span className="font-bold text-slate-700 dark:text-slate-300">{siteData.categories.length}</span> <span className="text-slate-400">categories</span></div>
-                      <div><span className="font-bold text-slate-700 dark:text-slate-300">{siteData.tags.length}</span> <span className="text-slate-400">tags</span></div>
-                    </div>
-                    {siteData.categories.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {siteData.categories.slice(0, 8).map((c) => (
-                          <Badge key={c.id} variant="outline" className="text-[10px]">{c.name}</Badge>
-                        ))}
-                        {siteData.categories.length > 8 && <Badge variant="outline" className="text-[10px]">+{siteData.categories.length - 8}</Badge>}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Company Name */}
-                <div>
-                  <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Company Name *</label>
-                  <Input
-                    className="mt-2"
-                    placeholder="e.g. Acme Real Estate"
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    disabled={generating}
-                  />
-                </div>
-
-                {/* Source URL */}
-                <div>
-                  <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Website URL *</label>
-                  <Input
-                    className="mt-2"
-                    placeholder="https://example.com"
-                    value={sourceUrl}
-                    onChange={(e) => setSourceUrl(e.target.value)}
-                    disabled={generating}
-                  />
-                  <p className="mt-1 text-[11px] text-slate-400">AI will crawl this link and infer the business type, topic, tone, and images.</p>
-                </div>
-
-                {/* Prompt */}
-                <div>
-                  <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Your Prompt <span className="text-slate-400 font-normal lowercase">(optional)</span></label>
+                {/* Prompt — disabled */}
+                <div className="opacity-40 pointer-events-none">
+                  <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Your Prompt <span className="font-normal lowercase">(disabled)</span></label>
                   <Textarea
-                    className="mt-2 min-h-[80px] resize-y"
-                    placeholder="Optional: add extra instructions like 'focus on Costa del Sol properties'..."
+                    className="mt-2 min-h-[60px] resize-y"
+                    placeholder="AI handles this automatically..."
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                    disabled={generating}
+                    disabled
                   />
                 </div>
 
-                {/* Reference Images */}
-                <div>
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Reference Images</label>
-                    <span className="text-[10px] text-slate-400">{uploadedImages.length}/3 · optional</span>
-                  </div>
+                {/* Reference Images — disabled */}
+                <div className="opacity-40 pointer-events-none">
+                  <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Reference Images <span className="font-normal lowercase">(disabled)</span></label>
                   <div className="mt-2 flex flex-wrap items-center gap-3">
-                    {uploadedImages.map((img, i) => (
-                      <div key={i} className="group relative size-20 overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
-                        <img src={`data:image/png;base64,${img}`} alt={`reference ${i + 1}`} className="size-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => removeUploadedImage(i)}
-                          className="absolute right-1 top-1 grid size-5 place-items-center rounded-full bg-slate-900/70 text-white opacity-0 transition group-hover:opacity-100"
-                        >
-                          <X className="size-3" />
-                        </button>
-                      </div>
-                    ))}
-                    {uploadedImages.length < 3 && (
-                      <label className="grid size-20 cursor-pointer place-items-center rounded-xl border border-dashed border-slate-300 bg-slate-50 transition hover:bg-slate-100 dark:border-white/15 dark:bg-slate-800/50 dark:hover:bg-slate-800">
-                        {uploadingImage ? <Loader2 className="size-5 animate-spin text-slate-400" /> : <ImageIcon className="size-5 text-slate-400" />}
-                        <input
-                          type="file"
-                          accept="image/png,image/jpeg,image/webp"
-                          multiple
-                          className="hidden"
-                          onChange={handleUploadPostImages}
-                          disabled={uploadingImage}
-                        />
-                      </label>
-                    )}
+                    <div className="grid size-20 place-items-center rounded-xl border border-dashed border-slate-300 bg-slate-50 dark:border-white/15 dark:bg-slate-800/50">
+                      <ImageIcon className="size-5 text-slate-400" />
+                    </div>
                   </div>
-                  <p className="mt-1.5 text-[11px] text-slate-400">Upload reference images so AI can match your business type, visual style, and image preferences. JPG, PNG, WebP — max 3 images.</p>
                 </div>
 
-                {/* Model selector */}
-                <div className="flex items-center gap-3">
+                {/* Model selector — disabled */}
+                <div className="flex items-center gap-3 opacity-40 pointer-events-none">
                   <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 whitespace-nowrap">AI Model</label>
                   <ModelSelector
                     models={models}
@@ -722,17 +668,7 @@ function PostCreateContent() {
                 </div>
 
                 {/* Generate button */}
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-xs text-slate-500 dark:text-slate-400">
-                    {selectedSkillId ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <Package className="size-3.5" /> Using skill: <strong className="text-slate-700 dark:text-slate-300">{selectedSkill?.name}</strong>
-                        <button className="ml-1 text-fuchsia-600 hover:underline" onClick={() => setSelectedSkillId(null)}>remove</button>
-                      </span>
-                    ) : (
-                      <span className="text-amber-600 dark:text-amber-400">Select a skill from the sidebar →</span>
-                    )}
-                  </div>
+                <div className="flex items-center justify-end gap-3">
                   <Button
                     size="lg"
                     onClick={handleGenerate}
