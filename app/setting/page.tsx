@@ -805,17 +805,19 @@ function SettingsInner() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3 -mt-2">
-                      <p className="text-[11px] text-slate-400">Enter company name + website, then let AI fetch the rest.</p>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleExtractBrandInfo}
-                        disabled={extractingBrand || !brandingForm.companyName.trim() || !(brandingForm.website ?? "").trim()}
-                        className="gap-1.5"
-                      >
-                        {extractingBrand ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
-                        {extractingBrand ? "Fetching..." : "Fetch from Website"}
-                      </Button>
+                      <p className="text-[11px] text-slate-400">{editingBranding ? "Edit any field below." : "Enter company name + website, then let AI fetch the rest."}</p>
+                      {!editingBranding && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleExtractBrandInfo}
+                          disabled={extractingBrand || !brandingForm.companyName.trim() || !(brandingForm.website ?? "").trim()}
+                          className="gap-1.5"
+                        >
+                          {extractingBrand ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+                          {extractingBrand ? "Fetching..." : "Fetch from Website"}
+                        </Button>
+                      )}
                     </div>
 
                     {/* Logo + Default Color — manually entered */}
@@ -884,8 +886,8 @@ function SettingsInner() {
                       </div>
                     </div>
 
-                    {/* All other fields — disabled, AI fills these from website crawl */}
-                    <div className="space-y-4 opacity-40 pointer-events-none">
+                    {/* All other fields — disabled for new brands (AI fills), editable when editing */}
+                    <div className={`space-y-4 ${editingBranding ? "" : "opacity-40 pointer-events-none"}`}>
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div>
                           <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Industry</label>
@@ -900,8 +902,8 @@ function SettingsInner() {
                             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                             value={brandingForm.tagline}
                             onChange={(e) => setBrandingForm({ ...brandingForm, tagline: e.target.value })}
-                            placeholder="AI will fill this..."
-                            disabled
+                            placeholder={editingBranding ? "Enter tagline..." : "AI will fill this..."}
+                            disabled={!editingBranding}
                           />
                         </div>
                       </div>
@@ -913,8 +915,8 @@ function SettingsInner() {
                           rows={2}
                           value={brandingForm.description}
                           onChange={(e) => setBrandingForm({ ...brandingForm, description: e.target.value })}
-                          placeholder="AI will fill this..."
-                          disabled
+                          placeholder={editingBranding ? "Enter description..." : "AI will fill this..."}
+                          disabled={!editingBranding}
                         />
                       </div>
 
@@ -925,8 +927,8 @@ function SettingsInner() {
                             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                             value={brandingForm.email}
                             onChange={(e) => setBrandingForm({ ...brandingForm, email: e.target.value })}
-                            placeholder="AI will fill this..."
-                            disabled
+                            placeholder={editingBranding ? "contact@example.com" : "AI will fill this..."}
+                            disabled={!editingBranding}
                           />
                         </div>
                         <div>
@@ -935,8 +937,8 @@ function SettingsInner() {
                             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                             value={brandingForm.phone}
                             onChange={(e) => setBrandingForm({ ...brandingForm, phone: e.target.value })}
-                            placeholder="AI will fill this..."
-                            disabled
+                            placeholder={editingBranding ? "+1 234 567 890" : "AI will fill this..."}
+                            disabled={!editingBranding}
                           />
                         </div>
                         <div>
@@ -945,8 +947,8 @@ function SettingsInner() {
                             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                             value={brandingForm.address}
                             onChange={(e) => setBrandingForm({ ...brandingForm, address: e.target.value })}
-                            placeholder="AI will fill this..."
-                            disabled
+                            placeholder={editingBranding ? "123 Main St, City, Country" : "AI will fill this..."}
+                            disabled={!editingBranding}
                           />
                         </div>
                       </div>
@@ -958,8 +960,8 @@ function SettingsInner() {
                             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                             value={brandingForm.socialLinks?.twitter ?? ""}
                             onChange={(e) => setBrandingForm({ ...brandingForm, socialLinks: { ...brandingForm.socialLinks, twitter: e.target.value } })}
-                            placeholder="AI will fill this..."
-                            disabled
+                            placeholder={editingBranding ? "@username" : "AI will fill this..."}
+                            disabled={!editingBranding}
                           />
                         </div>
                         <div>
@@ -968,8 +970,8 @@ function SettingsInner() {
                             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                             value={brandingForm.socialLinks?.linkedin ?? ""}
                             onChange={(e) => setBrandingForm({ ...brandingForm, socialLinks: { ...brandingForm.socialLinks, linkedin: e.target.value } })}
-                            placeholder="AI will fill this..."
-                            disabled
+                            placeholder={editingBranding ? "company/link" : "AI will fill this..."}
+                            disabled={!editingBranding}
                           />
                         </div>
                         <div>
@@ -978,8 +980,8 @@ function SettingsInner() {
                             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                             value={brandingForm.socialLinks?.facebook ?? ""}
                             onChange={(e) => setBrandingForm({ ...brandingForm, socialLinks: { ...brandingForm.socialLinks, facebook: e.target.value } })}
-                            placeholder="AI will fill this..."
-                            disabled
+                            placeholder={editingBranding ? "page/name" : "AI will fill this..."}
+                            disabled={!editingBranding}
                           />
                         </div>
                       </div>
