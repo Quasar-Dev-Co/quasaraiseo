@@ -204,8 +204,6 @@ export const wordpressApi = {
   // ─── AI Content Generation (Windsurf API) ───
   async generateWithWindsurf(params: {
     prompt: string;
-    companyName?: string;
-    url?: string;
     skillId?: string;
     model?: string;
     siteId?: string;
