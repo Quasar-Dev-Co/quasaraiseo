@@ -111,4 +111,11 @@ export const brandingApi = {
     const data = await res.json();
     return data.logoUrl;
   },
+
+  async extractFromWebsite(companyName: string, website: string): Promise<BrandingInput> {
+    return apiRequest("/api/branding/extract", {
+      method: "POST",
+      body: JSON.stringify({ companyName, website }),
+    });
+  },
 };

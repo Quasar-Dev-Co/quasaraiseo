@@ -7,7 +7,7 @@ import {
   Globe2, BarChart3, FileSpreadsheet, Smartphone, Bell,
   Shield, Mail, Download, RefreshCw, ExternalLink, Plug, Zap,
   Monitor, Tablet, KeyRound, Clock, MapPin, Trash2, LogOut, AlertCircle,
-  Building2, Plus, Pencil, Star, X, Link2, Phone, MapPin as MapPinIcon, Upload, ChevronDown, Search,
+  Building2, Plus, Pencil, Star, X, Link2, Phone, MapPin as MapPinIcon, Upload, ChevronDown, Search, Sparkles,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -139,6 +139,7 @@ function SettingsInner() {
   const [brandings, setBrandings] = useState<Branding[]>([]);
   const [brandingLoading, setBrandingLoading] = useState(false);
   const [brandingSaving, setBrandingSaving] = useState(false);
+  const [extractingBrand, setExtractingBrand] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
   const [showBrandingForm, setShowBrandingForm] = useState(false);
   const [editingBranding, setEditingBranding] = useState<Branding | null>(null);
@@ -269,6 +270,41 @@ function SettingsInner() {
       await fetchBrandings();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to set default branding");
+    }
+  };
+
+  const handleExtractBrandInfo = async () => {
+    if (!brandingForm.companyName.trim() || !(brandingForm.website ?? "").trim()) {
+      setError("Company name and website are required.");
+      return;
+    }
+    setExtractingBrand(true);
+    setError(null);
+    try {
+      const extracted = await brandingApi.extractFromWebsite(
+        brandingForm.companyName.trim(),
+        (brandingForm.website ?? "").trim()
+      );
+      setBrandingForm((prev) => ({
+        ...prev,
+        industry: extracted.industry ?? prev.industry,
+        tagline: extracted.tagline ?? prev.tagline,
+        description: extracted.description ?? prev.description,
+        email: extracted.email ?? prev.email,
+        phone: extracted.phone ?? prev.phone,
+        address: extracted.address ?? prev.address,
+        socialLinks: {
+          twitter: extracted.socialLinks?.twitter ?? "",
+          linkedin: extracted.socialLinks?.linkedin ?? "",
+          facebook: extracted.socialLinks?.facebook ?? "",
+          instagram: extracted.socialLinks?.instagram ?? "",
+          youtube: extracted.socialLinks?.youtube ?? "",
+        },
+      }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to extract brand info");
+    } finally {
+      setExtractingBrand(false);
     }
   };
 
@@ -712,6 +748,7 @@ function SettingsInner() {
                     <Button size="sm" variant="outline" className="gap-1.5" onClick={resetBrandingForm}><X className="size-3.5" /> Cancel</Button>
                   </header>
                   <div className="space-y-4 p-6">
+                    {/* Company Name + Website — side by side, only enabled fields */}
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
                         <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Company Name *</label>
@@ -723,38 +760,7 @@ function SettingsInner() {
                         />
                       </div>
                       <div>
-                        <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Industry</label>
-                        <IndustryCombobox
-                          value={brandingForm.industry ?? ""}
-                          onChange={(value) => setBrandingForm({ ...brandingForm, industry: value })}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Description</label>
-                      <textarea
-                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
-                        rows={2}
-                        value={brandingForm.description}
-                        onChange={(e) => setBrandingForm({ ...brandingForm, description: e.target.value })}
-                        placeholder="A brief description of the company..."
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Tagline</label>
-                      <input
-                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
-                        value={brandingForm.tagline}
-                        onChange={(e) => setBrandingForm({ ...brandingForm, tagline: e.target.value })}
-                        placeholder="Your company tagline..."
-                      />
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div>
-                        <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Website</label>
+                        <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Website *</label>
                         <input
                           className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                           value={brandingForm.website}
@@ -762,6 +768,23 @@ function SettingsInner() {
                           placeholder="https://example.com"
                         />
                       </div>
+                    </div>
+                    <div className="flex items-center gap-3 -mt-2">
+                      <p className="text-[11px] text-slate-400">Enter company name + website, then let AI fetch the rest.</p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleExtractBrandInfo}
+                        disabled={extractingBrand || !brandingForm.companyName.trim() || !(brandingForm.website ?? "").trim()}
+                        className="gap-1.5"
+                      >
+                        {extractingBrand ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+                        {extractingBrand ? "Fetching..." : "Fetch from Website"}
+                      </Button>
+                    </div>
+
+                    {/* Logo + Default Color — manually entered */}
+                    <div className="grid gap-4 sm:grid-cols-2">
                       <div>
                         <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Logo</label>
                         <div className="flex items-center gap-3">
@@ -796,82 +819,134 @@ function SettingsInner() {
                         </div>
                         <p className="mt-1.5 text-[11px] text-slate-400">PNG, JPG, SVG, WebP — max 5MB</p>
                       </div>
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-3">
-                      <div>
-                        <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Email</label>
-                        <input
-                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
-                          value={brandingForm.email}
-                          onChange={(e) => setBrandingForm({ ...brandingForm, email: e.target.value })}
-                          placeholder="contact@example.com"
-                        />
-                      </div>
-                      <div>
-                        <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Phone</label>
-                        <input
-                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
-                          value={brandingForm.phone}
-                          onChange={(e) => setBrandingForm({ ...brandingForm, phone: e.target.value })}
-                          placeholder="+1 234 567 890"
-                        />
-                      </div>
                       <div>
                         <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Default Color</label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="color"
-                            className="h-10 w-12 cursor-pointer rounded-lg border border-slate-200 dark:border-white/10"
-                            value={brandingForm.defaultColor}
-                            onChange={(e) => setBrandingForm({ ...brandingForm, defaultColor: e.target.value })}
-                          />
-                          <input
-                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
-                            value={brandingForm.defaultColor}
-                            onChange={(e) => setBrandingForm({ ...brandingForm, defaultColor: e.target.value })}
-                          />
+                        <div className="flex flex-wrap items-center gap-2">
+                          {["#6366f1", "#8b5cf6", "#ec4899", "#ef4444", "#f97316", "#f59e0b", "#10b981", "#06b6d4", "#3b82f6", "#1f2937"].map((c) => (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => setBrandingForm({ ...brandingForm, defaultColor: c })}
+                              className={`size-8 rounded-full transition-all ${(brandingForm.defaultColor ?? "").toLowerCase() === c ? "ring-2 ring-offset-2 ring-fuchsia-500 scale-110 dark:ring-offset-slate-900" : "hover:scale-110"}`}
+                              style={{ backgroundColor: c }}
+                              aria-label={c}
+                            />
+                          ))}
+                          <label className="relative grid size-8 cursor-pointer place-items-center rounded-full border border-dashed border-slate-300 transition hover:scale-110 dark:border-white/20">
+                            <input
+                              type="color"
+                              className="absolute inset-0 cursor-pointer opacity-0"
+                              value={brandingForm.defaultColor}
+                              onChange={(e) => setBrandingForm({ ...brandingForm, defaultColor: e.target.value })}
+                            />
+                            <span className="text-[10px] font-bold text-slate-400">+</span>
+                          </label>
+                        </div>
+                        <div className="mt-2 flex items-center gap-2">
+                          <div className="size-5 rounded-md border border-slate-200 dark:border-white/10" style={{ backgroundColor: brandingForm.defaultColor }} />
+                          <span className="text-[12px] font-mono text-slate-500 dark:text-slate-400">{brandingForm.defaultColor}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div>
-                      <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Address</label>
-                      <input
-                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
-                        value={brandingForm.address}
-                        onChange={(e) => setBrandingForm({ ...brandingForm, address: e.target.value })}
-                        placeholder="123 Main St, City, Country"
-                      />
-                    </div>
+                    {/* All other fields — disabled, AI fills these from website crawl */}
+                    <div className="space-y-4 opacity-40 pointer-events-none">
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Industry</label>
+                          <IndustryCombobox
+                            value={brandingForm.industry ?? ""}
+                            onChange={(value) => setBrandingForm({ ...brandingForm, industry: value })}
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Tagline</label>
+                          <input
+                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                            value={brandingForm.tagline}
+                            onChange={(e) => setBrandingForm({ ...brandingForm, tagline: e.target.value })}
+                            placeholder="AI will fill this..."
+                            disabled
+                          />
+                        </div>
+                      </div>
 
-                    <div className="grid gap-4 sm:grid-cols-3">
                       <div>
-                        <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Twitter / X</label>
-                        <input
+                        <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Description</label>
+                        <textarea
                           className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
-                          value={brandingForm.socialLinks?.twitter ?? ""}
-                          onChange={(e) => setBrandingForm({ ...brandingForm, socialLinks: { ...brandingForm.socialLinks, twitter: e.target.value } })}
-                          placeholder="@username"
+                          rows={2}
+                          value={brandingForm.description}
+                          onChange={(e) => setBrandingForm({ ...brandingForm, description: e.target.value })}
+                          placeholder="AI will fill this..."
+                          disabled
                         />
                       </div>
-                      <div>
-                        <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">LinkedIn</label>
-                        <input
-                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
-                          value={brandingForm.socialLinks?.linkedin ?? ""}
-                          onChange={(e) => setBrandingForm({ ...brandingForm, socialLinks: { ...brandingForm.socialLinks, linkedin: e.target.value } })}
-                          placeholder="company/link"
-                        />
+
+                      <div className="grid gap-4 sm:grid-cols-3">
+                        <div>
+                          <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Email</label>
+                          <input
+                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                            value={brandingForm.email}
+                            onChange={(e) => setBrandingForm({ ...brandingForm, email: e.target.value })}
+                            placeholder="AI will fill this..."
+                            disabled
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Phone</label>
+                          <input
+                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                            value={brandingForm.phone}
+                            onChange={(e) => setBrandingForm({ ...brandingForm, phone: e.target.value })}
+                            placeholder="AI will fill this..."
+                            disabled
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Address</label>
+                          <input
+                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                            value={brandingForm.address}
+                            onChange={(e) => setBrandingForm({ ...brandingForm, address: e.target.value })}
+                            placeholder="AI will fill this..."
+                            disabled
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Facebook</label>
-                        <input
-                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
-                          value={brandingForm.socialLinks?.facebook ?? ""}
-                          onChange={(e) => setBrandingForm({ ...brandingForm, socialLinks: { ...brandingForm.socialLinks, facebook: e.target.value } })}
-                          placeholder="page/name"
-                        />
+
+                      <div className="grid gap-4 sm:grid-cols-3">
+                        <div>
+                          <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Twitter / X</label>
+                          <input
+                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                            value={brandingForm.socialLinks?.twitter ?? ""}
+                            onChange={(e) => setBrandingForm({ ...brandingForm, socialLinks: { ...brandingForm.socialLinks, twitter: e.target.value } })}
+                            placeholder="AI will fill this..."
+                            disabled
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">LinkedIn</label>
+                          <input
+                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                            value={brandingForm.socialLinks?.linkedin ?? ""}
+                            onChange={(e) => setBrandingForm({ ...brandingForm, socialLinks: { ...brandingForm.socialLinks, linkedin: e.target.value } })}
+                            placeholder="AI will fill this..."
+                            disabled
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Facebook</label>
+                          <input
+                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                            value={brandingForm.socialLinks?.facebook ?? ""}
+                            onChange={(e) => setBrandingForm({ ...brandingForm, socialLinks: { ...brandingForm.socialLinks, facebook: e.target.value } })}
+                            placeholder="AI will fill this..."
+                            disabled
+                          />
+                        </div>
                       </div>
                     </div>
 
