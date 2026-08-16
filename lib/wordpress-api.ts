@@ -5,7 +5,7 @@ function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-export function fileToBase64(file: File): Promise<string> {
+function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -207,7 +207,6 @@ export const wordpressApi = {
     skillId?: string;
     model?: string;
     siteId?: string;
-    images?: string[];
   }): Promise<{ job: GenerationJob }> {
     const res = await fetch(`${BACKEND_URL}/api/wordpress/generate-windsurf`, {
       method: "POST",

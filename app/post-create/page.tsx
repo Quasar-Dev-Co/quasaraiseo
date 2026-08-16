@@ -20,7 +20,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { wordpressApi, fileToBase64, type WordPressSite, type WordPressPost, type WordPressSiteData, type PostSkillRecord, type ModelRecord, type GenerationJob, type GeneratedContent, type GeneratedImage } from "@/lib/wordpress-api";
+import {
+  wordpressApi,
+  type WordPressSite,
+  type WordPressPost,
+  type PostSkillRecord,
+  type WordPressSiteData,
+  type ModelRecord,
+  type GenerationJob,
+  type GeneratedContent,
+  type GeneratedImage,
+} from "@/lib/wordpress-api";
 import { ModelSelector, usePersistentModel } from "@/components/ModelSelector";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
@@ -83,10 +93,6 @@ function PostCreateContent() {
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
   const [imagesInserted, setImagesInserted] = useState(false);
-
-  // Reference images
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Content preview modal
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -394,7 +400,6 @@ function PostCreateContent() {
         skillId: selectedSkillId || undefined,
         model: selectedModel,
         siteId: selectedSiteId || undefined,
-        images: uploadedImages.length > 0 ? uploadedImages : undefined,
       });
       setGenJobs((prev) => [res.job, ...prev]);
       setGenerationStep("AI is processing your request...");
@@ -402,30 +407,6 @@ function PostCreateContent() {
       setGenError(err instanceof Error ? err.message : "Failed to start generation");
       setGenerating(false);
     }
-  };
-
-  const handleUploadPostImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-    setUploadingImage(true);
-    const base64List: string[] = [];
-    for (const file of files) {
-      try {
-        const b64 = await fileToBase64(file);
-        // Strip data URL prefix if present
-        const clean = b64.includes(",") ? b64.split(",")[1] : b64;
-        base64List.push(clean);
-      } catch {
-        // ignore failed reads
-      }
-    }
-    setUploadedImages((prev) => [...prev, ...base64List].slice(0, 3));
-    setUploadingImage(false);
-    e.target.value = "";
-  };
-
-  const removeUploadedImage = (index: number) => {
-    setUploadedImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleGenerateImages = async () => {
@@ -641,42 +622,6 @@ function PostCreateContent() {
                     onChange={(e) => setPrompt(e.target.value)}
                     disabled={generating}
                   />
-                </div>
-
-                {/* Reference Images */}
-                <div>
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Reference Images</label>
-                    <span className="text-[10px] text-slate-400">{uploadedImages.length}/3 · optional</span>
-                  </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-3">
-                    {uploadedImages.map((img, i) => (
-                      <div key={i} className="group relative size-20 overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
-                        <img src={`data:image/png;base64,${img}`} alt={`reference ${i + 1}`} className="size-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => removeUploadedImage(i)}
-                          className="absolute right-1 top-1 grid size-5 place-items-center rounded-full bg-slate-900/70 text-white opacity-0 transition group-hover:opacity-100"
-                        >
-                          <X className="size-3" />
-                        </button>
-                      </div>
-                    ))}
-                    {uploadedImages.length < 3 && (
-                      <label className="grid size-20 cursor-pointer place-items-center rounded-xl border border-dashed border-slate-300 bg-slate-50 transition hover:bg-slate-100 dark:border-white/15 dark:bg-slate-800/50 dark:hover:bg-slate-800">
-                        {uploadingImage ? <Loader2 className="size-5 animate-spin text-slate-400" /> : <ImageIcon className="size-5 text-slate-400" />}
-                        <input
-                          type="file"
-                          accept="image/png,image/jpeg,image/webp"
-                          multiple
-                          className="hidden"
-                          onChange={handleUploadPostImages}
-                          disabled={uploadingImage}
-                        />
-                      </label>
-                    )}
-                  </div>
-                  <p className="mt-1.5 text-[11px] text-slate-400">Upload reference images so AI can match your business type, visual style, and image preferences. JPG, PNG, WebP — max 3 images.</p>
                 </div>
 
                 {/* Model selector */}
