@@ -10,7 +10,7 @@ import {
   ArrowRight, Newspaper, Send, RefreshCw, Globe, AlertCircle,
   Type, Eye, Copy, Layers, Image as ImageIcon, X, Tag, ListTree,
   Bold, Italic, Underline, Link2, List, ListOrdered, Quote,
-  Heading2, Heading3, Pencil, Save, Undo2, Redo2,
+  Heading2, Heading3, Pencil, Save, Undo2, Redo2, Building2,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -32,6 +32,7 @@ import {
   type GeneratedImage,
 } from "@/lib/wordpress-api";
 import { ModelSelector, usePersistentModel } from "@/components/ModelSelector";
+import { brandingApi, type Branding } from "@/lib/branding-api";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   idle: { label: "Idle", color: "bg-slate-100 text-slate-600 border-slate-200", icon: Clock },
@@ -60,6 +61,10 @@ function PostCreateContent() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Branding
+  const [brands, setBrands] = useState<Branding[]>([]);
+  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null);
 
   // WordPress sites
   const [wpSites, setWpSites] = useState<WordPressSite[]>([]);
@@ -231,13 +236,17 @@ function PostCreateContent() {
 
   const loadData = useCallback(async () => {
     try {
-      const [skillsRes, sitesRes, jobsRes] = await Promise.all([
+      const [skillsRes, sitesRes, jobsRes, brandsRes] = await Promise.all([
         wordpressApi.listPostSkills(),
         wordpressApi.getSites(),
         wordpressApi.listGenerationJobs(),
+        brandingApi.getAll(),
       ]);
       setSkills(skillsRes.skills);
       setGenJobs(jobsRes.jobs || []);
+      setBrands(brandsRes);
+      const defaultBrand = brandsRes.find((b) => b.isDefault);
+      if (defaultBrand) setSelectedBrandId(defaultBrand.id);
       const connected = sitesRes.filter((s) => s.connected);
       setWpSites(connected);
       const siteIdFromUrl = searchParams.get("siteId");
@@ -400,6 +409,7 @@ function PostCreateContent() {
         skillId: selectedSkillId || undefined,
         model: selectedModel,
         siteId: selectedSiteId || undefined,
+        brandingId: selectedBrandId || undefined,
       });
       setGenJobs((prev) => [res.job, ...prev]);
       setGenerationStep("AI is processing your request...");
@@ -1250,6 +1260,91 @@ function PostCreateContent() {
                         )}
                       </div>
                     ))}
+                  </div>
+                )}
+              </div>
+            </article>
+
+            {/* Brand Profile */}
+            <article className="rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
+              <header className="border-b border-slate-100 px-5 py-4 dark:border-white/5">
+                <div className="flex gap-2.5">
+                  <span className="grid size-8 place-items-center rounded-[10px] bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400"><Building2 className="size-4" /></span>
+                  <div>
+                    <h3 className="m-0 text-sm text-slate-900 dark:text-white">Brand Profile</h3>
+                    <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Select brand for content generation</p>
+                  </div>
+                </div>
+              </header>
+              <div className="p-4">
+                {brands.length === 0 ? (
+                  <div className="py-6 text-center">
+                    <Building2 className="mx-auto size-8 text-slate-300 dark:text-slate-600" />
+                    <p className="mt-2 text-xs text-slate-400">No brands yet</p>
+                    <p className="mt-1 text-[10px] text-slate-400">Create one in Settings → Branding</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {brands.map((brand) => {
+                      const selected = selectedBrandId === brand.id;
+                      return (
+                        <div
+                          key={brand.id}
+                          className={`group rounded-xl border p-3 transition-all cursor-pointer ${
+                            selected
+                              ? "border-blue-300 bg-blue-50/50 dark:border-blue-400/30 dark:bg-blue-400/10"
+                              : "border-slate-200 bg-white hover:border-slate-300 dark:border-white/10 dark:bg-slate-900/40 dark:hover:border-white/20"
+                          }`}
+                          onClick={() => setSelectedBrandId(selected ? null : brand.id)}
+                        >
+                          <div className="flex items-start gap-3">
+                            {brand.logoUrl ? (
+                              <img
+                                src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}${brand.logoUrl}`}
+                                alt={brand.companyName}
+                                className="size-9 shrink-0 rounded-lg border border-slate-200 object-contain dark:border-white/10"
+                              />
+                            ) : (
+                              <span
+                                className="grid size-9 shrink-0 place-items-center rounded-lg text-xs font-black text-white"
+                                style={{ backgroundColor: brand.defaultColor }}
+                              >
+                                {brand.companyName.charAt(0).toUpperCase()}
+                              </span>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">{brand.companyName}</p>
+                                {brand.isDefault && (
+                                  <Badge variant="outline" className="text-[9px]">Default</Badge>
+                                )}
+                              </div>
+                              {brand.industry && (
+                                <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{brand.industry}</p>
+                              )}
+                              {selected && (
+                                <div className="mt-2 space-y-1 text-[10px] text-slate-500 dark:text-slate-400">
+                                  {brand.tagline && <p className="italic">&ldquo;{brand.tagline}&rdquo;</p>}
+                                  {brand.website && <p className="flex items-center gap-1"><Globe className="size-2.5" /> {brand.website.replace(/^https?:\/\//, "")}</p>}
+                                  {brand.email && <p className="flex items-center gap-1"><Tag className="size-2.5" /> {brand.email}</p>}
+                                  <div className="flex flex-wrap gap-1.5 pt-1">
+                                    {brand.socialLinks?.twitter && <span className="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800">Twitter</span>}
+                                    {brand.socialLinks?.linkedin && <span className="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800">LinkedIn</span>}
+                                    {brand.socialLinks?.facebook && <span className="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800">Facebook</span>}
+                                    {brand.socialLinks?.instagram && <span className="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800">Instagram</span>}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          {selected && (
+                            <div className="mt-2 flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400">
+                              <ArrowRight className="size-3" /> Selected for generation
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
