@@ -140,6 +140,7 @@ function SettingsInner() {
   const [brandingLoading, setBrandingLoading] = useState(false);
   const [brandingSaving, setBrandingSaving] = useState(false);
   const [extractingBrand, setExtractingBrand] = useState(false);
+  const [extractionStep, setExtractionStep] = useState("");
   const [logoUploading, setLogoUploading] = useState(false);
   const [showBrandingForm, setShowBrandingForm] = useState(false);
   const [editingBranding, setEditingBranding] = useState<Branding | null>(null);
@@ -238,13 +239,46 @@ function SettingsInner() {
 
   const handleSaveBranding = async () => {
     if (!brandingForm.companyName.trim()) return;
+    if (!(brandingForm.website ?? "").trim()) {
+      setError("Website URL is required.");
+      return;
+    }
     setBrandingSaving(true);
     setError(null);
     try {
+      let formData = brandingForm;
+
+      if (!editingBranding) {
+        setExtractionStep("Crawling website...");
+        const extracted = await brandingApi.extractFromWebsite(
+          brandingForm.companyName.trim(),
+          (brandingForm.website ?? "").trim()
+        );
+        setExtractionStep("AI is analyzing brand info...");
+        formData = {
+          ...brandingForm,
+          industry: extracted.industry ?? brandingForm.industry,
+          tagline: extracted.tagline ?? brandingForm.tagline,
+          description: extracted.description ?? brandingForm.description,
+          email: extracted.email ?? brandingForm.email,
+          phone: extracted.phone ?? brandingForm.phone,
+          address: extracted.address ?? brandingForm.address,
+          socialLinks: {
+            twitter: extracted.socialLinks?.twitter ?? "",
+            linkedin: extracted.socialLinks?.linkedin ?? "",
+            facebook: extracted.socialLinks?.facebook ?? "",
+            instagram: extracted.socialLinks?.instagram ?? "",
+            youtube: extracted.socialLinks?.youtube ?? "",
+          },
+        };
+        setBrandingForm(formData);
+        setExtractionStep("Saving brand...");
+      }
+
       if (editingBranding) {
-        await brandingApi.update(editingBranding.id, brandingForm);
+        await brandingApi.update(editingBranding.id, formData);
       } else {
-        await brandingApi.create(brandingForm);
+        await brandingApi.create(formData);
       }
       await fetchBrandings();
       resetBrandingForm();
@@ -252,6 +286,7 @@ function SettingsInner() {
       setError(e instanceof Error ? e.message : "Failed to save branding");
     } finally {
       setBrandingSaving(false);
+      setExtractionStep("");
     }
   };
 
@@ -962,8 +997,8 @@ function SettingsInner() {
 
                     <div className="flex justify-end gap-2.5 pt-2">
                       <Button size="sm" variant="outline" className="gap-1.5" onClick={resetBrandingForm}>Cancel</Button>
-                      <Button size="sm" className="gap-1.5" onClick={handleSaveBranding} disabled={brandingSaving || !brandingForm.companyName.trim()}>
-                        {brandingSaving ? <><Loader2 className="size-3.5 animate-spin" /> Saving...</> : <><CheckCircle2 className="size-3.5" /> {editingBranding ? "Update" : "Create"}</>}
+                      <Button size="sm" className="gap-1.5" onClick={handleSaveBranding} disabled={brandingSaving || !brandingForm.companyName.trim() || !(brandingForm.website ?? "").trim()}>
+                        {brandingSaving ? <><Loader2 className="size-3.5 animate-spin" /> {extractionStep || "Saving..."}</> : <><Sparkles className="size-3.5" /> {editingBranding ? "Update" : "Create & Fetch"}</>}
                       </Button>
                     </div>
                   </div>
