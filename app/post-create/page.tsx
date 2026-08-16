@@ -404,12 +404,15 @@ function PostCreateContent() {
 
     try {
       setGenerationStep("Sending prompt to AI model...");
+      const selectedBrand = brands.find((b) => b.id === selectedBrandId) ?? null;
       const res = await wordpressApi.generateWithWindsurf({
         prompt,
         skillId: selectedSkillId || undefined,
         model: selectedModel,
         siteId: selectedSiteId || undefined,
         brandingId: selectedBrandId || undefined,
+        companyName: selectedBrand?.companyName || undefined,
+        url: selectedBrand?.website || undefined,
       });
       setGenJobs((prev) => [res.job, ...prev]);
       setGenerationStep("AI is processing your request...");
@@ -424,7 +427,7 @@ function PostCreateContent() {
     setGeneratingImages(true);
     setImageError(null);
     try {
-      const result = await wordpressApi.generateImages(generatedContent.imagePrompts);
+      const result = await wordpressApi.generateImages(generatedContent.imagePrompts, selectedBrandId || undefined);
       setGeneratedImages(result.images);
       const updatedBody = insertImagesIntoBody(generatedContent.body, result.images);
       setGeneratedContent({ ...generatedContent, body: updatedBody });
