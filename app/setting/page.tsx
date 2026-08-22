@@ -234,7 +234,6 @@ function SettingsInner() {
       await aiProviderApi.saveSettings({
         provider: aiProvider,
         apiKey: aiApiKey,
-        defaultModel: aiDefaultModel || undefined,
       });
       setAiSuccess("AI provider settings saved successfully!");
       setAiApiKey("");
@@ -1291,21 +1290,6 @@ function SettingsInner() {
                     </p>
                   </div>
 
-                  {/* Default Model */}
-                  <div>
-                    <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Default Model</label>
-                    <input
-                      type="text"
-                      value={aiDefaultModel}
-                      onChange={(e) => setAiDefaultModel(e.target.value)}
-                      placeholder={aiProvider === "openai" ? "gpt-4o" : "anthropic/claude-3.5-sonnet"}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[13px] text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                    />
-                    <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-                      This model will be used for /audit-mcp, /post-create, and other AI features. You can override per request.
-                    </p>
-                  </div>
-
                   {/* Test result */}
                   {aiTestResult && (
                     <div className={`flex items-center gap-2 rounded-xl border p-3 text-[12px] ${
@@ -1354,7 +1338,7 @@ function SettingsInner() {
                       <li>• The key is encrypted with AES-256 before storing in the database</li>
                       <li>• Image generation still uses the server-level OpenAI key (gpt-image-2)</li>
                       <li>• You can switch between OpenAI and OpenRouter anytime</li>
-                      <li>• OpenRouter gives you access to 300+ models from a single API</li>
+                      <li>• <strong>Model selection happens in /audit-mcp and /post-create</strong> — just pick your model from the dropdown there</li>
                     </ul>
                   </div>
                 </div>
