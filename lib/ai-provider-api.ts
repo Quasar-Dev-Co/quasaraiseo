@@ -15,11 +15,16 @@ function authHeaders(): Record<string, string> {
 
 export type AiProvider = "openai" | "openrouter";
 
-export interface AiProviderSettings {
-  provider: string;
-  defaultModel: string;
+export interface ProviderInfo {
   hasApiKey: boolean;
   apiKeyPreview: string;
+  defaultModel: string;
+}
+
+export interface AiProviderSettings {
+  activeProvider: string;
+  openai: ProviderInfo;
+  openrouter: ProviderInfo;
 }
 
 export interface AiProviderModel {
@@ -72,18 +77,33 @@ export const aiProviderApi = {
     return providerRequest<{ settings: AiProviderSettings | null }>("/api/ai-provider");
   },
 
-  async saveSettings(data: {
+  async saveKey(data: {
     provider: AiProvider;
     apiKey: string;
     defaultModel?: string;
   }): Promise<{ success: boolean; message: string }> {
-    return providerRequest<{ success: boolean; message: string }>("/api/ai-provider", {
+    return providerRequest<{ success: boolean; message: string }>("/api/ai-provider/save-key", {
       method: "POST",
       body: JSON.stringify(data),
     });
   },
 
-  async deleteSettings(): Promise<{ success: boolean; message: string }> {
+  async switchProvider(data: {
+    provider: AiProvider;
+  }): Promise<{ success: boolean; message: string }> {
+    return providerRequest<{ success: boolean; message: string }>("/api/ai-provider/switch", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteKey(provider: AiProvider): Promise<{ success: boolean; message: string }> {
+    return providerRequest<{ success: boolean; message: string }>(`/api/ai-provider/key/${provider}`, {
+      method: "DELETE",
+    });
+  },
+
+  async deleteAllSettings(): Promise<{ success: boolean; message: string }> {
     return providerRequest<{ success: boolean; message: string }>("/api/ai-provider", {
       method: "DELETE",
     });

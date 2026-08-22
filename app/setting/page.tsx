@@ -146,11 +146,15 @@ function SettingsInner() {
   const [showBrandingForm, setShowBrandingForm] = useState(false);
   const [editingBranding, setEditingBranding] = useState<Branding | null>(null);
 
-  // AI Provider state
-  const [aiProvider, setAiProvider] = useState<ProviderType>("openai");
-  const [aiApiKey, setAiApiKey] = useState("");
-  const [aiDefaultModel, setAiDefaultModel] = useState("gpt-4o");
-  const [aiSettings, setAiSettings] = useState<{ provider: string; defaultModel: string; hasApiKey: boolean; apiKeyPreview: string } | null>(null);
+  // AI Provider state — both keys saved simultaneously
+  const [aiActiveProvider, setAiActiveProvider] = useState<ProviderType>("openai");
+  const [aiOpenaiKey, setAiOpenaiKey] = useState("");
+  const [aiOpenrouterKey, setAiOpenrouterKey] = useState("");
+  const [aiSettings, setAiSettings] = useState<{
+    activeProvider: string;
+    openai: { hasApiKey: boolean; apiKeyPreview: string; defaultModel: string };
+    openrouter: { hasApiKey: boolean; apiKeyPreview: string; defaultModel: string };
+  } | null>(null);
   const [aiSaving, setAiSaving] = useState(false);
   const [aiTesting, setAiTesting] = useState(false);
   const [aiTestResult, setAiTestResult] = useState<{ success: boolean; message: string; modelCount?: number; testModel?: string; testResponse?: string } | null>(null);
@@ -216,54 +220,82 @@ function SettingsInner() {
     aiProviderApi.getSettings().then((res) => {
       if (res.settings) {
         setAiSettings(res.settings);
-        setAiProvider(res.settings.provider as ProviderType);
-        setAiDefaultModel(res.settings.defaultModel);
+        setAiActiveProvider(res.settings.activeProvider as ProviderType);
       }
     }).catch(() => {});
   }, []);
 
-  const handleSaveAiProvider = async () => {
-    if (!aiApiKey.trim()) {
-      setAiError("API key is required.");
+  const reloadAiSettings = async () => {
+    const res = await aiProviderApi.getSettings();
+    if (res.settings) {
+      setAiSettings(res.settings);
+      setAiActiveProvider(res.settings.activeProvider as ProviderType);
+    }
+  };
+
+  const handleSaveOpenaiKey = async () => {
+    if (!aiOpenaiKey.trim()) {
+      setAiError("OpenAI API key is required.");
       return;
     }
     setAiSaving(true);
     setAiError(null);
     setAiSuccess(null);
     try {
-      await aiProviderApi.saveSettings({
-        provider: aiProvider,
-        apiKey: aiApiKey,
-      });
-      setAiSuccess("AI provider settings saved successfully!");
-      setAiApiKey("");
-      // Reload settings
-      const res = await aiProviderApi.getSettings();
-      if (res.settings) {
-        setAiSettings(res.settings);
-        setAiProvider(res.settings.provider as ProviderType);
-        setAiDefaultModel(res.settings.defaultModel);
-      }
+      await aiProviderApi.saveKey({ provider: "openai", apiKey: aiOpenaiKey });
+      setAiSuccess("OpenAI API key saved!");
+      setAiOpenaiKey("");
+      await reloadAiSettings();
     } catch (err) {
-      setAiError(err instanceof Error ? err.message : "Failed to save settings.");
+      setAiError(err instanceof Error ? err.message : "Failed to save OpenAI key.");
     } finally {
       setAiSaving(false);
     }
   };
 
-  const handleTestAiProvider = async () => {
-    if (!aiApiKey.trim()) {
-      setAiError("Enter an API key to test.");
+  const handleSaveOpenrouterKey = async () => {
+    if (!aiOpenrouterKey.trim()) {
+      setAiError("OpenRouter API key is required.");
+      return;
+    }
+    setAiSaving(true);
+    setAiError(null);
+    setAiSuccess(null);
+    try {
+      await aiProviderApi.saveKey({ provider: "openrouter", apiKey: aiOpenrouterKey });
+      setAiSuccess("OpenRouter API key saved!");
+      setAiOpenrouterKey("");
+      await reloadAiSettings();
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : "Failed to save OpenRouter key.");
+    } finally {
+      setAiSaving(false);
+    }
+  };
+
+  const handleSwitchProvider = async (provider: ProviderType) => {
+    setAiError(null);
+    setAiSuccess(null);
+    try {
+      await aiProviderApi.switchProvider({ provider });
+      setAiActiveProvider(provider);
+      setAiSuccess(`Switched to ${provider === "openai" ? "OpenAI" : "OpenRouter"}!`);
+      await reloadAiSettings();
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : "Failed to switch provider.");
+    }
+  };
+
+  const handleTestAiProvider = async (provider: ProviderType, apiKey: string) => {
+    if (!apiKey.trim()) {
+      setAiError(`Enter a${provider === "openai" ? "n OpenAI" : "n OpenRouter"} API key to test.`);
       return;
     }
     setAiTesting(true);
     setAiError(null);
     setAiTestResult(null);
     try {
-      const result = await aiProviderApi.testProvider({
-        provider: aiProvider,
-        apiKey: aiApiKey,
-      });
+      const result = await aiProviderApi.testProvider({ provider, apiKey });
       setAiTestResult(result);
     } catch (err) {
       setAiTestResult({
@@ -275,15 +307,14 @@ function SettingsInner() {
     }
   };
 
-  const handleDeleteAiProvider = async () => {
-    if (!confirm("Remove your AI provider settings? You'll need to re-enter them to use AI features.")) return;
+  const handleDeleteProviderKey = async (provider: ProviderType) => {
+    if (!confirm(`Remove your ${provider === "openai" ? "OpenAI" : "OpenRouter"} API key?`)) return;
     try {
-      await aiProviderApi.deleteSettings();
-      setAiSettings(null);
-      setAiApiKey("");
-      setAiSuccess("AI provider settings removed.");
+      await aiProviderApi.deleteKey(provider);
+      setAiSuccess(`${provider === "openai" ? "OpenAI" : "OpenRouter"} API key removed.`);
+      await reloadAiSettings();
     } catch (err) {
-      setAiError(err instanceof Error ? err.message : "Failed to remove settings.");
+      setAiError(err instanceof Error ? err.message : "Failed to remove key.");
     }
   };
 
@@ -1182,30 +1213,10 @@ function SettingsInner() {
               <div>
                 <h3 className="text-base font-black text-slate-900 dark:text-white">AI Provider Settings</h3>
                 <p className="mt-1 text-[13px] text-slate-600 dark:text-slate-400">
-                  Configure your own AI API key for content generation, audit reports, and agent tasks.
-                  Your key is encrypted and stored securely. No WindsurfAPI dependency needed.
+                  Save both your OpenAI and OpenRouter API keys. Switch between them anytime without re-entering.
+                  Keys are encrypted with AES-256 before storing.
                 </p>
               </div>
-
-              {/* Current status */}
-              {aiSettings && (
-                <article className="rounded-2xl border border-emerald-200/60 bg-emerald-50/50 p-4 dark:border-emerald-400/15 dark:bg-emerald-400/5">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle2 className="size-5 text-emerald-600 dark:text-emerald-400" />
-                    <div className="flex-1">
-                      <p className="text-[13px] font-bold text-emerald-800 dark:text-emerald-300">
-                        {aiSettings.provider === "openai" ? "OpenAI" : "OpenRouter"} is configured
-                      </p>
-                      <p className="text-[11px] text-emerald-700 dark:text-emerald-400/80">
-                        Model: {aiSettings.defaultModel} · Key: {aiSettings.apiKeyPreview}
-                      </p>
-                    </div>
-                    <Button size="xs" variant="outline" className="gap-1" onClick={handleDeleteAiProvider}>
-                      <Trash2 className="size-3" /> Remove
-                    </Button>
-                  </div>
-                </article>
-              )}
 
               {/* Error / Success messages */}
               {aiError && (
@@ -1219,131 +1230,224 @@ function SettingsInner() {
                 </div>
               )}
 
-              {/* Provider selection */}
-              <article className="overflow-hidden rounded-3xl border border-slate-200/60 bg-white dark:border-slate-700/50 dark:bg-slate-800/50">
-                <div className="space-y-5 p-6">
-                  {/* Provider selector */}
-                  <div>
-                    <label className="mb-2 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">AI Provider</label>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAiProvider("openai");
-                          setAiDefaultModel("gpt-4o");
-                        }}
-                        className={`flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition ${
-                          aiProvider === "openai"
-                            ? "border-emerald-500 bg-emerald-50/50 dark:border-emerald-400/40 dark:bg-emerald-400/5"
-                            : "border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600"
-                        }`}
-                      >
-                        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-slate-900 text-white text-[14px] font-black">AI</span>
-                        <div>
-                          <p className="text-[13px] font-bold text-slate-900 dark:text-white">OpenAI</p>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400">GPT-4o, GPT-4.1, o4-mini, etc.</p>
-                        </div>
-                        {aiProvider === "openai" && <CheckCircle2 className="ml-auto size-5 text-emerald-600" />}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAiProvider("openrouter");
-                          setAiDefaultModel("anthropic/claude-3.5-sonnet");
-                        }}
-                        className={`flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition ${
-                          aiProvider === "openrouter"
-                            ? "border-purple-500 bg-purple-50/50 dark:border-purple-400/40 dark:bg-purple-400/5"
-                            : "border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600"
-                        }`}
-                      >
-                        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 text-white text-[14px] font-black">OR</span>
-                        <div>
-                          <p className="text-[13px] font-bold text-slate-900 dark:text-white">OpenRouter</p>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400">300+ models (Claude, GPT, Gemini, Llama, etc.)</p>
-                        </div>
-                        {aiProvider === "openrouter" && <CheckCircle2 className="ml-auto size-5 text-purple-600" />}
-                      </button>
+              {/* Active provider indicator */}
+              {aiSettings && (aiSettings.openai.hasApiKey || aiSettings.openrouter.hasApiKey) && (
+                <article className="rounded-2xl border border-blue-200/60 bg-blue-50/50 p-4 dark:border-blue-400/15 dark:bg-blue-400/5">
+                  <div className="flex items-center gap-3">
+                    <Sparkles className="size-5 text-blue-600 dark:text-blue-400" />
+                    <div className="flex-1">
+                      <p className="text-[13px] font-bold text-blue-800 dark:text-blue-300">
+                        Active provider: {aiSettings.activeProvider === "openai" ? "OpenAI" : "OpenRouter"}
+                      </p>
+                      <p className="text-[11px] text-blue-700 dark:text-blue-400/80">
+                        {aiSettings.openai.hasApiKey && "OpenAI: configured · "}
+                        {aiSettings.openrouter.hasApiKey && "OpenRouter: configured"}
+                        {!aiSettings.openai.hasApiKey && !aiSettings.openrouter.hasApiKey && "No keys saved yet"}
+                      </p>
                     </div>
                   </div>
+                </article>
+              )}
 
-                  {/* API Key */}
+              {/* ─── OpenAI Section ─── */}
+              <article className="overflow-hidden rounded-3xl border border-slate-200/60 bg-white dark:border-slate-700/50 dark:bg-slate-800/50">
+                <div className="space-y-4 p-6">
+                  <div className="flex items-center gap-3">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-slate-900 text-white text-[14px] font-black">AI</span>
+                    <div className="flex-1">
+                      <p className="text-[14px] font-bold text-slate-900 dark:text-white">OpenAI</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">GPT-5.6, GPT-5.5, GPT-4o, o3, o4-mini, etc.</p>
+                    </div>
+                    {/* Active badge + switch button */}
+                    {aiSettings?.openai.hasApiKey && (
+                      aiSettings.activeProvider === "openai" ? (
+                        <span className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-bold text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400">
+                          ACTIVE
+                        </span>
+                      ) : (
+                        <Button size="xs" variant="outline" onClick={() => handleSwitchProvider("openai")}>
+                          Switch to OpenAI
+                        </Button>
+                      )
+                    )}
+                  </div>
+
+                  {/* OpenAI key status */}
+                  {aiSettings?.openai.hasApiKey && (
+                    <div className="flex items-center justify-between rounded-xl bg-emerald-50/50 px-3 py-2 dark:bg-emerald-400/5">
+                      <p className="text-[11px] text-emerald-700 dark:text-emerald-400/80">
+                        Key saved: {aiSettings.openai.apiKeyPreview}
+                      </p>
+                      <button
+                        onClick={() => handleDeleteProviderKey("openai")}
+                        className="text-[11px] text-red-500 hover:text-red-700"
+                      >
+                        Remove key
+                      </button>
+                    </div>
+                  )}
+
+                  {/* OpenAI API Key input */}
                   <div>
                     <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">
-                      API Key {aiSettings?.hasApiKey && <span className="text-emerald-600">(configured — enter new key to replace)</span>}
+                      OpenAI API Key {aiSettings?.openai.hasApiKey && <span className="text-emerald-600">(enter new key to replace)</span>}
                     </label>
                     <div className="relative">
                       <KeyRound className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                       <input
                         type="password"
-                        value={aiApiKey}
-                        onChange={(e) => setAiApiKey(e.target.value)}
-                        placeholder={aiProvider === "openai" ? "sk-proj-..." : "sk-or-v1-..."}
+                        value={aiOpenaiKey}
+                        onChange={(e) => setAiOpenaiKey(e.target.value)}
+                        placeholder="sk-proj-..."
                         className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-[13px] text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                         autoComplete="off"
                       />
                     </div>
                     <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-                      {aiProvider === "openai"
-                        ? "Get your API key from platform.openai.com/api-keys"
-                        : "Get your API key from openrouter.ai/keys"}
+                      Get your key from platform.openai.com/api-keys
                     </p>
                   </div>
 
-                  {/* Test result */}
-                  {aiTestResult && (
-                    <div className={`rounded-xl border p-4 text-[12px] ${
-                      aiTestResult.success
-                        ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-400"
-                        : "border-red-200 bg-red-50 text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-400"
-                    }`}>
-                      <div className="flex items-center gap-2 font-bold">
-                        {aiTestResult.success
-                          ? <CheckCircle2 className="size-4 shrink-0" />
-                          : <AlertCircle className="size-4 shrink-0" />}
-                        {aiTestResult.success ? "Connection Verified" : "Connection Failed"}
-                      </div>
-                      <p className="mt-1.5">{aiTestResult.message}</p>
-                      {aiTestResult.success && aiTestResult.testResponse && (
-                        <div className="mt-2.5 rounded-lg bg-white/60 p-2.5 dark:bg-slate-900/40">
-                          <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">
-                            AI Response (from {aiTestResult.testModel}):
-                          </p>
-                          <p className="mt-1 font-mono text-[12px] text-slate-800 dark:text-slate-200">
-                            "{aiTestResult.testResponse}"
-                          </p>
-                        </div>
-                      )}
-                      {aiTestResult.success && aiTestResult.modelCount !== undefined && (
-                        <p className="mt-1.5 text-[11px] text-emerald-600 dark:text-emerald-400/80">
-                          {aiTestResult.modelCount} models available · Test used a free/cheap model (cost: ~$0)
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Actions */}
+                  {/* OpenAI actions */}
                   <div className="flex flex-wrap gap-3">
                     <Button
-                      onClick={handleSaveAiProvider}
-                      disabled={aiSaving || !aiApiKey.trim()}
+                      onClick={handleSaveOpenaiKey}
+                      disabled={aiSaving || !aiOpenaiKey.trim()}
                       className="gap-1.5"
+                      size="sm"
                     >
                       {aiSaving ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
-                      {aiSaving ? "Saving..." : "Save Settings"}
+                      Save OpenAI Key
                     </Button>
                     <Button
                       variant="outline"
-                      onClick={handleTestAiProvider}
-                      disabled={aiTesting || !aiApiKey.trim()}
+                      onClick={() => handleTestAiProvider("openai", aiOpenaiKey)}
+                      disabled={aiTesting || !aiOpenaiKey.trim()}
                       className="gap-1.5"
+                      size="sm"
                     >
                       {aiTesting ? <Loader2 className="size-4 animate-spin" /> : <Zap className="size-4" />}
-                      {aiTesting ? "Testing..." : "Test Connection"}
+                      Test
                     </Button>
                   </div>
                 </div>
               </article>
+
+              {/* ─── OpenRouter Section ─── */}
+              <article className="overflow-hidden rounded-3xl border border-slate-200/60 bg-white dark:border-slate-700/50 dark:bg-slate-800/50">
+                <div className="space-y-4 p-6">
+                  <div className="flex items-center gap-3">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 text-white text-[14px] font-black">OR</span>
+                    <div className="flex-1">
+                      <p className="text-[14px] font-bold text-slate-900 dark:text-white">OpenRouter</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">Claude, GLM-5.2, Gemini, DeepSeek, Llama, 70+ models</p>
+                    </div>
+                    {/* Active badge + switch button */}
+                    {aiSettings?.openrouter.hasApiKey && (
+                      aiSettings.activeProvider === "openrouter" ? (
+                        <span className="rounded-full bg-purple-100 px-3 py-1 text-[11px] font-bold text-purple-700 dark:bg-purple-400/15 dark:text-purple-400">
+                          ACTIVE
+                        </span>
+                      ) : (
+                        <Button size="xs" variant="outline" onClick={() => handleSwitchProvider("openrouter")}>
+                          Switch to OpenRouter
+                        </Button>
+                      )
+                    )}
+                  </div>
+
+                  {/* OpenRouter key status */}
+                  {aiSettings?.openrouter.hasApiKey && (
+                    <div className="flex items-center justify-between rounded-xl bg-purple-50/50 px-3 py-2 dark:bg-purple-400/5">
+                      <p className="text-[11px] text-purple-700 dark:text-purple-400/80">
+                        Key saved: {aiSettings.openrouter.apiKeyPreview}
+                      </p>
+                      <button
+                        onClick={() => handleDeleteProviderKey("openrouter")}
+                        className="text-[11px] text-red-500 hover:text-red-700"
+                      >
+                        Remove key
+                      </button>
+                    </div>
+                  )}
+
+                  {/* OpenRouter API Key input */}
+                  <div>
+                    <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">
+                      OpenRouter API Key {aiSettings?.openrouter.hasApiKey && <span className="text-purple-600">(enter new key to replace)</span>}
+                    </label>
+                    <div className="relative">
+                      <KeyRound className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="password"
+                        value={aiOpenrouterKey}
+                        onChange={(e) => setAiOpenrouterKey(e.target.value)}
+                        placeholder="sk-or-v1-..."
+                        className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-[13px] text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                        autoComplete="off"
+                      />
+                    </div>
+                    <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                      Get your key from openrouter.ai/keys
+                    </p>
+                  </div>
+
+                  {/* OpenRouter actions */}
+                  <div className="flex flex-wrap gap-3">
+                    <Button
+                      onClick={handleSaveOpenrouterKey}
+                      disabled={aiSaving || !aiOpenrouterKey.trim()}
+                      className="gap-1.5"
+                      size="sm"
+                    >
+                      {aiSaving ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
+                      Save OpenRouter Key
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleTestAiProvider("openrouter", aiOpenrouterKey)}
+                      disabled={aiTesting || !aiOpenrouterKey.trim()}
+                      className="gap-1.5"
+                      size="sm"
+                    >
+                      {aiTesting ? <Loader2 className="size-4 animate-spin" /> : <Zap className="size-4" />}
+                      Test
+                    </Button>
+                  </div>
+                </div>
+              </article>
+
+              {/* Test result */}
+              {aiTestResult && (
+                <div className={`rounded-xl border p-4 text-[12px] ${
+                  aiTestResult.success
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-400"
+                    : "border-red-200 bg-red-50 text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-400"
+                }`}>
+                  <div className="flex items-center gap-2 font-bold">
+                    {aiTestResult.success
+                      ? <CheckCircle2 className="size-4 shrink-0" />
+                      : <AlertCircle className="size-4 shrink-0" />}
+                    {aiTestResult.success ? "Connection Verified" : "Connection Failed"}
+                  </div>
+                  <p className="mt-1.5">{aiTestResult.message}</p>
+                  {aiTestResult.success && aiTestResult.testResponse && (
+                    <div className="mt-2.5 rounded-lg bg-white/60 p-2.5 dark:bg-slate-900/40">
+                      <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">
+                        AI Response (from {aiTestResult.testModel}):
+                      </p>
+                      <p className="mt-1 font-mono text-[12px] text-slate-800 dark:text-slate-200">
+                        "{aiTestResult.testResponse}"
+                      </p>
+                    </div>
+                  )}
+                  {aiTestResult.success && aiTestResult.modelCount !== undefined && (
+                    <p className="mt-1.5 text-[11px] text-emerald-600 dark:text-emerald-400/80">
+                      {aiTestResult.modelCount} models available · Test used a free/cheap model (cost: ~$0)
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Info card */}
               <article className="rounded-2xl border border-blue-200/50 bg-blue-50/40 p-4 dark:border-blue-400/15 dark:bg-blue-400/5">
@@ -1352,11 +1456,12 @@ function SettingsInner() {
                   <div className="text-[12px] text-slate-700 dark:text-slate-300">
                     <p className="font-bold text-slate-900 dark:text-white">How this works</p>
                     <ul className="mt-1.5 space-y-1">
-                      <li>• Your API key is used for all AI features: /audit-mcp, /post-create, audit reports</li>
-                      <li>• The key is encrypted with AES-256 before storing in the database</li>
-                      <li>• Image generation still uses the server-level OpenAI key (gpt-image-2)</li>
-                      <li>• You can switch between OpenAI and OpenRouter anytime</li>
-                      <li>• <strong>Model selection happens in /audit-mcp and /post-create</strong> — just pick your model from the dropdown there</li>
+                      <li>• Save BOTH your OpenAI and OpenRouter API keys — they stay saved independently</li>
+                      <li>• Click "Switch to OpenAI" or "Switch to OpenRouter" to change the active provider instantly</li>
+                      <li>• The active provider's models show up in /audit-mcp and /post-create dropdowns</li>
+                      <li>• Keys are encrypted with AES-256 before storing in the database</li>
+                      <li>• Image generation still uses the server-level OpenAI key</li>
+                      <li>• <strong>Model selection happens in /audit-mcp and /post-create</strong> — pick from the dropdown there</li>
                     </ul>
                   </div>
                 </div>
