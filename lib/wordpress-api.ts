@@ -202,7 +202,7 @@ export const wordpressApi = {
   },
 
   // ─── AI Content Generation (via user's configured provider) ───
-  async generateWithWindsurf(params: {
+  async generateAiContent(params: {
     prompt: string;
     skillId?: string;
     model?: string;
@@ -211,7 +211,7 @@ export const wordpressApi = {
     companyName?: string;
     url?: string;
   }): Promise<{ job: GenerationJob }> {
-    const res = await fetch(`${BACKEND_URL}/api/wordpress/generate-windsurf`, {
+    const res = await fetch(`${BACKEND_URL}/api/wordpress/generate-content`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify(params),

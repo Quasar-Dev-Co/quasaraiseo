@@ -409,7 +409,7 @@ function PostCreateContent() {
     try {
       setGenerationStep("Sending prompt to AI model...");
       const selectedBrand = brands.find((b) => b.id === selectedBrandId) ?? null;
-      const res = await wordpressApi.generateWithWindsurf({
+      const res = await wordpressApi.generateAiContent({
         prompt,
         skillId: selectedSkillId || undefined,
         model: selectedModel,
