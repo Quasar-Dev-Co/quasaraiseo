@@ -92,14 +92,23 @@ export const aiProviderApi = {
   async testProvider(data: {
     provider: AiProvider;
     apiKey: string;
-  }): Promise<{ success: boolean; message: string; modelCount?: number }> {
-    return providerRequest<{ success: boolean; message: string; modelCount?: number }>(
-      "/api/ai-provider/test",
-      {
-        method: "POST",
-        body: JSON.stringify(data),
-      }
-    );
+  }): Promise<{
+    success: boolean;
+    message: string;
+    modelCount?: number;
+    testModel?: string;
+    testResponse?: string;
+  }> {
+    return providerRequest<{
+      success: boolean;
+      message: string;
+      modelCount?: number;
+      testModel?: string;
+      testResponse?: string;
+    }>("/api/ai-provider/test", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   },
 
   async listModels(): Promise<{ models: AiProviderModel[] }> {

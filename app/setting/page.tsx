@@ -153,7 +153,7 @@ function SettingsInner() {
   const [aiSettings, setAiSettings] = useState<{ provider: string; defaultModel: string; hasApiKey: boolean; apiKeyPreview: string } | null>(null);
   const [aiSaving, setAiSaving] = useState(false);
   const [aiTesting, setAiTesting] = useState(false);
-  const [aiTestResult, setAiTestResult] = useState<{ success: boolean; message: string; modelCount?: number } | null>(null);
+  const [aiTestResult, setAiTestResult] = useState<{ success: boolean; message: string; modelCount?: number; testModel?: string; testResponse?: string } | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiSuccess, setAiSuccess] = useState<string | null>(null);
   const [brandingForm, setBrandingForm] = useState<BrandingInput>({
@@ -1292,15 +1292,33 @@ function SettingsInner() {
 
                   {/* Test result */}
                   {aiTestResult && (
-                    <div className={`flex items-center gap-2 rounded-xl border p-3 text-[12px] ${
+                    <div className={`rounded-xl border p-4 text-[12px] ${
                       aiTestResult.success
-                        ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-400"
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-400"
                         : "border-red-200 bg-red-50 text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-400"
                     }`}>
-                      {aiTestResult.success
-                        ? <CheckCircle2 className="size-4 shrink-0" />
-                        : <AlertCircle className="size-4 shrink-0" />}
-                      {aiTestResult.message}
+                      <div className="flex items-center gap-2 font-bold">
+                        {aiTestResult.success
+                          ? <CheckCircle2 className="size-4 shrink-0" />
+                          : <AlertCircle className="size-4 shrink-0" />}
+                        {aiTestResult.success ? "Connection Verified" : "Connection Failed"}
+                      </div>
+                      <p className="mt-1.5">{aiTestResult.message}</p>
+                      {aiTestResult.success && aiTestResult.testResponse && (
+                        <div className="mt-2.5 rounded-lg bg-white/60 p-2.5 dark:bg-slate-900/40">
+                          <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">
+                            AI Response (from {aiTestResult.testModel}):
+                          </p>
+                          <p className="mt-1 font-mono text-[12px] text-slate-800 dark:text-slate-200">
+                            "{aiTestResult.testResponse}"
+                          </p>
+                        </div>
+                      )}
+                      {aiTestResult.success && aiTestResult.modelCount !== undefined && (
+                        <p className="mt-1.5 text-[11px] text-emerald-600 dark:text-emerald-400/80">
+                          {aiTestResult.modelCount} models available · Test used a free/cheap model (cost: ~$0)
+                        </p>
+                      )}
                     </div>
                   )}
 
