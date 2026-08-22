@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { googleApi, type GoogleStatus, type DeviceInfo } from "@/lib/google-api";
 import { brandingApi, type Branding, type BrandingInput } from "@/lib/branding-api";
+import { aiProviderApi, type AiProvider as ProviderType } from "@/lib/ai-provider-api";
 
 const GIcon = ({ c }: { c?: string }) => (
   <svg className={c} viewBox="0 0 24 24">
@@ -144,6 +145,17 @@ function SettingsInner() {
   const [logoUploading, setLogoUploading] = useState(false);
   const [showBrandingForm, setShowBrandingForm] = useState(false);
   const [editingBranding, setEditingBranding] = useState<Branding | null>(null);
+
+  // AI Provider state
+  const [aiProvider, setAiProvider] = useState<ProviderType>("openai");
+  const [aiApiKey, setAiApiKey] = useState("");
+  const [aiDefaultModel, setAiDefaultModel] = useState("gpt-4o");
+  const [aiSettings, setAiSettings] = useState<{ provider: string; defaultModel: string; hasApiKey: boolean; apiKeyPreview: string } | null>(null);
+  const [aiSaving, setAiSaving] = useState(false);
+  const [aiTesting, setAiTesting] = useState(false);
+  const [aiTestResult, setAiTestResult] = useState<{ success: boolean; message: string; modelCount?: number } | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiSuccess, setAiSuccess] = useState<string | null>(null);
   const [brandingForm, setBrandingForm] = useState<BrandingInput>({
     companyName: "",
     description: "",
@@ -198,6 +210,83 @@ function SettingsInner() {
   useEffect(() => {
     fetchBrandings();
   }, [fetchBrandings]);
+
+  // Load AI provider settings
+  useEffect(() => {
+    aiProviderApi.getSettings().then((res) => {
+      if (res.settings) {
+        setAiSettings(res.settings);
+        setAiProvider(res.settings.provider as ProviderType);
+        setAiDefaultModel(res.settings.defaultModel);
+      }
+    }).catch(() => {});
+  }, []);
+
+  const handleSaveAiProvider = async () => {
+    if (!aiApiKey.trim()) {
+      setAiError("API key is required.");
+      return;
+    }
+    setAiSaving(true);
+    setAiError(null);
+    setAiSuccess(null);
+    try {
+      await aiProviderApi.saveSettings({
+        provider: aiProvider,
+        apiKey: aiApiKey,
+        defaultModel: aiDefaultModel || undefined,
+      });
+      setAiSuccess("AI provider settings saved successfully!");
+      setAiApiKey("");
+      // Reload settings
+      const res = await aiProviderApi.getSettings();
+      if (res.settings) {
+        setAiSettings(res.settings);
+        setAiProvider(res.settings.provider as ProviderType);
+        setAiDefaultModel(res.settings.defaultModel);
+      }
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : "Failed to save settings.");
+    } finally {
+      setAiSaving(false);
+    }
+  };
+
+  const handleTestAiProvider = async () => {
+    if (!aiApiKey.trim()) {
+      setAiError("Enter an API key to test.");
+      return;
+    }
+    setAiTesting(true);
+    setAiError(null);
+    setAiTestResult(null);
+    try {
+      const result = await aiProviderApi.testProvider({
+        provider: aiProvider,
+        apiKey: aiApiKey,
+      });
+      setAiTestResult(result);
+    } catch (err) {
+      setAiTestResult({
+        success: false,
+        message: err instanceof Error ? err.message : "Test failed.",
+      });
+    } finally {
+      setAiTesting(false);
+    }
+  };
+
+  const handleDeleteAiProvider = async () => {
+    if (!confirm("Remove your AI provider settings? You'll need to re-enter them to use AI features.")) return;
+    try {
+      await aiProviderApi.deleteSettings();
+      setAiSettings(null);
+      setAiApiKey("");
+      setAiSuccess("AI provider settings removed.");
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : "Failed to remove settings.");
+    }
+  };
 
   const resetBrandingForm = () => {
     setBrandingForm({
@@ -486,6 +575,7 @@ function SettingsInner() {
             <TabsTrigger value="security" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Shield className="size-4" /> Security</TabsTrigger>
             <TabsTrigger value="workspace" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Settings className="size-4" /> Workspace</TabsTrigger>
             <TabsTrigger value="branding" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Building2 className="size-4" /> Branding</TabsTrigger>
+            <TabsTrigger value="ai-provider" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Sparkles className="size-4" /> AI Provider</TabsTrigger>
           </TabsList>
 
           {/* GOOGLE TAB */}
@@ -1084,6 +1174,191 @@ function SettingsInner() {
                   ))}
                 </div>
               )}
+            </div>
+          </TabsContent>
+
+          {/* AI PROVIDER TAB */}
+          <TabsContent value="ai-provider">
+            <div className="space-y-5">
+              <div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white">AI Provider Settings</h3>
+                <p className="mt-1 text-[13px] text-slate-600 dark:text-slate-400">
+                  Configure your own AI API key for content generation, audit reports, and agent tasks.
+                  Your key is encrypted and stored securely. No WindsurfAPI dependency needed.
+                </p>
+              </div>
+
+              {/* Current status */}
+              {aiSettings && (
+                <article className="rounded-2xl border border-emerald-200/60 bg-emerald-50/50 p-4 dark:border-emerald-400/15 dark:bg-emerald-400/5">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="size-5 text-emerald-600 dark:text-emerald-400" />
+                    <div className="flex-1">
+                      <p className="text-[13px] font-bold text-emerald-800 dark:text-emerald-300">
+                        {aiSettings.provider === "openai" ? "OpenAI" : "OpenRouter"} is configured
+                      </p>
+                      <p className="text-[11px] text-emerald-700 dark:text-emerald-400/80">
+                        Model: {aiSettings.defaultModel} · Key: {aiSettings.apiKeyPreview}
+                      </p>
+                    </div>
+                    <Button size="xs" variant="outline" className="gap-1" onClick={handleDeleteAiProvider}>
+                      <Trash2 className="size-3" /> Remove
+                    </Button>
+                  </div>
+                </article>
+              )}
+
+              {/* Error / Success messages */}
+              {aiError && (
+                <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-[12px] text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-400">
+                  <AlertCircle className="size-4 shrink-0" /> {aiError}
+                </div>
+              )}
+              {aiSuccess && (
+                <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-[12px] text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-400">
+                  <CheckCircle2 className="size-4 shrink-0" /> {aiSuccess}
+                </div>
+              )}
+
+              {/* Provider selection */}
+              <article className="overflow-hidden rounded-3xl border border-slate-200/60 bg-white dark:border-slate-700/50 dark:bg-slate-800/50">
+                <div className="space-y-5 p-6">
+                  {/* Provider selector */}
+                  <div>
+                    <label className="mb-2 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">AI Provider</label>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAiProvider("openai");
+                          setAiDefaultModel("gpt-4o");
+                        }}
+                        className={`flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition ${
+                          aiProvider === "openai"
+                            ? "border-emerald-500 bg-emerald-50/50 dark:border-emerald-400/40 dark:bg-emerald-400/5"
+                            : "border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600"
+                        }`}
+                      >
+                        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-slate-900 text-white text-[14px] font-black">AI</span>
+                        <div>
+                          <p className="text-[13px] font-bold text-slate-900 dark:text-white">OpenAI</p>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">GPT-4o, GPT-4.1, o4-mini, etc.</p>
+                        </div>
+                        {aiProvider === "openai" && <CheckCircle2 className="ml-auto size-5 text-emerald-600" />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAiProvider("openrouter");
+                          setAiDefaultModel("anthropic/claude-3.5-sonnet");
+                        }}
+                        className={`flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition ${
+                          aiProvider === "openrouter"
+                            ? "border-purple-500 bg-purple-50/50 dark:border-purple-400/40 dark:bg-purple-400/5"
+                            : "border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600"
+                        }`}
+                      >
+                        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 text-white text-[14px] font-black">OR</span>
+                        <div>
+                          <p className="text-[13px] font-bold text-slate-900 dark:text-white">OpenRouter</p>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">300+ models (Claude, GPT, Gemini, Llama, etc.)</p>
+                        </div>
+                        {aiProvider === "openrouter" && <CheckCircle2 className="ml-auto size-5 text-purple-600" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* API Key */}
+                  <div>
+                    <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">
+                      API Key {aiSettings?.hasApiKey && <span className="text-emerald-600">(configured — enter new key to replace)</span>}
+                    </label>
+                    <div className="relative">
+                      <KeyRound className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="password"
+                        value={aiApiKey}
+                        onChange={(e) => setAiApiKey(e.target.value)}
+                        placeholder={aiProvider === "openai" ? "sk-proj-..." : "sk-or-v1-..."}
+                        className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-[13px] text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                        autoComplete="off"
+                      />
+                    </div>
+                    <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                      {aiProvider === "openai"
+                        ? "Get your API key from platform.openai.com/api-keys"
+                        : "Get your API key from openrouter.ai/keys"}
+                    </p>
+                  </div>
+
+                  {/* Default Model */}
+                  <div>
+                    <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Default Model</label>
+                    <input
+                      type="text"
+                      value={aiDefaultModel}
+                      onChange={(e) => setAiDefaultModel(e.target.value)}
+                      placeholder={aiProvider === "openai" ? "gpt-4o" : "anthropic/claude-3.5-sonnet"}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[13px] text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    />
+                    <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                      This model will be used for /audit-mcp, /post-create, and other AI features. You can override per request.
+                    </p>
+                  </div>
+
+                  {/* Test result */}
+                  {aiTestResult && (
+                    <div className={`flex items-center gap-2 rounded-xl border p-3 text-[12px] ${
+                      aiTestResult.success
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-400"
+                        : "border-red-200 bg-red-50 text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-400"
+                    }`}>
+                      {aiTestResult.success
+                        ? <CheckCircle2 className="size-4 shrink-0" />
+                        : <AlertCircle className="size-4 shrink-0" />}
+                      {aiTestResult.message}
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex flex-wrap gap-3">
+                    <Button
+                      onClick={handleSaveAiProvider}
+                      disabled={aiSaving || !aiApiKey.trim()}
+                      className="gap-1.5"
+                    >
+                      {aiSaving ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
+                      {aiSaving ? "Saving..." : "Save Settings"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleTestAiProvider}
+                      disabled={aiTesting || !aiApiKey.trim()}
+                      className="gap-1.5"
+                    >
+                      {aiTesting ? <Loader2 className="size-4 animate-spin" /> : <Zap className="size-4" />}
+                      {aiTesting ? "Testing..." : "Test Connection"}
+                    </Button>
+                  </div>
+                </div>
+              </article>
+
+              {/* Info card */}
+              <article className="rounded-2xl border border-blue-200/50 bg-blue-50/40 p-4 dark:border-blue-400/15 dark:bg-blue-400/5">
+                <div className="flex gap-3">
+                  <Sparkles className="size-5 shrink-0 text-blue-600 dark:text-blue-400" />
+                  <div className="text-[12px] text-slate-700 dark:text-slate-300">
+                    <p className="font-bold text-slate-900 dark:text-white">How this works</p>
+                    <ul className="mt-1.5 space-y-1">
+                      <li>• Your API key is used for all AI features: /audit-mcp, /post-create, audit reports</li>
+                      <li>• The key is encrypted with AES-256 before storing in the database</li>
+                      <li>• Image generation still uses the server-level OpenAI key (gpt-image-2)</li>
+                      <li>• You can switch between OpenAI and OpenRouter anytime</li>
+                      <li>• OpenRouter gives you access to 300+ models from a single API</li>
+                    </ul>
+                  </div>
+                </div>
+              </article>
             </div>
           </TabsContent>
         </Tabs>

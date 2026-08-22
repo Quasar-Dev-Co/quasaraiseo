@@ -264,10 +264,14 @@ function PostCreateContent() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  const [modelsError, setModelsError] = useState<string | null>(null);
+
   useEffect(() => {
     wordpressApi.listModels().then((res) => {
       setModels(res.models);
-    }).catch(() => {});
+    }).catch((err) => {
+      setModelsError(err instanceof Error ? err.message : "Failed to load models");
+    });
   }, []);
 
   // Load site data when site changes
@@ -647,6 +651,16 @@ function PostCreateContent() {
                     className="flex-1"
                   />
                 </div>
+                {modelsError && (
+                  <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[12px] text-amber-800 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-400">
+                    <AlertCircle className="size-4 shrink-0" />
+                    <span>
+                      Could not load AI models. Go to{" "}
+                      <a href="/setting" className="font-bold underline">Settings → AI Provider</a>
+                      {" "}to configure your OpenAI or OpenRouter API key.
+                    </span>
+                  </div>
+                )}
 
                 {/* Generate button */}
                 <div className="flex items-center justify-between gap-3">
