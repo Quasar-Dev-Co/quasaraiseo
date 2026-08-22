@@ -201,7 +201,7 @@ export const wordpressApi = {
     return res.json();
   },
 
-  // ─── AI Content Generation (Windsurf API) ───
+  // ─── AI Content Generation (via user's configured provider) ───
   async generateWithWindsurf(params: {
     prompt: string;
     skillId?: string;

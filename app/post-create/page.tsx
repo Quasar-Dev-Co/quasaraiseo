@@ -1385,7 +1385,7 @@ function PostCreateContent() {
                 </li>
                 <li className="flex gap-2.5 text-xs text-slate-600 dark:text-slate-400">
                   <span className="grid size-5 shrink-0 place-items-center rounded-full bg-fuchsia-100 text-[10px] font-bold text-fuchsia-700 dark:bg-fuchsia-400/20 dark:text-fuchsia-400">4</span>
-                  AI generates content via WindsurfAPI
+                  AI generates content via your configured provider
                 </li>
                 <li className="flex gap-2.5 text-xs text-slate-600 dark:text-slate-400">
                   <span className="grid size-5 shrink-0 place-items-center rounded-full bg-fuchsia-100 text-[10px] font-bold text-fuchsia-700 dark:bg-fuchsia-400/20 dark:text-fuchsia-400">5</span>

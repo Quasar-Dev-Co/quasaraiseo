@@ -226,7 +226,7 @@ export default function AuditMcpPage() {
             </em>
           </h1>
           <p className="mt-4 max-w-[700px] text-[15px] leading-relaxed text-slate-600 dark:text-slate-400">
-            Upload a skill zip, describe what you need, and let the AI agent process it through WindsurfAPI. Get PDFs, spreadsheets, and reports delivered straight to you.
+            Upload a skill zip, describe what you need, and let the AI agent process it through your configured AI provider. Get PDFs, spreadsheets, and reports delivered straight to you.
           </p>
         </section>
 
@@ -618,7 +618,7 @@ export default function AuditMcpPage() {
                 </li>
                 <li className="flex gap-2.5 text-xs text-slate-600 dark:text-slate-400">
                   <span className="grid size-5 shrink-0 place-items-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-700 dark:bg-blue-400/20 dark:text-blue-400">3</span>
-                  AI processes via WindsurfAPI with tool access
+                  AI processes via your configured provider with tool access
                 </li>
                 <li className="flex gap-2.5 text-xs text-slate-600 dark:text-slate-400">
                   <span className="grid size-5 shrink-0 place-items-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-700 dark:bg-blue-400/20 dark:text-blue-400">4</span>
