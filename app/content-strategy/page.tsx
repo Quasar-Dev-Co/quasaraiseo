@@ -257,7 +257,7 @@ function QuasarMcpContent() {
   const progress = taskSteps.length > 0 ? Math.round((completedSteps / taskSteps.length) * 100) : 0;
 
   return (
-    <div className="flex h-[calc(100vh-0px)] flex-col overflow-hidden">
+    <div className="-mx-4 -my-8 flex h-[calc(100vh-64px)] flex-col overflow-hidden lg:-mx-9">
 
       {/* Header Bar */}
       <div className="flex items-center justify-between border-b border-slate-200 bg-white/80 px-4 py-3 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/80">
@@ -287,10 +287,10 @@ function QuasarMcpContent() {
       </div>
 
       {/* Main Layout: Left (Tasks) + Right (Chat) */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden min-h-0">
 
         {/* ─── LEFT: Task Panel ─── */}
-        <div className="hidden w-[340px] shrink-0 flex-col border-r border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50 md:flex">
+        <div className="hidden w-[340px] shrink-0 flex-col border-r border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50 md:flex min-h-0">
           <div className="border-b border-slate-200 px-4 py-3 dark:border-slate-800">
             <div className="flex items-center gap-2">
               <Activity className="size-4 text-slate-500" />
@@ -298,7 +298,7 @@ function QuasarMcpContent() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3">
+          <div className="flex-1 overflow-y-auto p-3 min-h-0">
             {/* Active Steps */}
             {taskSteps.length > 0 && (
               <div className="mb-4">
@@ -379,10 +379,10 @@ function QuasarMcpContent() {
         </div>
 
         {/* ─── RIGHT: Chat Panel ─── */}
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex flex-1 flex-col overflow-hidden min-h-0">
 
           {/* Chat Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-6">
+          <div className="flex-1 overflow-y-auto px-4 py-6 min-h-0">
             <div className="mx-auto max-w-3xl space-y-4">
 
               {/* Welcome message */}
