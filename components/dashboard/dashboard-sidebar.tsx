@@ -18,6 +18,7 @@ import {
   BarChart3,
   Globe2,
   FileSpreadsheet,
+  Network,
   Newspaper,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -30,8 +31,8 @@ import { useAuth } from "@/hooks/use-auth";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Create Audit", href: "/create_audit_report", icon: FileSearch },
   { label: "Audit MCP", href: "/audit-mcp", icon: Plug },
+  { label: "Content Strategy", href: "/content-strategy", icon: Network },
   { label: "Post Create", href: "/post-create", icon: PenLine },
   { label: "Task Management", href: "/task-management", icon: ClipboardList },
 ];

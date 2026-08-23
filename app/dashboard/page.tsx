@@ -5,7 +5,7 @@ import { RootState } from "@/lib/store";
 import {
   TrendingUp, TrendingDown, FileSearch, ClipboardList, Plug, PenLine,
   AlertTriangle, CheckCircle2, Clock, ArrowUpRight, Activity,
-  Users, Zap, BarChart3, Globe2,
+  Users, Zap, BarChart3, Globe2, Network,
 } from "lucide-react";
 import Link from "next/link";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
@@ -212,7 +212,7 @@ export default function DashboardPage() {
             </header>
             <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
               {[
-                { href: "/create_audit_report", icon: FileSearch, label: "Create Audit", desc: "Run a new SEO audit" },
+                { href: "/content-strategy", icon: Network, label: "Content Strategy", desc: "Plan pillar & cluster pages" },
                 { href: "/audit-mcp", icon: Plug, label: "Audit MCP", desc: `${mcp.servers.length} servers connected` },
                 { href: "/post-create", icon: PenLine, label: "Post Create", desc: `${post.contentHistory.length} posts generated` },
                 { href: "/task-management", icon: ClipboardList, label: "Tasks", desc: `${activeTasks} active tasks` },

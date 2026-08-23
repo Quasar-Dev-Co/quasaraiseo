@@ -52,7 +52,7 @@ export function Hero() {
 
           <div className="mt-8 flex flex-col items-stretch gap-3.5 sm:flex-row sm:items-center">
             <Link
-              href="/create_audit_report"
+              href="/audit-mcp"
               className="flex items-center justify-center gap-2 rounded-[15px] bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 px-6 py-4 text-sm font-bold text-white shadow-[0_16px_35px_rgba(217,70,239,0.3)] transition-transform hover:-translate-y-px"
             >
               Create your free audit <ArrowUpRight className="size-4" />

@@ -64,7 +64,7 @@ export function PricingSection({ showToast }: { showToast: ShowToast }) {
               <span className="text-[11px] text-slate-500">/month</span>
             </strong>
             <Link
-              href="/create_audit_report"
+              href="/audit-mcp"
               className="mt-5.5 flex w-full items-center justify-center rounded-[13px] border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition-transform hover:-translate-y-px"
             >
               Start auditing
@@ -99,7 +99,7 @@ export function PricingSection({ showToast }: { showToast: ShowToast }) {
             </div>
 
             <Link
-              href="/create_audit_report"
+              href="/audit-mcp"
               className="mt-6 flex w-full items-center justify-center rounded-[14px] bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 px-4 py-3.5 text-sm font-extrabold text-white shadow-[0_12px_28px_rgba(217,70,239,0.35)] transition-all hover:scale-[1.02] hover:shadow-[0_16px_35px_rgba(217,70,239,0.5)]"
             >
               Start growing

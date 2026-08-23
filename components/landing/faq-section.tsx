@@ -24,7 +24,7 @@ export function FaqSection() {
             larger marketing workflow.
           </p>
           <Link
-            href="/create_audit_report"
+            href="/audit-mcp"
             className="mt-6 inline-flex min-h-13 items-center gap-2 rounded-[15px] bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 px-5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(217,70,239,0.3)] transition-transform hover:-translate-y-px"
           >
             Create free audit <ArrowUpRight className="size-4" />
