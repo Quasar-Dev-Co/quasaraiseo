@@ -257,7 +257,7 @@ function QuasarMcpContent() {
   const progress = taskSteps.length > 0 ? Math.round((completedSteps / taskSteps.length) * 100) : 0;
 
   return (
-    <div className="-mx-4 -my-8 flex h-[calc(100vh-64px)] flex-col overflow-hidden lg:-mx-9">
+    <div className="-mx-4 -my-8 flex h-[calc(100vh-64px-5px)] flex-col overflow-hidden lg:-mx-9">
 
       {/* Header Bar */}
       <div className="flex items-center justify-between border-b border-slate-200 bg-white/80 px-4 py-3 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/80">
