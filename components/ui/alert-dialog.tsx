@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +27,20 @@ export function AlertDialog({
   onCancel,
   children,
 }: AlertDialogProps) {
+  const [mounted, setMounted] = useState(false);
+  const [closing, setClosing] = useState(false);
+
+  // Mount animation
+  useEffect(() => {
+    if (open) {
+      setClosing(false);
+      const t = requestAnimationFrame(() => setMounted(true));
+      return () => cancelAnimationFrame(t);
+    } else {
+      setMounted(false);
+    }
+  }, [open]);
+
   // Close on Escape
   useEffect(() => {
     if (!open) return;
@@ -40,6 +54,16 @@ export function AlertDialog({
 
   if (!open) return null;
 
+  const handleClose = () => {
+    setClosing(true);
+    setTimeout(onCancel, 200);
+  };
+
+  const handleConfirm = () => {
+    setClosing(true);
+    setTimeout(onConfirm, 200);
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -48,12 +72,22 @@ export function AlertDialog({
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm dark:bg-black/80"
-        onClick={onCancel}
+        className={cn(
+          "absolute inset-0 bg-black/60 backdrop-blur-sm dark:bg-black/80 transition-opacity duration-200",
+          mounted && !closing ? "opacity-100" : "opacity-0"
+        )}
+        onClick={handleClose}
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900">
+      <div
+        className={cn(
+          "relative w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900 transition-all duration-200 ease-out",
+          mounted && !closing
+            ? "opacity-100 scale-100 translate-y-0"
+            : "opacity-0 scale-95 translate-y-4"
+        )}
+      >
         <h2 className="text-lg font-black text-slate-900 dark:text-white">
           {title}
         </h2>
@@ -65,15 +99,16 @@ export function AlertDialog({
         {children}
 
         <div className="mt-6 flex items-center justify-end gap-3">
-          <Button variant="ghost" onClick={onCancel}>
+          <Button variant="ghost" onClick={handleClose}>
             {cancelText}
           </Button>
           <Button
             className={cn(
+              "transition-all",
               variant === "danger" &&
                 "bg-red-600 text-white hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700"
             )}
-            onClick={onConfirm}
+            onClick={handleConfirm}
           >
             {confirmText}
           </Button>
