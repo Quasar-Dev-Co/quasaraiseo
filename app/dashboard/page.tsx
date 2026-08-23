@@ -212,7 +212,7 @@ export default function DashboardPage() {
             </header>
             <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
               {[
-                { href: "/content-strategy", icon: Network, label: "Content Strategy", desc: "Plan pillar & cluster pages" },
+                { href: "/content-strategy", icon: Network, label: "Quasar MCP", desc: "AI SEO agent server" },
                 { href: "/audit-mcp", icon: Plug, label: "Audit MCP", desc: `${mcp.servers.length} servers connected` },
                 { href: "/post-create", icon: PenLine, label: "Post Create", desc: `${post.contentHistory.length} posts generated` },
                 { href: "/task-management", icon: ClipboardList, label: "Tasks", desc: `${activeTasks} active tasks` },

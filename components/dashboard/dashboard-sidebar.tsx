@@ -33,7 +33,7 @@ const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Audit MCP", href: "/audit-mcp", icon: Plug },
   { label: "Post Create", href: "/post-create", icon: PenLine },
-  { label: "Content Strategy", href: "/content-strategy", icon: Network },
+  { label: "Quasar MCP", href: "/content-strategy", icon: Network },
   { label: "Task Management", href: "/task-management", icon: ClipboardList },
 ];
 

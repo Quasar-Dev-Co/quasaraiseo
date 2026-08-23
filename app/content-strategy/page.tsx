@@ -2,19 +2,18 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Network, Sparkles, ArrowRight, Layers, Globe,
-  Target, FileText, Link2, TrendingUp, Lightbulb,
-  CheckCircle2, Circle, ChevronRight, Search, Zap,
-  BarChart3, MapPin, Users, Calendar, Star, Download,
-  Loader2, XCircle, Clock, Trash2, AlertCircle,
+  Network, Sparkles, Loader2, CheckCircle2, XCircle, Clock,
+  Search, Zap, Send, Terminal, Cpu, Activity, ArrowRight,
+  ChevronRight, Trash2, Download, Bot, User, Wrench,
+  TrendingUp, Target, Layers, Users, Star, Calendar,
+  BarChart3, MapPin, FileText, Lightbulb, AlertCircle,
+  CircleDot, Server,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   keywordResearchApi,
   type KeywordResearchJob,
@@ -22,11 +21,25 @@ import {
   type KeywordRecord,
 } from "@/lib/keyword-research-api";
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
-  running: { label: "Running", color: "bg-blue-100 text-blue-700 border-blue-200", icon: Loader2 },
-  completed: { label: "Completed", color: "bg-emerald-100 text-emerald-700 border-emerald-200", icon: CheckCircle2 },
-  failed: { label: "Failed", color: "bg-red-100 text-red-700 border-red-200", icon: XCircle },
-};
+// ─── Types ───
+
+interface ChatMessage {
+  id: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+  timestamp: number;
+  jobId?: string;
+  result?: KeywordResearchResult;
+}
+
+interface TaskStep {
+  id: string;
+  label: string;
+  status: "pending" | "running" | "completed" | "failed";
+  detail?: string;
+}
+
+// ─── Helpers ───
 
 const PRIORITY_COLORS: Record<string, string> = {
   Critical: "bg-red-100 text-red-700 border-red-200",
@@ -60,706 +73,715 @@ function getKdLabel(kd: number): string {
   return "Extreme";
 }
 
-function ContentStrategyContent() {
-  const [seed, setSeed] = useState("");
-  const [location, setLocation] = useState("");
-  const [industryType, setIndustryType] = useState("");
-  const [businessName, setBusinessName] = useState("");
-  const [starting, setStarting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+// Simulated agent steps for the task panel
+const RESEARCH_STEPS: Omit<TaskStep, "id" | "status">[] = [
+  { label: "Detecting industry type", detail: "Auto-classifying business vertical" },
+  { label: "Generating seed keywords", detail: "Expanding from user input" },
+  { label: "Expanding with modifiers", detail: "Question, commercial, transactional, local" },
+  { label: "Classifying search intent", detail: "Informational / Commercial / Transactional" },
+  { label: "Estimating metrics", detail: "Volume, KD, CPC, traffic potential" },
+  { label: "Clustering keywords", detail: "SERP overlap → topic clusters" },
+  { label: "Scoring & prioritizing", detail: "Business value × feasibility × traffic" },
+  { label: "Analyzing competitors", detail: "Strengths, weaknesses, opportunities" },
+  { label: "Identifying quick wins", detail: "Low KD + decent volume" },
+  { label: "Mapping SERP features", detail: "Snippets, PAA, AI Overviews" },
+  { label: "Building content strategy", detail: "Phased roadmap with page types" },
+  { label: "Compiling final report", detail: "JSON output matching schema" },
+];
+
+function uid(): string {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+// ─── Main Component ───
+
+function QuasarMcpContent() {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
   const [jobs, setJobs] = useState<KeywordResearchJob[]>([]);
   const [activeJob, setActiveJob] = useState<KeywordResearchJob | null>(null);
+  const [taskSteps, setTaskSteps] = useState<TaskStep[]>([]);
+  const [isWorking, setIsWorking] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const stepTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Load past jobs
   const loadJobs = useCallback(async () => {
     try {
       const res = await keywordResearchApi.listJobs();
       setJobs(res.jobs);
       const running = res.jobs.find((j) => j.status === "running");
-      if (running) setActiveJob(running);
-      else if (res.jobs.length > 0 && res.jobs[0].status === "completed") setActiveJob(res.jobs[0]);
+      if (running) {
+        setActiveJob(running);
+        setIsWorking(true);
+      }
     } catch {}
   }, []);
 
   useEffect(() => { loadJobs(); }, [loadJobs]);
 
-  // Poll running jobs
-  const hasRunningJob = jobs.some((j) => j.status === "running");
+  // Auto-scroll chat
   useEffect(() => {
-    if (hasRunningJob) {
-      if (pollRef.current) return;
-      pollRef.current = setInterval(async () => {
-        const runningJobs = jobs.filter((j) => j.status === "running");
-        for (const job of runningJobs) {
-          try {
-            const res = await keywordResearchApi.getJob(job.id);
-            setJobs((prev) => prev.map((j) => (j.id === job.id ? res.job : j)));
-            if (res.job.status === "completed" || res.job.status === "failed") {
-              setActiveJob(res.job);
-            }
-          } catch {}
-        }
-      }, 3000);
-    } else {
-      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
-    }
-    return () => { if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; } };
-  }, [hasRunningJob, jobs]);
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-  const handleStart = async () => {
-    if (!seed.trim()) return;
-    setStarting(true);
-    setError(null);
-    try {
-      const res = await keywordResearchApi.startResearch({
-        seed: seed.trim(),
-        location: location.trim() || undefined,
-        industryType: industryType.trim() || undefined,
-        businessName: businessName.trim() || undefined,
+  // Poll running job
+  useEffect(() => {
+    if (!isWorking || !activeJob) return;
+    if (pollRef.current) return;
+    pollRef.current = setInterval(async () => {
+      if (!activeJob) return;
+      try {
+        const res = await keywordResearchApi.getJob(activeJob.id);
+        setJobs((prev) => prev.map((j) => (j.id === activeJob.id ? res.job : j)));
+        setActiveJob(res.job);
+        if (res.job.status === "completed") {
+          setIsWorking(false);
+          // Mark all steps completed
+          setTaskSteps((prev) => prev.map((s) => ({ ...s, status: "completed" as const })));
+          // Add assistant message with results
+          setMessages((prev) => [...prev, {
+            id: uid(),
+            role: "assistant",
+            content: `Research complete! Found **${res.job.result?.meta?.total_keywords ?? 0} keywords** across all categories. The full report is ready below.`,
+            timestamp: Date.now(),
+            jobId: res.job.id,
+            result: res.job.result ?? undefined,
+          }]);
+        } else if (res.job.status === "failed") {
+          setIsWorking(false);
+          setTaskSteps((prev) => prev.map((s) => s.status === "running" ? { ...s, status: "failed" as const } : s));
+          setMessages((prev) => [...prev, {
+            id: uid(),
+            role: "assistant",
+            content: `Research failed: ${res.job.errorMessage ?? "Unknown error"}`,
+            timestamp: Date.now(),
+          }]);
+        }
+      } catch {}
+    }, 3000);
+    return () => { if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; } };
+  }, [isWorking, activeJob]);
+
+  // Simulate step progression while working
+  useEffect(() => {
+    if (!isWorking) {
+      if (stepTimerRef.current) { clearInterval(stepTimerRef.current); stepTimerRef.current = null; }
+      return;
+    }
+    let currentStep = 0;
+    stepTimerRef.current = setInterval(() => {
+      setTaskSteps((prev) => {
+        const next = [...prev];
+        if (currentStep < next.length) {
+          next[currentStep] = { ...next[currentStep], status: "running" };
+        }
+        if (currentStep > 0 && currentStep - 1 < next.length) {
+          next[currentStep - 1] = { ...next[currentStep - 1], status: "completed" };
+        }
+        currentStep++;
+        return next;
       });
-      setJobs((prev) => [res.job, ...prev]);
-      setActiveJob(res.job);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to start research");
-    } finally {
-      setStarting(false);
+    }, 2500);
+    return () => { if (stepTimerRef.current) { clearInterval(stepTimerRef.current); stepTimerRef.current = null; } };
+  }, [isWorking]);
+
+  const handleSend = async () => {
+    const text = input.trim();
+    if (!text || isWorking) return;
+
+    // Add user message
+    const userMsg: ChatMessage = { id: uid(), role: "user", content: text, timestamp: Date.now() };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+
+    // Parse intent — keyword research command
+    const researchMatch = text.match(/(?:research|keywords?|keyword research|find keywords?)\s*(?:for|on|about)?\s*(.+)/i);
+    if (researchMatch || text.toLowerCase().includes("keyword")) {
+      const seed = researchMatch?.[1]?.trim() || text;
+      // Initialize task steps
+      setTaskSteps(RESEARCH_STEPS.map((s) => ({ ...s, id: uid(), status: "pending" as const })));
+      setIsWorking(true);
+
+      // Add system message
+      setMessages((prev) => [...prev, {
+        id: uid(),
+        role: "system",
+        content: `Starting keyword research for "${seed}"...`,
+        timestamp: Date.now(),
+      }]);
+
+      try {
+        const res = await keywordResearchApi.startResearch({ seed });
+        setActiveJob(res.job);
+        setJobs((prev) => [res.job, ...prev]);
+      } catch (err) {
+        setIsWorking(false);
+        setTaskSteps([]);
+        setMessages((prev) => [...prev, {
+          id: uid(),
+          role: "assistant",
+          content: `Error: ${err instanceof Error ? err.message : "Failed to start research"}`,
+          timestamp: Date.now(),
+        }]);
+      }
+      return;
+    }
+
+    // Default response
+    setMessages((prev) => [...prev, {
+      id: uid(),
+      role: "assistant",
+      content: `I can help with keyword research. Try: "research keywords for AI web development" or "find keywords for dentist in Portland"`,
+      timestamp: Date.now(),
+    }]);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
   };
 
-  const handleDelete = async (jobId: string) => {
+  const handleDeleteJob = async (jobId: string) => {
     try {
       await keywordResearchApi.deleteJob(jobId);
       setJobs((prev) => prev.filter((j) => j.id !== jobId));
-      if (activeJob?.id === jobId) setActiveJob(null);
+      if (activeJob?.id === jobId) { setActiveJob(null); setTaskSteps([]); }
     } catch {}
   };
 
-  const result = activeJob?.result as KeywordResearchResult | null;
-  const isRunning = activeJob?.status === "running";
+  const completedSteps = taskSteps.filter((s) => s.status === "completed").length;
+  const progress = taskSteps.length > 0 ? Math.round((completedSteps / taskSteps.length) * 100) : 0;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="flex h-[calc(100vh-0px)] flex-col overflow-hidden">
 
-      {/* Header */}
-      <div className="mb-8 flex items-center gap-3">
-        <div className="grid size-11 place-items-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg">
-          <Network className="size-6" />
+      {/* Header Bar */}
+      <div className="flex items-center justify-between border-b border-slate-200 bg-white/80 px-4 py-3 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/80">
+        <div className="flex items-center gap-3">
+          <div className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg">
+            <Server className="size-5" />
+          </div>
+          <div>
+            <h1 className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
+              Quasar MCP
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              AI SEO Agent Server
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Content Strategy
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Keyword research, topic clusters, and content planning for SEO dominance
-          </p>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="gap-1.5 text-xs">
+            <CircleDot className="size-3 text-emerald-500" />
+            Online
+          </Badge>
+          <Badge variant="outline" className="gap-1.5 text-xs">
+            <Cpu className="size-3 text-blue-500" />
+            {isWorking ? "Processing" : "Idle"}
+          </Badge>
         </div>
       </div>
 
-      {/* Input Card */}
-      <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="mb-4 flex items-center gap-2">
-          <Search className="size-5 text-blue-600" />
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-            Keyword Research
-          </h2>
-        </div>
+      {/* Main Layout: Left (Tasks) + Right (Chat) */}
+      <div className="flex flex-1 overflow-hidden">
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
-              Seed Keyword / Topic *
-            </label>
-            <Input
-              value={seed}
-              onChange={(e) => setSeed(e.target.value)}
-              placeholder="e.g. AI web development"
-              className="w-full"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
-              Location (optional)
-            </label>
-            <Input
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="e.g. New York, NY"
-              className="w-full"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
-              Industry (auto-detect)
-            </label>
-            <select
-              value={industryType}
-              onChange={(e) => setIndustryType(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white"
-            >
-              <option value="">Auto-detect</option>
-              <option value="local_service">Local Service</option>
-              <option value="saas">SaaS</option>
-              <option value="ecommerce">E-commerce</option>
-              <option value="publisher">Blog / Publisher</option>
-              <option value="agency">Agency</option>
-            </select>
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
-              Business Name (optional)
-            </label>
-            <Input
-              value={businessName}
-              onChange={(e) => setBusinessName(e.target.value)}
-              placeholder="e.g. CodeMyPixel"
-              className="w-full"
-            />
-          </div>
-        </div>
-
-        <div className="mt-4 flex items-center justify-between">
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            AI will research 200+ keywords with volume, difficulty, CPC, intent, clusters, and quick wins.
-          </p>
-          <Button
-            onClick={handleStart}
-            disabled={!seed.trim() || starting || isRunning}
-            className="gap-2"
-          >
-            {starting || isRunning ? (
-              <>
-                <Loader2 className="size-4 animate-spin" />
-                Researching...
-              </>
-            ) : (
-              <>
-                <Sparkles className="size-4" />
-                Start Research
-              </>
-            )}
-          </Button>
-        </div>
-
-        {error && (
-          <div className="mt-3 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/30">
-            <AlertCircle className="size-4" /> {error}
-          </div>
-        )}
-      </div>
-
-      {/* Running Status */}
-      {isRunning && (
-        <div className="mb-6 rounded-2xl border border-blue-200 bg-blue-50/50 p-6 dark:border-blue-800 dark:bg-blue-950/30">
-          <div className="flex items-center gap-3">
-            <Loader2 className="size-6 animate-spin text-blue-600" />
-            <div>
-              <h3 className="font-semibold text-slate-900 dark:text-white">
-                Researching keywords for "{activeJob?.seed}"
-              </h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                AI is analyzing search volume, difficulty, intent, competitors, and building topic clusters. This takes 1-3 minutes.
-              </p>
+        {/* ─── LEFT: Task Panel ─── */}
+        <div className="hidden w-[340px] shrink-0 flex-col border-r border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50 md:flex">
+          <div className="border-b border-slate-200 px-4 py-3 dark:border-slate-800">
+            <div className="flex items-center gap-2">
+              <Activity className="size-4 text-slate-500" />
+              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Agent Activity</h2>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Failed Status */}
-      {activeJob?.status === "failed" && (
-        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50/50 p-6 dark:border-red-800 dark:bg-red-950/30">
-          <div className="flex items-center gap-3">
-            <XCircle className="size-6 text-red-600" />
-            <div>
-              <h3 className="font-semibold text-slate-900 dark:text-white">Research failed</h3>
-              <p className="text-sm text-red-600">{activeJob.errorMessage}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Results */}
-      {result && activeJob?.status === "completed" && (
-        <KeywordResearchResults result={result} />
-      )}
-
-      {/* Past Jobs */}
-      {jobs.length > 0 && (
-        <div className="mt-8">
-          <h3 className="mb-3 text-sm font-semibold uppercase text-slate-500 dark:text-slate-400">
-            Past Research Jobs
-          </h3>
-          <div className="space-y-2">
-            {jobs.map((job) => {
-              const sc = STATUS_CONFIG[job.status] ?? STATUS_CONFIG.running;
-              const StatusIcon = sc.icon;
-              return (
-                <div
-                  key={job.id}
-                  className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900"
-                >
-                  <div className="flex items-center gap-3">
-                    <StatusIcon className={`size-4 ${job.status === "running" ? "animate-spin" : ""} ${sc.color.split(" ")[1]}`} />
-                    <div>
-                      <p className="text-sm font-medium text-slate-900 dark:text-white">
-                        {job.seed}
-                        {job.location ? ` — ${job.location}` : ""}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {new Date(job.createdAt).toLocaleString()}
-                        {job.result?.meta?.total_keywords ? ` • ${job.result.meta.total_keywords} keywords` : ""}
-                      </p>
+          <div className="flex-1 overflow-y-auto p-3">
+            {/* Active Steps */}
+            {taskSteps.length > 0 && (
+              <div className="mb-4">
+                {/* Progress bar */}
+                {isWorking && (
+                  <div className="mb-3 rounded-lg border border-blue-200 bg-blue-50/50 p-3 dark:border-blue-800 dark:bg-blue-950/30">
+                    <div className="mb-1.5 flex items-center justify-between text-xs">
+                      <span className="font-medium text-blue-700 dark:text-blue-400">Progress</span>
+                      <span className="text-blue-600">{progress}%</span>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setActiveJob(job)}
-                      className="text-xs"
-                    >
-                      View
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(job.id)}
-                      className="text-xs text-red-500"
-                    >
-                      <Trash2 className="size-3" />
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {!activeJob && !isRunning && jobs.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-slate-300 p-12 text-center dark:border-slate-700">
-          <Search className="mx-auto mb-4 size-12 text-slate-300 dark:text-slate-600" />
-          <h3 className="mb-2 text-lg font-semibold text-slate-700 dark:text-slate-300">
-            Start with a seed keyword
-          </h3>
-          <p className="mx-auto max-w-md text-sm text-slate-500 dark:text-slate-400">
-            Enter a topic or keyword above. The AI will research 200+ keywords with
-            search volume, difficulty, CPC, search intent, topic clusters, competitors,
-            quick wins, and a content strategy roadmap.
-          </p>
-        </div>
-      )}
-
-    </div>
-  );
-}
-
-// ─── Results Component ───
-
-function KeywordResearchResults({ result }: { result: KeywordResearchResult }) {
-  const { meta } = result;
-  const [activeTab, setActiveTab] = useState("overview");
-
-  return (
-    <div className="space-y-6">
-
-      {/* KPI Summary Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
-          icon={Search}
-          label="Total Keywords"
-          value={meta.total_keywords.toString()}
-          color="bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400"
-        />
-        <KpiCard
-          icon={TrendingUp}
-          label="Monthly Volume"
-          value={meta.total_monthly_volume.toLocaleString()}
-          color="bg-purple-50 text-purple-600 dark:bg-purple-950/30 dark:text-purple-400"
-        />
-        <KpiCard
-          icon={Zap}
-          label="Quick Wins"
-          value={result.quick_wins.length.toString()}
-          color="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400"
-        />
-        <KpiCard
-          icon={BarChart3}
-          label="Avg CPC"
-          value={`$${meta.avg_cpc.toFixed(2)}`}
-          color="bg-orange-50 text-orange-600 dark:bg-orange-950/30 dark:text-orange-400"
-        />
-      </div>
-
-      {/* Key Findings */}
-      {result.kpi_summary.key_findings.length > 0 && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-6 dark:border-amber-800 dark:bg-amber-950/30">
-          <div className="mb-3 flex items-center gap-2">
-            <Lightbulb className="size-5 text-amber-600" />
-            <h3 className="font-semibold text-slate-900 dark:text-white">Key Findings</h3>
-          </div>
-          <ul className="space-y-1.5 text-sm text-slate-600 dark:text-slate-400">
-            {result.kpi_summary.key_findings.map((finding, i) => (
-              <li key={i} className="flex items-start gap-2">
-                <ChevronRight className="mt-0.5 size-4 shrink-0 text-amber-500" />
-                {finding}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="flex w-full flex-wrap gap-1">
-          <TabsTrigger value="overview" className="gap-1.5 text-xs">
-            <BarChart3 className="size-3.5" /> Overview
-          </TabsTrigger>
-          <TabsTrigger value="primary" className="gap-1.5 text-xs">
-            <Target className="size-3.5" /> Primary ({result.primary_keywords.length})
-          </TabsTrigger>
-          <TabsTrigger value="service" className="gap-1.5 text-xs">
-            <Layers className="size-3.5" /> By Category ({result.service_keywords.length})
-          </TabsTrigger>
-          {result.location_keywords.length > 0 && (
-            <TabsTrigger value="location" className="gap-1.5 text-xs">
-              <MapPin className="size-3.5" /> Location ({result.location_keywords.length})
-            </TabsTrigger>
-          )}
-          <TabsTrigger value="longtail" className="gap-1.5 text-xs">
-            <FileText className="size-3.5" /> Long-tail ({result.longtail_keywords.length})
-          </TabsTrigger>
-          <TabsTrigger value="clusters" className="gap-1.5 text-xs">
-            <Network className="size-3.5" /> Clusters ({result.topic_clusters.length})
-          </TabsTrigger>
-          <TabsTrigger value="competitors" className="gap-1.5 text-xs">
-            <Users className="size-3.5" /> Competitors ({result.competitors.length})
-          </TabsTrigger>
-          <TabsTrigger value="quickwins" className="gap-1.5 text-xs">
-            <Zap className="size-3.5" /> Quick Wins ({result.quick_wins.length})
-          </TabsTrigger>
-          <TabsTrigger value="serp" className="gap-1.5 text-xs">
-            <Star className="size-3.5" /> SERP ({result.serp_features.length})
-          </TabsTrigger>
-          <TabsTrigger value="seasonality" className="gap-1.5 text-xs">
-            <Calendar className="size-3.5" /> Trends ({result.seasonality.length})
-          </TabsTrigger>
-          <TabsTrigger value="strategy" className="gap-1.5 text-xs">
-            <ArrowRight className="size-3.5" /> Strategy ({result.content_strategy.length})
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="mt-4">
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-              <h4 className="mb-3 font-semibold text-slate-900 dark:text-white">Top Opportunity</h4>
-              <div className="flex items-center gap-3">
-                <div className="grid size-10 place-items-center rounded-lg bg-emerald-100 text-emerald-700">
-                  <TrendingUp className="size-5" />
-                </div>
-                <div>
-                  <p className="font-medium text-slate-900 dark:text-white">{meta.top_opportunity.keyword}</p>
-                  <p className="text-sm text-slate-500">{meta.top_opportunity.volume.toLocaleString()} searches/mo</p>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-              <h4 className="mb-3 font-semibold text-slate-900 dark:text-white">Highest CPC</h4>
-              <div className="flex items-center gap-3">
-                <div className="grid size-10 place-items-center rounded-lg bg-orange-100 text-orange-700">
-                  <BarChart3 className="size-5" />
-                </div>
-                <div>
-                  <p className="font-medium text-slate-900 dark:text-white">{meta.highest_cpc.keyword}</p>
-                  <p className="text-sm text-slate-500">${meta.highest_cpc.cpc.toFixed(2)} per click</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {meta.market_description && (
-            <div className="mt-4 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-              <h4 className="mb-2 font-semibold text-slate-900 dark:text-white">Market Overview</h4>
-              <p className="text-sm text-slate-600 dark:text-slate-400">{meta.market_description}</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Badge variant="outline">Industry: {meta.industry_type}</Badge>
-                {meta.location && <Badge variant="outline">Location: {meta.location}</Badge>}
-                <Badge variant="outline">Data: {meta.data_source}</Badge>
-                {meta.market_population && <Badge variant="outline">Pop: {meta.market_population.toLocaleString()}</Badge>}
-              </div>
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Primary Keywords Tab */}
-        <TabsContent value="primary" className="mt-4">
-          <KeywordTable keywords={result.primary_keywords} />
-        </TabsContent>
-
-        {/* Service Keywords Tab */}
-        <TabsContent value="service" className="mt-4">
-          <KeywordTable keywords={result.service_keywords} showCategory />
-        </TabsContent>
-
-        {/* Location Keywords Tab */}
-        <TabsContent value="location" className="mt-4">
-          <KeywordTable keywords={result.location_keywords} showLocation />
-        </TabsContent>
-
-        {/* Long-tail Keywords Tab */}
-        <TabsContent value="longtail" className="mt-4">
-          <div className="space-y-2">
-            {result.longtail_keywords.map((kw, i) => (
-              <div key={i} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-medium text-slate-900 dark:text-white">{kw.keyword}</p>
-                    {kw.title_suggestion && (
-                      <p className="mt-1 text-sm text-slate-500">Title: {kw.title_suggestion}</p>
-                    )}
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      <Badge variant="outline" className={`text-xs ${PRIORITY_COLORS[kw.priority] ?? ""}`}>{kw.priority}</Badge>
-                      <Badge variant="outline" className={`text-xs ${INTENT_COLORS[kw.intent] ?? ""}`}>{kw.intent}</Badge>
-                      {kw.content_type && <Badge variant="outline" className="text-xs">{kw.content_type}</Badge>}
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-blue-100 dark:bg-blue-900">
+                      <div className="h-full rounded-full bg-blue-500 transition-all duration-500" style={{ width: `${progress}%` }} />
                     </div>
-                  </div>
-                  <div className="text-right text-sm">
-                    <p className="text-slate-900 dark:text-white">{kw.volume.toLocaleString()} vol</p>
-                    <p className={getKdColor(kw.kd)}>KD {kw.kd} — {getKdLabel(kw.kd)}</p>
-                    {kw.cpc > 0 && <p className="text-slate-500">${kw.cpc.toFixed(2)} CPC</p>}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* Topic Clusters Tab */}
-        <TabsContent value="clusters" className="mt-4">
-          <div className="space-y-4">
-            {result.topic_clusters.map((cluster, i) => (
-              <div key={i} className="rounded-xl border-2 border-purple-200 bg-purple-50/30 p-5 dark:border-purple-800 dark:bg-purple-950/20">
-                <div className="mb-3 flex items-center gap-2">
-                  <div className="grid size-8 place-items-center rounded-lg bg-purple-600 text-white">
-                    <Layers className="size-4" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-slate-900 dark:text-white">{cluster.cluster_name}</h4>
-                    <p className="text-xs text-slate-500">Pillar: {cluster.pillar_keyword}</p>
-                  </div>
-                </div>
-                <div className="mb-3 flex flex-wrap gap-2">
-                  <Badge variant="outline" className="text-xs">{cluster.total_volume.toLocaleString()} total vol</Badge>
-                  <Badge variant="outline" className={`text-xs ${getKdColor(cluster.avg_kd)}`}>Avg KD {cluster.avg_kd}</Badge>
-                  <Badge variant="outline" className="text-xs">{cluster.page_type}</Badge>
-                  {cluster.content_gap && <Badge variant="outline" className="text-xs text-amber-600">Gap: {cluster.content_gap}</Badge>}
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {cluster.supporting_keywords.map((skw, j) => (
-                    <span key={j} className="rounded-md bg-white px-2 py-1 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                      {skw}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* Competitors Tab */}
-        <TabsContent value="competitors" className="mt-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            {result.competitors.map((comp, i) => (
-              <div key={i} className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-                <div className="mb-3 flex items-center justify-between">
-                  <h4 className="font-semibold text-slate-900 dark:text-white">{comp.name}</h4>
-                  {comp.domain_rating && <Badge variant="outline">DR {comp.domain_rating}</Badge>}
-                </div>
-                {comp.domain && <p className="mb-2 text-xs text-slate-500">{comp.domain}</p>}
-                <div className="space-y-2 text-sm">
-                  <div>
-                    <span className="font-medium text-emerald-600">Strengths: </span>
-                    <span className="text-slate-600 dark:text-slate-400">{comp.strengths}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-red-600">Weaknesses: </span>
-                    <span className="text-slate-600 dark:text-slate-400">{comp.weaknesses}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-blue-600">Opportunity: </span>
-                    <span className="text-slate-600 dark:text-slate-400">{comp.opportunity}</span>
-                  </div>
-                </div>
-                {comp.top_keywords && comp.top_keywords.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-1">
-                    {comp.top_keywords.slice(0, 5).map((kw, j) => (
-                      <Badge key={j} variant="outline" className="text-xs">{kw}</Badge>
-                    ))}
                   </div>
                 )}
-              </div>
-            ))}
-          </div>
-        </TabsContent>
 
-        {/* Quick Wins Tab */}
-        <TabsContent value="quickwins" className="mt-4">
-          <div className="space-y-2">
-            {result.quick_wins.map((qw, i) => (
-              <div key={i} className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50/30 p-4 dark:border-emerald-800 dark:bg-emerald-950/20">
-                <div>
-                  <p className="font-medium text-slate-900 dark:text-white">{qw.keyword}</p>
-                  <p className="text-sm text-slate-500">{qw.action}</p>
-                  {qw.target_page && <p className="text-xs text-slate-400">→ {qw.target_page}</p>}
-                </div>
-                <div className="text-right text-sm">
-                  <p className="text-slate-900 dark:text-white">{qw.volume.toLocaleString()} vol</p>
-                  <p className={getKdColor(qw.kd)}>KD {qw.kd}</p>
-                  <Badge className={`text-xs ${PRIORITY_COLORS[qw.expected_impact] ?? ""}`}>{qw.expected_impact}</Badge>
-                </div>
-              </div>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* SERP Features Tab */}
-        <TabsContent value="serp" className="mt-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            {result.serp_features.map((sf, i) => (
-              <div key={i} className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-                <div className="mb-2 flex items-center justify-between">
-                  <h4 className="font-semibold text-slate-900 dark:text-white">{sf.feature}</h4>
-                  <Badge className={`text-xs ${PRIORITY_COLORS[sf.opportunity_level] ?? ""}`}>{sf.opportunity_level}</Badge>
-                </div>
-                <p className="mb-2 text-sm text-slate-600 dark:text-slate-400">{sf.how_to_win}</p>
-                <p className="text-xs text-slate-500">{sf.keyword_count} keywords</p>
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {sf.example_keywords.slice(0, 3).map((kw, j) => (
-                    <Badge key={j} variant="outline" className="text-xs">{kw}</Badge>
+                <div className="space-y-1">
+                  {taskSteps.map((step, i) => (
+                    <TaskStepItem key={step.id} step={step} index={i} />
                   ))}
                 </div>
               </div>
-            ))}
-          </div>
-        </TabsContent>
+            )}
 
-        {/* Seasonality Tab */}
-        <TabsContent value="seasonality" className="mt-4">
-          <div className="space-y-2">
-            {result.seasonality.map((s, i) => (
-              <div key={i} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                <div>
-                  <p className="font-medium text-slate-900 dark:text-white">{s.keyword}</p>
-                  <p className="text-sm text-slate-500">{s.volume.toLocaleString()} searches/mo</p>
+            {/* Past Jobs */}
+            <div>
+              <h3 className="mb-2 px-1 text-xs font-semibold uppercase text-slate-400 dark:text-slate-500">
+                Past Tasks
+              </h3>
+              <div className="space-y-1.5">
+                {jobs.length === 0 && !isWorking && (
+                  <p className="px-2 py-4 text-center text-xs text-slate-400">
+                    No tasks yet. Send a message to start.
+                  </p>
+                )}
+                {jobs.map((job) => (
+                  <PastJobItem
+                    key={job.id}
+                    job={job}
+                    isActive={activeJob?.id === job.id}
+                    onClick={() => {
+                      setActiveJob(job);
+                      if (job.status === "completed" && job.result) {
+                        setMessages((prev) => {
+                          const exists = prev.find((m) => m.jobId === job.id);
+                          if (exists) return prev;
+                          return [...prev, {
+                            id: uid(),
+                            role: "assistant",
+                            content: `Loaded research for "${job.seed}" — ${job.result?.meta?.total_keywords ?? 0} keywords found.`,
+                            timestamp: Date.now(),
+                            jobId: job.id,
+                            result: job.result ?? undefined,
+                          }];
+                        });
+                      }
+                    }}
+                    onDelete={() => handleDeleteJob(job.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Footer Stats */}
+          <div className="border-t border-slate-200 px-4 py-3 dark:border-slate-800">
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="rounded-lg bg-white p-2 dark:bg-slate-800">
+                <p className="text-slate-400">Tasks</p>
+                <p className="font-bold text-slate-700 dark:text-slate-200">{jobs.length}</p>
+              </div>
+              <div className="rounded-lg bg-white p-2 dark:bg-slate-800">
+                <p className="text-slate-400">Completed</p>
+                <p className="font-bold text-emerald-600">{jobs.filter((j) => j.status === "completed").length}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ─── RIGHT: Chat Panel ─── */}
+        <div className="flex flex-1 flex-col overflow-hidden">
+
+          {/* Chat Messages */}
+          <div className="flex-1 overflow-y-auto px-4 py-6">
+            <div className="mx-auto max-w-3xl space-y-4">
+
+              {/* Welcome message */}
+              {messages.length === 0 && (
+                <div className="py-12 text-center">
+                  <div className="mx-auto mb-4 grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-xl">
+                    <Bot className="size-8" />
+                  </div>
+                  <h2 className="mb-2 text-xl font-bold text-slate-900 dark:text-white">
+                    Quasar MCP Server
+                  </h2>
+                  <p className="mx-auto mb-6 max-w-md text-sm text-slate-500 dark:text-slate-400">
+                    Your AI SEO agent server. Tell it what to research, and it will
+                    execute keyword research, clustering, competitor analysis, and
+                    content strategy planning.
+                  </p>
+
+                  {/* Suggested commands */}
+                  <div className="mx-auto max-w-lg space-y-2">
+                    <p className="mb-2 text-xs font-semibold uppercase text-slate-400">Try these commands</p>
+                    {[
+                      "Research keywords for AI web development",
+                      "Find keywords for dentist in Portland",
+                      "Keyword research for CRM software",
+                      "Research keywords for SEO agency in New York",
+                    ].map((cmd) => (
+                      <button
+                        key={cmd}
+                        onClick={() => { setInput(cmd); }}
+                        className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-left text-sm text-slate-600 transition-all hover:border-blue-300 hover:bg-blue-50/50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-blue-700 dark:hover:bg-blue-950/30"
+                      >
+                        <Terminal className="size-4 text-blue-500" />
+                        {cmd}
+                        <ArrowRight className="ml-auto size-3.5 text-slate-300" />
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="text-right text-sm">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="size-3 text-emerald-500" />
-                    <span className="text-emerald-600">Peak: {s.peak_months.join(", ")}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="size-3 text-slate-400" />
-                    <span className="text-slate-500">Low: {s.low_months.join(", ")}</span>
-                  </div>
-                  <Badge variant="outline" className={`mt-1 text-xs ${s.trend_direction === "growing" ? "text-emerald-600" : s.trend_direction === "declining" ? "text-red-600" : ""}`}>
-                    {s.trend_direction}
-                  </Badge>
+              )}
+
+              {/* Messages */}
+              {messages.map((msg) => (
+                <ChatMessageItem key={msg.id} message={msg} />
+              ))}
+
+              <div ref={chatEndRef} />
+            </div>
+          </div>
+
+          {/* Input Bar */}
+          <div className="border-t border-slate-200 bg-white/80 px-4 py-3 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/80">
+            <div className="mx-auto flex max-w-3xl items-end gap-2">
+              <div className="relative flex-1">
+                <Textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Send a command... e.g. 'research keywords for AI web development'"
+                  disabled={isWorking}
+                  className="min-h-[44px] max-h-[120px] resize-none rounded-xl border-slate-200 bg-white pr-10 text-sm dark:border-slate-700 dark:bg-slate-900"
+                  rows={1}
+                />
+                <div className="absolute bottom-2.5 right-3 text-[10px] text-slate-400">
+                  ↵ to send
                 </div>
               </div>
-            ))}
+              <Button
+                onClick={handleSend}
+                disabled={!input.trim() || isWorking}
+                size="icon"
+                className="size-[44px] shrink-0 rounded-xl"
+              >
+                {isWorking ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+              </Button>
+            </div>
           </div>
-        </TabsContent>
 
-        {/* Content Strategy Tab */}
-        <TabsContent value="strategy" className="mt-4">
-          <div className="space-y-2">
-            {result.content_strategy.map((cs, i) => (
-              <div key={i} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Badge className="text-xs bg-blue-100 text-blue-700">{cs.priority_phase}</Badge>
-                      <span className="font-medium text-slate-900 dark:text-white">{cs.content_type}</span>
-                    </div>
-                    <p className="mt-1 text-sm text-slate-500">Keywords: {cs.target_keywords}</p>
-                    <p className="text-xs text-slate-400">URL: {cs.page_url}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-slate-900 dark:text-white">{cs.est_volume}</p>
-                    {cs.status && <Badge variant="outline" className="text-xs">{cs.status}</Badge>}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </TabsContent>
-
-      </Tabs>
-    </div>
-  );
-}
-
-// ─── KPI Card ───
-
-function KpiCard({ icon: Icon, label, value, color }: { icon: typeof Search; label: string; value: string; color: string }) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-      <div className={`mb-2 grid size-9 place-items-center rounded-lg ${color}`}>
-        <Icon className="size-5" />
+        </div>
       </div>
-      <p className="text-xs font-medium uppercase text-slate-500">{label}</p>
-      <p className="text-xl font-bold text-slate-900 dark:text-white">{value}</p>
     </div>
   );
 }
 
-// ─── Keyword Table ───
+// ─── Task Step Item ───
 
-function KeywordTable({ keywords, showCategory, showLocation }: { keywords: KeywordRecord[]; showCategory?: boolean; showLocation?: boolean }) {
+function TaskStepItem({ step, index }: { step: TaskStep; index: number }) {
+  const icons = {
+    pending: <Clock className="size-3.5 text-slate-300" />,
+    running: <Loader2 className="size-3.5 animate-spin text-blue-500" />,
+    completed: <CheckCircle2 className="size-3.5 text-emerald-500" />,
+    failed: <XCircle className="size-3.5 text-red-500" />,
+  };
+
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
-      <table className="w-full text-sm">
-        <thead className="bg-slate-50 dark:bg-slate-900">
-          <tr className="text-left">
-            <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-300">Keyword</th>
-            {showCategory && <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-300">Category</th>}
-            {showLocation && <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-300">Location</th>}
-            <th className="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">Volume</th>
-            <th className="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">KD</th>
-            <th className="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">CPC</th>
-            <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-300">Intent</th>
-            <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-300">Priority</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-          {keywords.map((kw, i) => (
-            <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-              <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">{kw.keyword}</td>
-              {showCategory && <td className="px-4 py-3 text-slate-500">{kw.category ?? "—"}</td>}
-              {showLocation && <td className="px-4 py-3 text-slate-500">{kw.location ?? "—"}</td>}
-              <td className="px-4 py-3 text-right text-slate-900 dark:text-white">{kw.volume.toLocaleString()}</td>
-              <td className={`px-4 py-3 text-right font-medium ${getKdColor(kw.kd)}`}>{kw.kd}</td>
-              <td className="px-4 py-3 text-right text-slate-500">{kw.cpc > 0 ? `$${kw.cpc.toFixed(2)}` : "—"}</td>
-              <td className="px-4 py-3">
-                <Badge variant="outline" className={`text-xs ${INTENT_COLORS[kw.intent] ?? ""}`}>{kw.intent}</Badge>
-              </td>
-              <td className="px-4 py-3">
-                <Badge variant="outline" className={`text-xs ${PRIORITY_COLORS[kw.priority] ?? ""}`}>{kw.priority}</Badge>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className={`flex items-start gap-2.5 rounded-lg px-2.5 py-2 transition-colors ${
+      step.status === "running" ? "bg-blue-50 dark:bg-blue-950/30" : ""
+    }`}>
+      <div className="mt-0.5 shrink-0">
+        {icons[step.status]}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className={`text-xs font-medium ${
+          step.status === "pending" ? "text-slate-400" :
+          step.status === "running" ? "text-blue-700 dark:text-blue-400" :
+          step.status === "completed" ? "text-slate-700 dark:text-slate-300" :
+          "text-red-600"
+        }`}>
+          {step.label}
+        </p>
+        {step.detail && step.status === "running" && (
+          <p className="mt-0.5 text-[10px] text-slate-400">{step.detail}</p>
+        )}
+      </div>
+      <span className="text-[10px] text-slate-300">{index + 1}</span>
     </div>
   );
 }
+
+// ─── Past Job Item ───
+
+function PastJobItem({ job, isActive, onClick, onDelete }: {
+  job: KeywordResearchJob;
+  isActive: boolean;
+  onClick: () => void;
+  onDelete: () => void;
+}) {
+  const statusConfig = {
+    running: { icon: Loader2, color: "text-blue-500", spin: true },
+    completed: { icon: CheckCircle2, color: "text-emerald-500", spin: false },
+    failed: { icon: XCircle, color: "text-red-500", spin: false },
+  };
+  const sc = statusConfig[job.status as keyof typeof statusConfig] ?? statusConfig.running;
+  const StatusIcon = sc.icon;
+
+  return (
+    <div
+      onClick={onClick}
+      className={`group cursor-pointer rounded-lg border p-2.5 transition-all ${
+        isActive
+          ? "border-blue-300 bg-blue-50/50 dark:border-blue-700 dark:bg-blue-950/30"
+          : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <StatusIcon className={`size-3.5 shrink-0 ${sc.color} ${sc.spin ? "animate-spin" : ""}`} />
+        <p className="flex-1 truncate text-xs font-medium text-slate-700 dark:text-slate-300">
+          {job.seed}
+        </p>
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          className="opacity-0 transition-opacity group-hover:opacity-100"
+        >
+          <Trash2 className="size-3 text-red-400 hover:text-red-600" />
+        </button>
+      </div>
+      <div className="mt-1 flex items-center gap-2 text-[10px] text-slate-400">
+        <span>{new Date(job.createdAt).toLocaleDateString()}</span>
+        {job.result?.meta?.total_keywords && (
+          <span className="text-emerald-500">{job.result.meta.total_keywords} keywords</span>
+        )}
+        {job.location && <span>• {job.location}</span>}
+      </div>
+    </div>
+  );
+}
+
+// ─── Chat Message Item ───
+
+function ChatMessageItem({ message }: { message: ChatMessage }) {
+  const isUser = message.role === "user";
+  const isSystem = message.role === "system";
+
+  if (isSystem) {
+    return (
+      <div className="flex justify-center">
+        <div className="flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+          <Wrench className="size-3" />
+          {message.content}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}>
+      {/* Avatar */}
+      <div className={`grid size-8 shrink-0 place-items-center rounded-lg ${
+        isUser
+          ? "bg-gradient-to-br from-slate-600 to-slate-800 text-white"
+          : "bg-gradient-to-br from-blue-500 to-purple-600 text-white"
+      }`}>
+        {isUser ? <User className="size-4" /> : <Bot className="size-4" />}
+      </div>
+
+      {/* Content */}
+      <div className={`flex max-w-[80%] flex-col ${isUser ? "items-end" : "items-start"}`}>
+        <div className={`rounded-2xl px-4 py-2.5 text-sm ${
+          isUser
+            ? "bg-slate-800 text-white dark:bg-slate-700"
+            : "bg-white text-slate-700 shadow-sm border border-slate-100 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-800"
+        }`}>
+          <p className="whitespace-pre-wrap">{message.content}</p>
+        </div>
+
+        {/* Results */}
+        {message.result && <ResultPanel result={message.result} />}
+
+        <span className="mt-1 px-1 text-[10px] text-slate-400">
+          {new Date(message.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Result Panel (inline in chat) ───
+
+function ResultPanel({ result }: { result: KeywordResearchResult }) {
+  const [expanded, setExpanded] = useState(false);
+  const { meta } = result;
+
+  return (
+    <div className="mt-2 w-full rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+      {/* Header */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-center justify-between p-3"
+      >
+        <div className="flex items-center gap-2">
+          <BarChart3 className="size-4 text-blue-500" />
+          <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            Keyword Research Report
+          </span>
+        </div>
+        <ChevronRight className={`size-4 text-slate-400 transition-transform ${expanded ? "rotate-90" : ""}`} />
+      </button>
+
+      {/* KPI mini cards */}
+      <div className="grid grid-cols-4 gap-2 px-3 pb-3">
+        <MiniKpi icon={Search} label="Keywords" value={meta.total_keywords.toString()} color="text-blue-600" />
+        <MiniKpi icon={TrendingUp} label="Volume" value={meta.total_monthly_volume.toLocaleString()} color="text-purple-600" />
+        <MiniKpi icon={Zap} label="Quick Wins" value={result.quick_wins.length.toString()} color="text-emerald-600" />
+        <MiniKpi icon={BarChart3} label="Avg CPC" value={`$${meta.avg_cpc.toFixed(2)}`} color="text-orange-600" />
+      </div>
+
+      {/* Expanded content */}
+      {expanded && (
+        <div className="border-t border-slate-100 p-3 dark:border-slate-800">
+          {/* Key Findings */}
+          {result.kpi_summary.key_findings.length > 0 && (
+            <div className="mb-4">
+              <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                <Lightbulb className="size-3.5 text-amber-500" /> Key Findings
+              </h4>
+              <ul className="space-y-1 text-xs text-slate-500 dark:text-slate-400">
+                {result.kpi_summary.key_findings.slice(0, 5).map((f, i) => (
+                  <li key={i} className="flex items-start gap-1.5">
+                    <ChevronRight className="mt-0.5 size-3 shrink-0 text-amber-500" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Top Primary Keywords */}
+          {result.primary_keywords.length > 0 && (
+            <div className="mb-4">
+              <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                <Target className="size-3.5 text-red-500" /> Top Primary Keywords
+              </h4>
+              <div className="space-y-1">
+                {result.primary_keywords.slice(0, 8).map((kw, i) => (
+                  <KeywordRow key={i} kw={kw} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Topic Clusters */}
+          {result.topic_clusters.length > 0 && (
+            <div className="mb-4">
+              <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                <Network className="size-3.5 text-purple-500" /> Topic Clusters
+              </h4>
+              <div className="space-y-2">
+                {result.topic_clusters.slice(0, 5).map((cluster, i) => (
+                  <div key={i} className="rounded-lg border border-purple-200 bg-purple-50/30 p-2 dark:border-purple-800 dark:bg-purple-950/20">
+                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300">{cluster.cluster_name}</p>
+                    <p className="text-[10px] text-slate-500">Pillar: {cluster.pillar_keyword}</p>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      <Badge variant="outline" className="text-[10px]">{cluster.total_volume.toLocaleString()} vol</Badge>
+                      <Badge variant="outline" className={`text-[10px] ${getKdColor(cluster.avg_kd)}`}>KD {cluster.avg_kd}</Badge>
+                      <Badge variant="outline" className="text-[10px]">{cluster.supporting_keywords.length} supporting</Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Quick Wins */}
+          {result.quick_wins.length > 0 && (
+            <div className="mb-4">
+              <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                <Zap className="size-3.5 text-emerald-500" /> Quick Wins
+              </h4>
+              <div className="space-y-1">
+                {result.quick_wins.slice(0, 5).map((qw, i) => (
+                  <div key={i} className="flex items-center justify-between rounded-lg bg-emerald-50/30 px-2 py-1.5 dark:bg-emerald-950/20">
+                    <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{qw.keyword}</span>
+                    <div className="flex items-center gap-2 text-[10px]">
+                      <span className="text-slate-500">{qw.volume.toLocaleString()} vol</span>
+                      <span className={getKdColor(qw.kd)}>KD {qw.kd}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Competitors */}
+          {result.competitors.length > 0 && (
+            <div className="mb-4">
+              <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                <Users className="size-3.5 text-cyan-500" /> Competitors
+              </h4>
+              <div className="grid grid-cols-2 gap-2">
+                {result.competitors.slice(0, 4).map((comp, i) => (
+                  <div key={i} className="rounded-lg border border-slate-200 p-2 dark:border-slate-800">
+                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300">{comp.name}</p>
+                    {comp.domain_rating && <p className="text-[10px] text-slate-500">DR {comp.domain_rating}</p>}
+                    <p className="mt-1 text-[10px] text-slate-400 line-clamp-2">{comp.opportunity}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* SERP Features */}
+          {result.serp_features.length > 0 && (
+            <div>
+              <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                <Star className="size-3.5 text-yellow-500" /> SERP Features
+              </h4>
+              <div className="flex flex-wrap gap-1.5">
+                {result.serp_features.map((sf, i) => (
+                  <Badge key={i} variant="outline" className="text-[10px]">
+                    {sf.feature} ({sf.keyword_count})
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Mini KPI ───
+
+function MiniKpi({ icon: Icon, label, value, color }: { icon: typeof Search; label: string; value: string; color: string }) {
+  return (
+    <div className="rounded-lg bg-slate-50 p-2 dark:bg-slate-800/50">
+      <Icon className={`size-3.5 ${color}`} />
+      <p className="mt-1 text-[10px] text-slate-400">{label}</p>
+      <p className="text-xs font-bold text-slate-700 dark:text-slate-200">{value}</p>
+    </div>
+  );
+}
+
+// ─── Keyword Row ───
+
+function KeywordRow({ kw }: { kw: KeywordRecord }) {
+  return (
+    <div className="flex items-center justify-between rounded-lg bg-slate-50 px-2 py-1.5 dark:bg-slate-800/50">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-xs font-medium text-slate-700 dark:text-slate-300">{kw.keyword}</p>
+        <div className="mt-0.5 flex items-center gap-1.5">
+          <Badge variant="outline" className={`h-4 text-[9px] ${INTENT_COLORS[kw.intent] ?? ""}`}>{kw.intent}</Badge>
+          <Badge variant="outline" className={`h-4 text-[9px] ${PRIORITY_COLORS[kw.priority] ?? ""}`}>{kw.priority}</Badge>
+        </div>
+      </div>
+      <div className="ml-2 shrink-0 text-right text-[10px]">
+        <p className="text-slate-700 dark:text-slate-300">{kw.volume.toLocaleString()}</p>
+        <p className={getKdColor(kw.kd)}>KD {kw.kd}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Page Export ───
 
 export default function ContentStrategyPage() {
   return (
     <RequireAuth>
       <DashboardLayout>
-        <ContentStrategyContent />
+        <QuasarMcpContent />
       </DashboardLayout>
     </RequireAuth>
   );
