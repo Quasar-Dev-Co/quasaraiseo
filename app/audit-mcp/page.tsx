@@ -11,6 +11,7 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AlertDialog } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -90,6 +91,15 @@ export default function AuditMcpPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Alert dialog state
+  const [alert, setAlert] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    variant: "danger" | "default";
+    onConfirm: () => void;
+  }>({ open: false, title: "", description: "", variant: "default", onConfirm: () => {} });
+
   const loadData = useCallback(async () => {
     try {
       const [skillsRes, jobsRes] = await Promise.all([agentApi.listSkills(), agentApi.listJobs()]);
@@ -136,9 +146,22 @@ export default function AuditMcpPage() {
   };
 
   const handleDeleteSkill = async (id: string) => {
-    if (!confirm("Delete this skill?")) return;
-    try { await agentApi.deleteSkill(id); if (selectedSkillId === id) setSelectedSkillId(null); await loadData(); }
-    catch (err) { setError(err instanceof Error ? err.message : "Delete failed"); }
+    setAlert({
+      open: true,
+      title: "Delete skill?",
+      description: "This will permanently delete this skill. You cannot undo this.",
+      variant: "danger",
+      onConfirm: async () => {
+        setAlert((a) => ({ ...a, open: false }));
+        try {
+          await agentApi.deleteSkill(id);
+          if (selectedSkillId === id) setSelectedSkillId(null);
+          await loadData();
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Delete failed");
+        }
+      },
+    });
   };
 
   const handleSubmitJob = async () => {
@@ -207,12 +230,22 @@ export default function AuditMcpPage() {
     } catch (err) { setError(err instanceof Error ? err.message : "Download failed"); }
   };
 
-  const handleDeleteJob = async (jobId: string) => {
-    if (!confirm("Delete this task and all its generated files?")) return;
-    try {
-      await agentApi.deleteJob(jobId);
-      await loadData();
-    } catch (err) { setError(err instanceof Error ? err.message : "Delete failed"); }
+  const handleDeleteJob = (jobId: string) => {
+    setAlert({
+      open: true,
+      title: "Delete task?",
+      description: "This will delete this task and all its generated files. You cannot undo this.",
+      variant: "danger",
+      onConfirm: async () => {
+        setAlert((a) => ({ ...a, open: false }));
+        try {
+          await agentApi.deleteJob(jobId);
+          await loadData();
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Delete failed");
+        }
+      },
+    });
   };
 
   const handleRetryJob = async (jobId: string) => {
@@ -222,12 +255,22 @@ export default function AuditMcpPage() {
     } catch (err) { setError(err instanceof Error ? err.message : "Retry failed"); }
   };
 
-  const handleDeleteAllJobs = async () => {
-    if (!confirm("Delete ALL tasks and generated files? This cannot be undone.")) return;
-    try {
-      await agentApi.deleteAllJobs();
-      await loadData();
-    } catch (err) { setError(err instanceof Error ? err.message : "Delete all failed"); }
+  const handleDeleteAllJobs = () => {
+    setAlert({
+      open: true,
+      title: "Delete all tasks?",
+      description: "This will delete ALL tasks and generated files. This cannot be undone.",
+      variant: "danger",
+      onConfirm: async () => {
+        setAlert((a) => ({ ...a, open: false }));
+        try {
+          await agentApi.deleteAllJobs();
+          await loadData();
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Delete all failed");
+        }
+      },
+    });
   };
 
   const selectedSkill = skills.find((s) => s.id === selectedSkillId);
@@ -708,6 +751,17 @@ export default function AuditMcpPage() {
           </aside>
         </div>
       </DashboardLayout>
+
+      <AlertDialog
+        open={alert.open}
+        title={alert.title}
+        description={alert.description}
+        variant={alert.variant}
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={alert.onConfirm}
+        onCancel={() => setAlert((a) => ({ ...a, open: false }))}
+      />
     </RequireAuth>
   );
 }
