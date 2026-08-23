@@ -5,6 +5,7 @@ import {
   Upload, FileArchive, Sparkles, Loader2, FileText, Download,
   Trash2, Zap, CheckCircle2, XCircle, Clock, Package, Brain,
   ArrowRight, FileSpreadsheet, FileImage, File as FileIcon, AlertCircle,
+  RotateCw, X,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -206,6 +207,29 @@ export default function AuditMcpPage() {
     } catch (err) { setError(err instanceof Error ? err.message : "Download failed"); }
   };
 
+  const handleDeleteJob = async (jobId: string) => {
+    if (!confirm("Delete this task and all its generated files?")) return;
+    try {
+      await agentApi.deleteJob(jobId);
+      await loadData();
+    } catch (err) { setError(err instanceof Error ? err.message : "Delete failed"); }
+  };
+
+  const handleRetryJob = async (jobId: string) => {
+    try {
+      await agentApi.retryJob(jobId);
+      await loadData();
+    } catch (err) { setError(err instanceof Error ? err.message : "Retry failed"); }
+  };
+
+  const handleDeleteAllJobs = async () => {
+    if (!confirm("Delete ALL tasks and generated files? This cannot be undone.")) return;
+    try {
+      await agentApi.deleteAllJobs();
+      await loadData();
+    } catch (err) { setError(err instanceof Error ? err.message : "Delete all failed"); }
+  };
+
   const selectedSkill = skills.find((s) => s.id === selectedSkillId);
   const completedJobs = jobs.filter((j) => j.status === "completed" || j.status === "failed");
   const runningJobs = jobs.filter((j) => j.status === "pending" || j.status === "running");
@@ -338,7 +362,15 @@ export default function AuditMcpPage() {
             {/* Running jobs */}
             {runningJobs.length > 0 && (
               <div className="space-y-3">
-                <h2 className="text-sm font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Active Tasks</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Active Tasks</h2>
+                  <button
+                    onClick={handleDeleteAllJobs}
+                    className="text-xs font-medium text-red-500 hover:text-red-700 dark:text-red-400"
+                  >
+                    Delete all
+                  </button>
+                </div>
                 {runningJobs.map((job) => {
                   const status = STATUS_CONFIG[job.status];
                   const StatusIcon = status.icon;
@@ -356,6 +388,13 @@ export default function AuditMcpPage() {
                           <p className="mt-2 text-sm text-slate-700 dark:text-slate-300 line-clamp-2">{job.prompt}</p>
                           <p className="mt-1.5 text-xs text-slate-400">Started {formatDate(job.createdAt)}</p>
                         </div>
+                        <button
+                          onClick={() => handleDeleteJob(job.id)}
+                          className="shrink-0 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-400/10"
+                          title="Cancel & delete"
+                        >
+                          <X className="size-4" />
+                        </button>
                       </div>
                     </article>
                   );
@@ -390,7 +429,23 @@ export default function AuditMcpPage() {
                               <Badge className={status.color}>{status.label}</Badge>
                               {job.skill && <Badge variant="outline" className="text-[10px]"><Package className="size-2.5" /> {job.skill.name}</Badge>}
                             </div>
-                            <span className="text-xs text-slate-400">{formatDate(job.completedAt || job.createdAt)}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-slate-400">{formatDate(job.completedAt || job.createdAt)}</span>
+                              <button
+                                onClick={() => handleRetryJob(job.id)}
+                                className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-400/10"
+                                title="Retry"
+                              >
+                                <RotateCw className="size-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteJob(job.id)}
+                                className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-400/10"
+                                title="Delete"
+                              >
+                                <Trash2 className="size-3.5" />
+                              </button>
+                            </div>
                           </header>
                           <div className="p-5">
                             <p className="text-sm font-medium text-slate-700 dark:text-slate-300 line-clamp-1">{job.prompt}</p>
@@ -459,25 +514,49 @@ export default function AuditMcpPage() {
                       <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">No task history yet.</p>
                     </article>
                   ) : (
-                    jobs.map((job) => {
-                      const status = STATUS_CONFIG[job.status];
-                      const StatusIcon = status.icon;
-                      return (
-                        <div key={job.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-slate-900/50">
-                          <StatusIcon className={`size-4 shrink-0 ${job.status === "running" ? "animate-spin text-blue-500" : job.status === "completed" ? "text-emerald-500" : job.status === "failed" ? "text-red-500" : "text-amber-500"}`} />
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium text-slate-700 dark:text-slate-300">{job.prompt}</p>
-                            <p className="text-xs text-slate-400">{formatDate(job.createdAt)}</p>
+                    <>
+                      <div className="flex justify-end mb-2">
+                        <button
+                          onClick={handleDeleteAllJobs}
+                          className="text-xs font-medium text-red-500 hover:text-red-700 dark:text-red-400"
+                        >
+                          Delete all tasks
+                        </button>
+                      </div>
+                      {jobs.map((job) => {
+                        const status = STATUS_CONFIG[job.status];
+                        const StatusIcon = status.icon;
+                        return (
+                          <div key={job.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-slate-900/50">
+                            <StatusIcon className={`size-4 shrink-0 ${job.status === "running" ? "animate-spin text-blue-500" : job.status === "completed" ? "text-emerald-500" : job.status === "failed" ? "text-red-500" : "text-amber-500"}`} />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium text-slate-700 dark:text-slate-300">{job.prompt}</p>
+                              <p className="text-xs text-slate-400">{formatDate(job.createdAt)}</p>
+                            </div>
+                            <Badge className={`shrink-0 ${status.color}`}>{status.label}</Badge>
+                            {job.outputFiles && job.outputFiles.length > 0 && (
+                              <Badge variant="outline" className="shrink-0 text-[10px]">
+                                <FileText className="size-2.5" /> {job.outputFiles.length}
+                              </Badge>
+                            )}
+                            <button
+                              onClick={() => handleRetryJob(job.id)}
+                              className="shrink-0 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-400/10"
+                              title="Retry"
+                            >
+                              <RotateCw className="size-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteJob(job.id)}
+                              className="shrink-0 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-400/10"
+                              title="Delete"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
                           </div>
-                          <Badge className={`shrink-0 ${status.color}`}>{status.label}</Badge>
-                          {job.outputFiles && job.outputFiles.length > 0 && (
-                            <Badge variant="outline" className="shrink-0 text-[10px]">
-                              <FileText className="size-2.5" /> {job.outputFiles.length}
-                            </Badge>
-                          )}
-                        </div>
-                      );
-                    })
+                        );
+                      })}
+                    </>
                   )}
                 </div>
               </TabsContent>

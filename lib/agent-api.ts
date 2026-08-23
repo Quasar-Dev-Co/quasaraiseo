@@ -148,6 +148,24 @@ export const agentApi = {
     return agentRequest<{ job: AgentJobRecord }>(`/api/agent/jobs/${id}`);
   },
 
+  async deleteJob(id: string): Promise<{ success: boolean }> {
+    return agentRequest<{ success: boolean }>(`/api/agent/jobs/${id}`, {
+      method: "DELETE",
+    });
+  },
+
+  async retryJob(id: string): Promise<{ job: AgentJobRecord }> {
+    return agentRequest<{ job: AgentJobRecord }>(`/api/agent/jobs/${id}/retry`, {
+      method: "POST",
+    });
+  },
+
+  async deleteAllJobs(): Promise<{ success: boolean; count: number }> {
+    return agentRequest<{ success: boolean; count: number }>(`/api/agent/jobs`, {
+      method: "DELETE",
+    });
+  },
+
   getFileDownloadUrl(fileId: string): string {
     return `${API_BASE_URL}/api/agent/files/${fileId}`;
   },
