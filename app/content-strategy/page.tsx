@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Server, Send, Bot, User, Wrench, Loader2, CheckCircle2, XCircle,
+  Server, Send, Bot, User, Wrench, Loader2, CheckCircle2,
   Search, Globe, FileText, FileSpreadsheet, Trash2, Download,
   CircleDot, Cpu, Activity, ChevronRight, Sparkles, Terminal,
+  Plus, MessageSquare,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -17,6 +18,7 @@ import {
   type McpSession,
   type McpToolCall,
   type McpFile,
+  type McpSessionPreview,
 } from "@/lib/keyword-mcp-api";
 
 // ─── Tool icons ───
@@ -40,17 +42,34 @@ function getToolLabel(tool: string, args: Record<string, unknown>): string {
   return tool;
 }
 
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  const now = new Date();
+  if (d.toDateString() === now.toDateString()) {
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 // ─── Main Component ───
 
 function QuasarMcpContent() {
   const [session, setSession] = useState<McpSession | null>(null);
+  const [sessions, setSessions] = useState<McpSessionPreview[]>([]);
   const [messages, setMessages] = useState<McpChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isThinking, setIsThinking] = useState(false);
   const [activeTools, setActiveTools] = useState<McpToolCall[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Load session on mount
+  // Load session list + get/create current session
+  const loadSessions = useCallback(async () => {
+    try {
+      const { sessions } = await keywordMcpApi.listSessions();
+      setSessions(sessions);
+    } catch {}
+  }, []);
+
   useEffect(() => {
     keywordMcpApi.getSession()
       .then(({ session }) => {
@@ -58,7 +77,8 @@ function QuasarMcpContent() {
         setMessages(session.messages || []);
       })
       .catch(() => {});
-  }, []);
+    loadSessions();
+  }, [loadSessions]);
 
   // Auto-scroll
   useEffect(() => {
@@ -69,7 +89,6 @@ function QuasarMcpContent() {
     const text = input.trim();
     if (!text || isThinking || !session) return;
 
-    // Add user message immediately
     const userMsg: McpChatMessage = { role: "user", content: text, timestamp: Date.now() };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
@@ -78,13 +97,9 @@ function QuasarMcpContent() {
 
     try {
       const result = await keywordMcpApi.sendMessage(session.id, text);
-
-      // Show tool calls that happened
       if (result.toolCalls && result.toolCalls.length > 0) {
         setActiveTools(result.toolCalls);
       }
-
-      // Add assistant response
       const assistantMsg: McpChatMessage = {
         role: "assistant",
         content: result.response,
@@ -93,6 +108,8 @@ function QuasarMcpContent() {
         files: result.files,
       };
       setMessages((prev) => [...prev, assistantMsg]);
+      // Refresh session list
+      loadSessions();
     } catch (err) {
       setMessages((prev) => [...prev, {
         role: "assistant",
@@ -112,23 +129,49 @@ function QuasarMcpContent() {
     }
   };
 
-  const handleClearChat = async () => {
-    if (!session) return;
+  const handleNewChat = async () => {
     try {
-      await keywordMcpApi.clearSession(session.id);
-      const { session: newSession } = await keywordMcpApi.getSession();
+      const { session: newSession } = await keywordMcpApi.createNewSession();
       setSession(newSession);
       setMessages([]);
+      setInput("");
+      setIsThinking(false);
+      setActiveTools([]);
+      loadSessions();
     } catch {}
   };
 
-  // Collect all tool calls from recent messages for the left panel
-  const recentToolCalls: Array<{ tool: McpToolCall; msgIndex: number }> = [];
+  const handleSelectSession = async (sessionId: string) => {
+    try {
+      const { session: loaded } = await keywordMcpApi.getSessionById(sessionId);
+      setSession(loaded);
+      setMessages(loaded.messages || []);
+      setIsThinking(false);
+      setActiveTools([]);
+    } catch {}
+  };
+
+  const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await keywordMcpApi.clearSession(sessionId);
+      // If we deleted the active session, create a new one
+      if (session?.id === sessionId) {
+        const { session: newSession } = await keywordMcpApi.createNewSession();
+        setSession(newSession);
+        setMessages([]);
+      }
+      loadSessions();
+    } catch {}
+  };
+
+  // Collect tool calls from recent messages
+  const recentToolCalls: McpToolCall[] = [];
   for (let i = messages.length - 1; i >= 0 && recentToolCalls.length < 20; i--) {
     const m = messages[i];
     if (m.toolCalls) {
       for (const tc of m.toolCalls) {
-        recentToolCalls.unshift({ tool: tc, msgIndex: i });
+        recentToolCalls.unshift(tc);
       }
     }
   }
@@ -160,29 +203,35 @@ function QuasarMcpContent() {
             <Cpu className="size-3 text-blue-500" />
             {isThinking ? "Thinking" : "Idle"}
           </Badge>
-          {messages.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={handleClearChat} className="gap-1.5 text-xs">
-              <Trash2 className="size-3.5" />
-              Clear
-            </Button>
-          )}
+          <Button variant="outline" size="sm" onClick={handleNewChat} className="gap-1.5 text-xs">
+            <Plus className="size-3.5" />
+            New Chat
+          </Button>
         </div>
       </div>
 
       {/* Main Layout */}
       <div className="flex flex-1 overflow-hidden min-h-0">
 
-        {/* ─── LEFT: Agent Activity ─── */}
+        {/* ─── LEFT: Sessions + Activity ─── */}
         <div className="hidden w-[340px] shrink-0 flex-col border-r border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50 md:flex min-h-0">
-          <div className="border-b border-slate-200 px-4 py-3 dark:border-slate-800">
-            <div className="flex items-center gap-2">
-              <Activity className="size-4 text-slate-500" />
-              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Agent Activity</h2>
-            </div>
+
+          {/* New Chat button at top of sidebar */}
+          <div className="border-b border-slate-200 p-3 dark:border-slate-800">
+            <Button
+              onClick={handleNewChat}
+              variant="outline"
+              className="w-full gap-2"
+              size="sm"
+            >
+              <Plus className="size-4" />
+              New Chat
+            </Button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-3 min-h-0">
-            {/* Active tools (while thinking) */}
+
+            {/* Active tools while thinking */}
             {isThinking && (
               <div className="mb-4">
                 <div className="mb-2 flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50/50 p-2.5 dark:border-blue-800 dark:bg-blue-950/30">
@@ -198,44 +247,65 @@ function QuasarMcpContent() {
                     ))}
                   </div>
                 )}
-                {activeTools.length === 0 && (
-                  <p className="px-2 py-4 text-center text-xs text-slate-400">
-                    Calling AI provider...
-                  </p>
-                )}
               </div>
             )}
 
-            {/* History of tool calls */}
+            {/* Chat history list */}
             <div>
               <h3 className="mb-2 px-1 text-xs font-semibold uppercase text-slate-400 dark:text-slate-500">
-                Tool History
+                Chat History
               </h3>
               <div className="space-y-1.5">
-                {recentToolCalls.length === 0 && !isThinking && (
+                {sessions.length === 0 && !isThinking && (
                   <p className="px-2 py-4 text-center text-xs text-slate-400">
-                    No activity yet. Send a message to start.
+                    No chats yet. Click "New Chat" to start.
                   </p>
                 )}
-                {recentToolCalls.map(({ tool }, i) => (
-                  <ToolCallItem key={i} tool={tool} compact />
+                {sessions.map((s) => (
+                  <div
+                    key={s.id}
+                    onClick={() => handleSelectSession(s.id)}
+                    className={`group cursor-pointer rounded-lg border p-2.5 transition-all ${
+                      session?.id === s.id
+                        ? "border-blue-300 bg-blue-50/50 dark:border-blue-700 dark:bg-blue-950/30"
+                        : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="size-3.5 shrink-0 text-slate-400" />
+                      <p className="flex-1 truncate text-xs font-medium text-slate-700 dark:text-slate-300">
+                        {s.preview}
+                      </p>
+                      <button
+                        onClick={(e) => handleDeleteSession(s.id, e)}
+                        className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+                      >
+                        <Trash2 className="size-3 text-red-400 hover:text-red-600" />
+                      </button>
+                    </div>
+                    <div className="mt-1 flex items-center gap-2 text-[10px] text-slate-400">
+                      <span>{formatDate(s.updatedAt)}</span>
+                      <span>•</span>
+                      <span>{s.messageCount} msgs</span>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
-          </div>
 
-          {/* Footer */}
-          <div className="border-t border-slate-200 px-4 py-3 dark:border-slate-800">
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="rounded-lg bg-white p-2 dark:bg-slate-800">
-                <p className="text-slate-400">Messages</p>
-                <p className="font-bold text-slate-700 dark:text-slate-200">{messages.length}</p>
+            {/* Tool history for current session */}
+            {recentToolCalls.length > 0 && (
+              <div className="mt-4">
+                <h3 className="mb-2 px-1 text-xs font-semibold uppercase text-slate-400 dark:text-slate-500">
+                  Tool History
+                </h3>
+                <div className="space-y-1.5">
+                  {recentToolCalls.map((tc, i) => (
+                    <ToolCallItem key={i} tool={tc} compact />
+                  ))}
+                </div>
               </div>
-              <div className="rounded-lg bg-white p-2 dark:bg-slate-800">
-                <p className="text-slate-400">Tool Calls</p>
-                <p className="font-bold text-slate-700 dark:text-slate-200">{recentToolCalls.length}</p>
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -343,7 +413,7 @@ function QuasarMcpContent() {
   );
 }
 
-// ─── Tool Call Item (left panel) ───
+// ─── Tool Call Item ───
 
 function ToolCallItem({ tool, compact }: { tool: McpToolCall; compact?: boolean }) {
   const Icon = TOOL_ICONS[tool.name] || Wrench;
@@ -372,7 +442,6 @@ function ChatMessageItem({ message }: { message: McpChatMessage }) {
 
   return (
     <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}>
-      {/* Avatar */}
       <div className={`grid size-8 shrink-0 place-items-center rounded-lg ${
         isUser
           ? "bg-gradient-to-br from-slate-600 to-slate-800 text-white"
@@ -381,10 +450,8 @@ function ChatMessageItem({ message }: { message: McpChatMessage }) {
         {isUser ? <User className="size-4" /> : <Bot className="size-4" />}
       </div>
 
-      {/* Content */}
       <div className={`flex max-w-[80%] flex-col ${isUser ? "items-end" : "items-start"}`}>
-
-        {/* Tool calls (shown inline for assistant messages) */}
+        {/* Tool calls inline */}
         {!isUser && message.toolCalls && message.toolCalls.length > 0 && (
           <div className="mb-2 w-full space-y-1">
             {message.toolCalls.map((tc, i) => (

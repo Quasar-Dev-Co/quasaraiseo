@@ -41,9 +41,42 @@ export interface McpSession {
   updatedAt: string;
 }
 
+export interface McpSessionPreview {
+  id: string;
+  preview: string;
+  messageCount: number;
+  updatedAt: string;
+  createdAt: string;
+}
+
 export const keywordMcpApi = {
   async getSession(): Promise<{ session: McpSession }> {
     const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/session`, {
+      headers: { ...authHeaders() },
+    });
+    if (!resp.ok) throw new Error(`Failed to get session: ${resp.status}`);
+    return resp.json();
+  },
+
+  async listSessions(): Promise<{ sessions: McpSessionPreview[] }> {
+    const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/sessions`, {
+      headers: { ...authHeaders() },
+    });
+    if (!resp.ok) throw new Error(`Failed to list sessions: ${resp.status}`);
+    return resp.json();
+  },
+
+  async createNewSession(): Promise<{ session: McpSession }> {
+    const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/session`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+    });
+    if (!resp.ok) throw new Error(`Failed to create session: ${resp.status}`);
+    return resp.json();
+  },
+
+  async getSessionById(sessionId: string): Promise<{ session: McpSession }> {
+    const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/session/${sessionId}`, {
       headers: { ...authHeaders() },
     });
     if (!resp.ok) throw new Error(`Failed to get session: ${resp.status}`);
