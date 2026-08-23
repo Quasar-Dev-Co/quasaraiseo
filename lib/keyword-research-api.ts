@@ -127,6 +127,16 @@ export interface KeywordResearchResult {
   };
 }
 
+export interface AgentStep {
+  id: string;
+  label: string;
+  tool: string;
+  status: "pending" | "running" | "completed" | "failed";
+  detail?: string;
+  result?: string;
+  timestamp: number;
+}
+
 export interface KeywordResearchJob {
   id: string;
   userId: string;
@@ -136,6 +146,7 @@ export interface KeywordResearchJob {
   businessName: string | null;
   status: "running" | "completed" | "failed";
   result: KeywordResearchResult | null;
+  steps: AgentStep[] | null;
   errorMessage: string | null;
   createdAt: string;
   updatedAt: string;

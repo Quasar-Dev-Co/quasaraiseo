@@ -19,6 +19,7 @@ import {
   type KeywordResearchJob,
   type KeywordResearchResult,
   type KeywordRecord,
+  type AgentStep,
 } from "@/lib/keyword-research-api";
 
 // ─── Types ───
@@ -30,13 +31,6 @@ interface ChatMessage {
   timestamp: number;
   jobId?: string;
   result?: KeywordResearchResult;
-}
-
-interface TaskStep {
-  id: string;
-  label: string;
-  status: "pending" | "running" | "completed" | "failed";
-  detail?: string;
 }
 
 // ─── Helpers ───
@@ -73,21 +67,7 @@ function getKdLabel(kd: number): string {
   return "Extreme";
 }
 
-// Simulated agent steps for the task panel
-const RESEARCH_STEPS: Omit<TaskStep, "id" | "status">[] = [
-  { label: "Detecting industry type", detail: "Auto-classifying business vertical" },
-  { label: "Generating seed keywords", detail: "Expanding from user input" },
-  { label: "Expanding with modifiers", detail: "Question, commercial, transactional, local" },
-  { label: "Classifying search intent", detail: "Informational / Commercial / Transactional" },
-  { label: "Estimating metrics", detail: "Volume, KD, CPC, traffic potential" },
-  { label: "Clustering keywords", detail: "SERP overlap → topic clusters" },
-  { label: "Scoring & prioritizing", detail: "Business value × feasibility × traffic" },
-  { label: "Analyzing competitors", detail: "Strengths, weaknesses, opportunities" },
-  { label: "Identifying quick wins", detail: "Low KD + decent volume" },
-  { label: "Mapping SERP features", detail: "Snippets, PAA, AI Overviews" },
-  { label: "Building content strategy", detail: "Phased roadmap with page types" },
-  { label: "Compiling final report", detail: "JSON output matching schema" },
-];
+// ─── Helpers ───
 
 function uid(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -100,11 +80,10 @@ function QuasarMcpContent() {
   const [input, setInput] = useState("");
   const [jobs, setJobs] = useState<KeywordResearchJob[]>([]);
   const [activeJob, setActiveJob] = useState<KeywordResearchJob | null>(null);
-  const [taskSteps, setTaskSteps] = useState<TaskStep[]>([]);
+  const [taskSteps, setTaskSteps] = useState<AgentStep[]>([]);
   const [isWorking, setIsWorking] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const stepTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load past jobs
   const loadJobs = useCallback(async () => {
@@ -136,6 +115,10 @@ function QuasarMcpContent() {
         const res = await keywordResearchApi.getJob(activeJob.id);
         setJobs((prev) => prev.map((j) => (j.id === activeJob.id ? res.job : j)));
         setActiveJob(res.job);
+        // Update steps from real agent data
+        if (res.job.steps) {
+          setTaskSteps(res.job.steps);
+        }
         if (res.job.status === "completed") {
           setIsWorking(false);
           // Mark all steps completed
@@ -164,29 +147,6 @@ function QuasarMcpContent() {
     return () => { if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; } };
   }, [isWorking, activeJob]);
 
-  // Simulate step progression while working
-  useEffect(() => {
-    if (!isWorking) {
-      if (stepTimerRef.current) { clearInterval(stepTimerRef.current); stepTimerRef.current = null; }
-      return;
-    }
-    let currentStep = 0;
-    stepTimerRef.current = setInterval(() => {
-      setTaskSteps((prev) => {
-        const next = [...prev];
-        if (currentStep < next.length) {
-          next[currentStep] = { ...next[currentStep], status: "running" };
-        }
-        if (currentStep > 0 && currentStep - 1 < next.length) {
-          next[currentStep - 1] = { ...next[currentStep - 1], status: "completed" };
-        }
-        currentStep++;
-        return next;
-      });
-    }, 2500);
-    return () => { if (stepTimerRef.current) { clearInterval(stepTimerRef.current); stepTimerRef.current = null; } };
-  }, [isWorking]);
-
   const handleSend = async () => {
     const text = input.trim();
     if (!text || isWorking) return;
@@ -200,8 +160,8 @@ function QuasarMcpContent() {
     const researchMatch = text.match(/(?:research|keywords?|keyword research|find keywords?)\s*(?:for|on|about)?\s*(.+)/i);
     if (researchMatch || text.toLowerCase().includes("keyword")) {
       const seed = researchMatch?.[1]?.trim() || text;
-      // Initialize task steps
-      setTaskSteps(RESEARCH_STEPS.map((s) => ({ ...s, id: uid(), status: "pending" as const })));
+      // Clear previous steps — real steps will come from polling
+      setTaskSteps([]);
       setIsWorking(true);
 
       // Add system message
@@ -468,7 +428,7 @@ function QuasarMcpContent() {
 
 // ─── Task Step Item ───
 
-function TaskStepItem({ step, index }: { step: TaskStep; index: number }) {
+function TaskStepItem({ step, index }: { step: AgentStep; index: number }) {
   const icons = {
     pending: <Clock className="size-3.5 text-slate-300" />,
     running: <Loader2 className="size-3.5 animate-spin text-blue-500" />,
