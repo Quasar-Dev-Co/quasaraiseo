@@ -530,20 +530,32 @@ function ChatMessageItem({ message }: { message: McpChatMessage }) {
 function FileDownloadButton({ file }: { file: McpFile }) {
   const isPdf = file.fileType === "pdf";
   const Icon = isPdf ? FileText : FileSpreadsheet;
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      await keywordMcpApi.downloadFile(file.fileId, file.fileName);
+    } catch (err) {
+      alert(`Download failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
-    <a
-      href={keywordMcpApi.getFileUrl(file.fileId)}
-      download={file.fileName}
-      className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-medium text-blue-700 transition-all hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-950/50"
+    <button
+      onClick={handleDownload}
+      disabled={downloading}
+      className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-medium text-blue-700 transition-all hover:bg-blue-100 disabled:opacity-50 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-950/50"
     >
       <Icon className="size-4" />
       <div>
         <p className="text-xs font-bold">Download {file.fileType.toUpperCase()}</p>
         <p className="text-[10px] text-blue-500">{file.fileName}</p>
       </div>
-      <Download className="ml-2 size-4" />
-    </a>
+      {downloading ? <Loader2 className="ml-2 size-4 animate-spin" /> : <Download className="ml-2 size-4" />}
+    </button>
   );
 }
 

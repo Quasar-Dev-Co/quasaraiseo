@@ -106,4 +106,20 @@ export const keywordMcpApi = {
   getFileUrl(fileId: string): string {
     return `${BACKEND_URL}/api/keyword-mcp/files/${fileId}`;
   },
+
+  async downloadFile(fileId: string, fileName: string): Promise<void> {
+    const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/files/${fileId}`, {
+      headers: { ...authHeaders() },
+    });
+    if (!resp.ok) throw new Error(`Download failed: ${resp.status}`);
+    const blob = await resp.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  },
 };
