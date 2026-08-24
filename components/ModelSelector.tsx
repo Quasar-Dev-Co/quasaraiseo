@@ -131,9 +131,10 @@ interface ModelSelectorProps {
   onChange: (modelId: string) => void;
   className?: string;
   dark?: boolean;
+  compact?: boolean;
 }
 
-export function ModelSelector({ models, value, onChange, className = "", dark = false }: ModelSelectorProps) {
+export function ModelSelector({ models, value, onChange, className = "", dark = false, compact = false }: ModelSelectorProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
@@ -161,17 +162,23 @@ export function ModelSelector({ models, value, onChange, className = "", dark = 
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-sm outline-none transition-colors ${
-          dark
-            ? "border-slate-600 bg-slate-800 text-white hover:border-blue-500"
-            : "border-slate-300 bg-white text-slate-900 hover:border-fuchsia-500 dark:border-white/15 dark:bg-slate-800 dark:text-white"
-        }`}
+        className={compact
+          ? `flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+              dark
+                ? "border-slate-700 bg-slate-900/80 text-slate-300 hover:border-slate-500 hover:bg-slate-800"
+                : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"
+            }`
+          : `flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-sm outline-none transition-colors ${
+              dark
+                ? "border-slate-600 bg-slate-800 text-white hover:border-blue-500"
+                : "border-slate-300 bg-white text-slate-900 hover:border-fuchsia-500 dark:border-white/15 dark:bg-slate-800 dark:text-white"
+            }`}
       >
-        <ModelIcon modelId={value} size={20} />
-        <span className="flex-1 truncate text-left">
+        <ModelIcon modelId={value} size={compact ? 16 : 20} />
+        <span className={`truncate text-left ${compact ? "max-w-[120px]" : "flex-1"}`}>
           {formatModelLabel(value, selectedModel?.label)}
         </span>
-        <ChevronDown className={`size-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`shrink-0 transition-transform ${open ? "rotate-180" : ""} ${compact ? "size-3" : "size-4"}`} />
       </button>
 
       {open && (

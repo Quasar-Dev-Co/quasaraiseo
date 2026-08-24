@@ -390,38 +390,32 @@ function QuasarMcpContent() {
 
           {/* Input */}
           <div className="border-t border-slate-200 bg-white/80 px-4 py-3 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/80">
-            {/* Model selector row */}
-            <div className="mx-auto mb-2 flex max-w-3xl items-center gap-2">
-              <span className="text-xs font-bold uppercase text-slate-400 dark:text-slate-500 whitespace-nowrap">AI Model</span>
-              <div className="w-64">
+            <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+              <div className="flex items-center gap-2 pb-1.5 pl-1.5">
                 <ModelSelector
                   models={models}
                   value={selectedModel}
                   onChange={setModel}
                   dark
+                  compact
                 />
               </div>
-            </div>
-            <div className="mx-auto flex max-w-3xl items-end gap-2">
               <div className="relative flex-1">
                 <Textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Tell the agent what you need... e.g. 'find keywords for my website'"
+                  placeholder="Tell the agent what you need..."
                   disabled={isThinking}
-                  className="min-h-[44px] max-h-[120px] resize-none rounded-xl border-slate-200 bg-white pr-10 text-sm dark:border-slate-700 dark:bg-slate-900"
+                  className="min-h-[36px] max-h-[120px] resize-none border-0 bg-transparent px-2 py-2.5 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
                   rows={1}
                 />
-                <div className="absolute bottom-2.5 right-3 text-[10px] text-slate-400">
-                  ↵ to send
-                </div>
               </div>
               <Button
                 onClick={handleSend}
                 disabled={!input.trim() || isThinking}
                 size="icon"
-                className="size-[44px] shrink-0 rounded-xl"
+                className="size-9 shrink-0 rounded-xl"
               >
                 {isThinking ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
               </Button>
