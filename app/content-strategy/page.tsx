@@ -21,6 +21,7 @@ import {
   type McpSessionPreview,
 } from "@/lib/keyword-mcp-api";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 // ─── Tool icons ───
 
@@ -481,6 +482,7 @@ function ChatMessageItem({ message }: { message: McpChatMessage }) {
           ) : (
             <div className="prose-chat">
               <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
                 components={{
                   h1: ({ children }) => <h1 className="mb-2 mt-3 text-base font-bold text-slate-900 dark:text-white">{children}</h1>,
                   h2: ({ children }) => <h2 className="mb-2 mt-3 text-sm font-bold text-slate-900 dark:text-white">{children}</h2>,
