@@ -394,14 +394,14 @@ function QuasarMcpContent() {
               {/* Rounded input card */}
               <div className="rounded-2xl border border-slate-200 bg-white shadow-sm transition-colors focus-within:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:focus-within:border-slate-500">
                 {/* Text area */}
-                <div className="px-4 pt-3">
+                <div className="px-4 pt-3 pb-1">
                   <Textarea
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Tell the agent what you need... e.g. 'find keywords for my website'"
                     disabled={isThinking}
-                    className="min-h-[24px] max-h-[120px] resize-none border-0 bg-transparent px-0 py-1 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 dark:text-white"
+                    className="min-h-[44px] max-h-[120px] resize-none border-0 bg-transparent px-0 py-2 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 dark:text-white"
                     rows={1}
                   />
                 </div>
