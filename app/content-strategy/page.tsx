@@ -401,7 +401,7 @@ function QuasarMcpContent() {
                     onKeyDown={handleKeyDown}
                     placeholder="Tell the agent what you need... e.g. 'find keywords for my website'"
                     disabled={isThinking}
-                    className="min-h-[44px] max-h-[120px] resize-none border-0 bg-transparent px-0 py-2 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 dark:text-white"
+                    className="min-h-[44px] max-h-[120px] resize-none border-0 bg-transparent px-2 py-2 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 dark:text-white"
                     rows={1}
                   />
                 </div>
