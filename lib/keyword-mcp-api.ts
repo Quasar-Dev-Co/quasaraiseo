@@ -5,6 +5,11 @@ function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+export interface ModelRecord {
+  id: string;
+  label?: string;
+}
+
 export interface McpToolCall {
   name: string;
   args: Record<string, unknown>;
@@ -83,16 +88,24 @@ export const keywordMcpApi = {
     return resp.json();
   },
 
-  async sendMessage(sessionId: string, message: string): Promise<McpChatResponse> {
+  async sendMessage(sessionId: string, message: string, model?: string): Promise<McpChatResponse> {
     const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ sessionId, message }),
+      body: JSON.stringify({ sessionId, message, model }),
     });
     if (!resp.ok) {
       const err = await resp.text();
       throw new Error(`Failed to send message: ${err.slice(0, 200)}`);
     }
+    return resp.json();
+  },
+
+  async listModels(): Promise<{ models: ModelRecord[] }> {
+    const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/models`, {
+      headers: { ...authHeaders() },
+    });
+    if (!resp.ok) throw new Error(`Failed to list models: ${resp.status}`);
     return resp.json();
   },
 

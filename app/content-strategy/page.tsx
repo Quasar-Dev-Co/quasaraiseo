@@ -19,9 +19,11 @@ import {
   type McpToolCall,
   type McpFile,
   type McpSessionPreview,
+  type ModelRecord,
 } from "@/lib/keyword-mcp-api";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { ModelSelector, usePersistentModel } from "@/components/ModelSelector";
 
 // ─── Tool icons ───
 
@@ -62,6 +64,8 @@ function QuasarMcpContent() {
   const [input, setInput] = useState("");
   const [isThinking, setIsThinking] = useState(false);
   const [activeTools, setActiveTools] = useState<McpToolCall[]>([]);
+  const [models, setModels] = useState<ModelRecord[]>([]);
+  const { selectedModel, setModel } = usePersistentModel(models);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Load session list + get/create current session
@@ -80,6 +84,9 @@ function QuasarMcpContent() {
       })
       .catch(() => {});
     loadSessions();
+    keywordMcpApi.listModels()
+      .then(({ models }) => setModels(models))
+      .catch(() => {});
   }, [loadSessions]);
 
   // Auto-scroll
@@ -98,7 +105,7 @@ function QuasarMcpContent() {
     setActiveTools([]);
 
     try {
-      const result = await keywordMcpApi.sendMessage(session.id, text);
+      const result = await keywordMcpApi.sendMessage(session.id, text, selectedModel);
       if (result.toolCalls && result.toolCalls.length > 0) {
         setActiveTools(result.toolCalls);
       }
@@ -383,6 +390,18 @@ function QuasarMcpContent() {
 
           {/* Input */}
           <div className="border-t border-slate-200 bg-white/80 px-4 py-3 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/80">
+            {/* Model selector row */}
+            <div className="mx-auto mb-2 flex max-w-3xl items-center gap-2">
+              <span className="text-xs font-bold uppercase text-slate-400 dark:text-slate-500 whitespace-nowrap">AI Model</span>
+              <div className="w-64">
+                <ModelSelector
+                  models={models}
+                  value={selectedModel}
+                  onChange={setModel}
+                  dark
+                />
+              </div>
+            </div>
             <div className="mx-auto flex max-w-3xl items-end gap-2">
               <div className="relative flex-1">
                 <Textarea
