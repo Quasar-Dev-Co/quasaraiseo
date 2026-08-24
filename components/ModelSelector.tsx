@@ -175,14 +175,14 @@ export function ModelSelector({ models, value, onChange, className = "", dark = 
             }`}
       >
         <ModelIcon modelId={value} size={compact ? 16 : 20} />
-        <span className={`truncate text-left ${compact ? "max-w-[120px]" : "flex-1"}`}>
+        <span className={`truncate text-left ${compact ? "max-w-[200px]" : "flex-1"}`}>
           {formatModelLabel(value, selectedModel?.label)}
         </span>
         <ChevronDown className={`shrink-0 transition-transform ${open ? "rotate-180" : ""} ${compact ? "size-3" : "size-4"}`} />
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full min-w-[280px] rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
+        <div className={`absolute z-50 w-full min-w-[280px] rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800 ${compact ? "bottom-full mb-1" : "mt-1"}`}>
           <div className="border-b border-slate-100 p-2 dark:border-slate-700">
             <input
               type="text"
