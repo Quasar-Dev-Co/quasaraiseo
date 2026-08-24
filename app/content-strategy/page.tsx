@@ -5,7 +5,7 @@ import {
   Server, Send, Bot, User, Wrench, Loader2, CheckCircle2,
   Search, Globe, FileText, FileSpreadsheet, Trash2, Download,
   CircleDot, Cpu, Activity, ChevronRight, Sparkles, Terminal,
-  Plus, MessageSquare,
+  Plus, MessageSquare, Paperclip, ArrowUp,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -388,37 +388,59 @@ function QuasarMcpContent() {
             </div>
           </div>
 
-          {/* Input */}
+          {/* Input — Devin-style chat bar */}
           <div className="border-t border-slate-200 bg-white/80 px-4 py-3 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/80">
-            <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-              <div className="flex items-center gap-2 pb-1.5 pl-1.5">
-                <ModelSelector
-                  models={models}
-                  value={selectedModel}
-                  onChange={setModel}
-                  dark
-                  compact
-                />
+            <div className="mx-auto max-w-3xl">
+              {/* Rounded input card */}
+              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm transition-colors focus-within:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:focus-within:border-slate-500">
+                {/* Text area */}
+                <div className="px-4 pt-3">
+                  <Textarea
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Tell the agent what you need... e.g. 'find keywords for my website'"
+                    disabled={isThinking}
+                    className="min-h-[24px] max-h-[120px] resize-none border-0 bg-transparent px-0 py-1 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 dark:text-white"
+                    rows={1}
+                  />
+                </div>
+                {/* Bottom toolbar */}
+                <div className="flex items-center justify-between px-3 pb-2.5 pt-1">
+                  {/* Left: upload buttons */}
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      title="Attach file"
+                      className="grid size-8 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+                    >
+                      <Paperclip className="size-4" />
+                    </button>
+                  </div>
+                  {/* Right: model selector + send button */}
+                  <div className="flex items-center gap-2">
+                    <ModelSelector
+                      models={models}
+                      value={selectedModel}
+                      onChange={setModel}
+                      dark
+                      compact
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSend}
+                      disabled={!input.trim() || isThinking}
+                      className="grid size-8 place-items-center rounded-lg bg-slate-900 text-white transition-colors hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-30 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                    >
+                      {isThinking ? <Loader2 className="size-4 animate-spin" /> : <ArrowUp className="size-4" />}
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="relative flex-1">
-                <Textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Tell the agent what you need..."
-                  disabled={isThinking}
-                  className="min-h-[36px] max-h-[120px] resize-none border-0 bg-transparent px-2 py-2.5 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                  rows={1}
-                />
-              </div>
-              <Button
-                onClick={handleSend}
-                disabled={!input.trim() || isThinking}
-                size="icon"
-                className="size-9 shrink-0 rounded-xl"
-              >
-                {isThinking ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-              </Button>
+              {/* Helper text */}
+              <p className="mt-1.5 text-center text-[11px] text-slate-400 dark:text-slate-500">
+                Quasar MCP can search the web, read your branding, research keywords, and generate reports
+              </p>
             </div>
           </div>
 
