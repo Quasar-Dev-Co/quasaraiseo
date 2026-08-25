@@ -138,6 +138,37 @@ function QuasarMcpContent() {
     }
   };
 
+  // Quick reply: sends a preset message as if the user typed it
+  const handleQuickReply = useCallback(async (text: string) => {
+    if (!text.trim() || isThinking || !session) return;
+    const userMsg: McpChatMessage = { role: "user", content: text, timestamp: Date.now() };
+    setMessages((prev) => [...prev, userMsg]);
+    setIsThinking(true);
+    setActiveTools([]);
+    try {
+      const result = await keywordMcpApi.sendMessage(session.id, text, selectedModel);
+      if (result.toolCalls && result.toolCalls.length > 0) setActiveTools(result.toolCalls);
+      const assistantMsg: McpChatMessage = {
+        role: "assistant",
+        content: result.response,
+        timestamp: Date.now(),
+        toolCalls: result.toolCalls,
+        files: result.files,
+      };
+      setMessages((prev) => [...prev, assistantMsg]);
+      loadSessions();
+    } catch (err) {
+      setMessages((prev) => [...prev, {
+        role: "assistant",
+        content: `Error: ${err instanceof Error ? err.message : "Something went wrong"}`,
+        timestamp: Date.now(),
+      }]);
+    } finally {
+      setIsThinking(false);
+      setActiveTools([]);
+    }
+  }, [session, isThinking, selectedModel, loadSessions]);
+
   const handleNewChat = async () => {
     try {
       const { session: newSession } = await keywordMcpApi.createNewSession();
@@ -364,7 +395,7 @@ function QuasarMcpContent() {
 
               {/* Messages */}
               {messages.map((msg, i) => (
-                <ChatMessageItem key={i} message={msg} />
+                <ChatMessageItem key={i} message={msg} onQuickReply={handleQuickReply} />
               ))}
 
               {/* Thinking indicator */}
@@ -474,8 +505,44 @@ function ToolCallItem({ tool, compact }: { tool: McpToolCall; compact?: boolean 
 
 // ─── Chat Message Item ───
 
-function ChatMessageItem({ message }: { message: McpChatMessage }) {
+function ChatMessageItem({ message, onQuickReply }: { message: McpChatMessage; onQuickReply?: (text: string) => void }) {
   const isUser = message.role === "user";
+
+  // Detect quick-reply prompts from the AI
+  const quickReplies: { label: string; text: string }[] = [];
+  if (!isUser && onQuickReply) {
+    const c = message.content.toLowerCase();
+    if (c.includes("start writing") || c.includes('reply "start writing"') || c.includes('say "start writing"')) {
+      quickReplies.push({ label: "Start writing", text: "Start writing" });
+    }
+    if (c.includes("should i start writing") || c.includes("shall i start") || c.includes("ready to write")) {
+      quickReplies.push({ label: "Start writing", text: "Start writing" });
+    }
+    if (c.includes("save it") || c.includes("give me the file") || c.includes("download it")) {
+      if (c.includes("say 'save") || c.includes("say \"save") || c.includes("'save it'") || c.includes("give me the file")) {
+        quickReplies.push({ label: "Save it", text: "Save it" });
+        quickReplies.push({ label: "Give me the file", text: "Give me the file" });
+      }
+    }
+    if (c.includes("should i save") || c.includes("want me to save") || c.includes("ready to save")) {
+      quickReplies.push({ label: "Save it", text: "Save it" });
+    }
+    if (c.includes("looks good") && (c.includes("confirm") || c.includes("proceed") || c.includes("continue"))) {
+      quickReplies.push({ label: "Looks good, continue", text: "Looks good, continue" });
+    }
+    if (c.includes("want me to adjust") || c.includes("want me to change") || c.includes("any changes")) {
+      if (!c.includes("start writing")) {
+        quickReplies.push({ label: "Looks good, start writing", text: "Looks good, start writing" });
+      }
+    }
+    if (c.includes("more changes") || c.includes("any more changes")) {
+      quickReplies.push({ label: "Save it", text: "Save it" });
+      quickReplies.push({ label: "No more changes, save it", text: "No more changes, save it" });
+    }
+    if (c.includes("confirm") && c.includes("structure")) {
+      quickReplies.push({ label: "Looks good, start writing", text: "Looks good, start writing" });
+    }
+  }
 
   return (
     <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}>
@@ -550,6 +617,23 @@ function ChatMessageItem({ message }: { message: McpChatMessage }) {
           <div className="mt-2 flex flex-wrap gap-2">
             {message.files.map((file) => (
               <FileDownloadButton key={file.fileId} file={file} />
+            ))}
+          </div>
+        )}
+
+        {/* Quick reply buttons */}
+        {!isUser && quickReplies.length > 0 && onQuickReply && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {quickReplies.map((qr, i) => (
+              <button
+                key={i}
+                onClick={() => onQuickReply(qr.text)}
+                className="group inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3.5 py-1.5 text-xs font-medium text-blue-700 transition-all hover:border-blue-400 hover:bg-blue-100 hover:shadow-sm dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300 dark:hover:bg-blue-900"
+              >
+                <Sparkles className="size-3 text-blue-500 transition-transform group-hover:scale-110" />
+                {qr.label}
+                <ArrowUp className="size-3 text-blue-400 opacity-0 transition-opacity group-hover:opacity-100" />
+              </button>
             ))}
           </div>
         )}
