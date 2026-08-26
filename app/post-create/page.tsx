@@ -266,6 +266,16 @@ function PostCreateContent() {
       } else if (connected.length > 0) {
         setSelectedSiteId(connected[0].id);
       }
+
+      // Handle contentFileId and prompt from URL (sent from Quasar MCP)
+      const contentFileIdFromUrl = searchParams.get("contentFileId");
+      const promptFromUrl = searchParams.get("prompt");
+      if (contentFileIdFromUrl && (contentFilesRes.files || []).some((f) => f.id === contentFileIdFromUrl)) {
+        setSelectedContentFileId(contentFileIdFromUrl);
+      }
+      if (promptFromUrl) {
+        setPrompt(decodeURIComponent(promptFromUrl));
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load data");
     } finally {
@@ -276,6 +286,19 @@ function PostCreateContent() {
   useEffect(() => { loadData(); }, [loadData]);
 
   const [modelsError, setModelsError] = useState<string | null>(null);
+  const [mcpBanner, setMcpBanner] = useState<string | null>(null);
+
+  // Show banner when loaded from MCP
+  useEffect(() => {
+    const contentFileIdFromUrl = searchParams.get("contentFileId");
+    const promptFromUrl = searchParams.get("prompt");
+    if (contentFileIdFromUrl && promptFromUrl) {
+      setMcpBanner("Sent from Quasar MCP — reference page selected and prompt pre-filled. Review and click Generate Post when ready.");
+      // Clear the URL params after 8 seconds
+      const timer = setTimeout(() => setMcpBanner(null), 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     wordpressApi.listModels().then((res) => {
@@ -550,6 +573,16 @@ function PostCreateContent() {
   return (
     <RequireAuth>
       <DashboardLayout>
+        {/* MCP Banner */}
+        {mcpBanner && (
+          <div className="mb-4 flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-400/20 dark:bg-blue-400/10">
+            <Sparkles className="size-5 shrink-0 text-blue-600 dark:text-blue-400" />
+            <p className="text-sm text-blue-700 dark:text-blue-300">{mcpBanner}</p>
+            <button onClick={() => setMcpBanner(null)} className="ml-auto text-blue-400 hover:text-blue-600">
+              <X className="size-4" />
+            </button>
+          </div>
+        )}
         {/* Hero */}
         <section className="mb-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200/60 bg-fuchsia-50/80 px-3 py-2 text-xs font-bold uppercase tracking-[0.19em] text-fuchsia-700 dark:border-fuchsia-400/20 dark:bg-fuchsia-400/10 dark:text-fuchsia-400">
