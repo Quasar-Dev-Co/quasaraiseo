@@ -949,7 +949,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                   <Button
                     size="lg"
                     onClick={handleGenerate}
-                    disabled={!prompt.trim() || generating || !selectedSkillId}
+                    disabled={!prompt.trim() || generating || (!selectedSkillId && !selectedContentFileId)}
                     className="bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white hover:from-fuchsia-700 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {generating ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
