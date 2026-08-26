@@ -36,6 +36,7 @@ import {
 import { ModelSelector, usePersistentModel } from "@/components/ModelSelector";
 import { brandingApi, type Branding } from "@/lib/branding-api";
 import { Skeleton } from "@/components/ui/skeleton";
+import { keywordMcpApi } from "@/lib/keyword-mcp-api";
 import { useMinLoading } from "@/lib/use-min-loading";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
@@ -270,7 +271,7 @@ function PostCreateContent() {
         setSelectedSiteId(connected[0].id);
       }
 
-      // Handle contentFileId and prompt from URL (sent from Quasar MCP)
+      // Handle contentFileId and prompt from URL (sent from Quasar MCP legacy)
       const contentFileIdFromUrl = searchParams.get("contentFileId");
       const promptFromUrl = searchParams.get("prompt");
       if (contentFileIdFromUrl && (contentFilesRes.files || []).some((f) => f.id === contentFileIdFromUrl)) {
@@ -278,6 +279,27 @@ function PostCreateContent() {
       }
       if (promptFromUrl) {
         setPrompt(decodeURIComponent(promptFromUrl));
+      }
+
+      // Handle briefId from URL — fetch from MCP and pre-fill
+      const briefIdFromUrl = searchParams.get("briefId");
+      if (briefIdFromUrl) {
+        try {
+          const { brief } = await keywordMcpApi.getPendingPostBrief(briefIdFromUrl);
+          if (brief.contentFileId && (contentFilesRes.files || []).some((f) => f.id === brief.contentFileId)) {
+            setSelectedContentFileId(brief.contentFileId);
+          }
+          if (brief.prompt) {
+            setPrompt(brief.prompt);
+          }
+          if (brief.title) {
+            setMcpBanner(`From Quasar MCP: "${brief.title}"${brief.keyword ? ` — keyword: ${brief.keyword}` : ""}. Reference page selected, prompt pre-filled.`);
+          } else {
+            setMcpBanner("From Quasar MCP: post brief loaded. Reference page selected, prompt pre-filled.");
+          }
+        } catch (err) {
+          setMcpBanner(`Could not load MCP brief: ${err instanceof Error ? err.message : "Unknown"}`);
+        }
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load data");
@@ -291,15 +313,12 @@ function PostCreateContent() {
   const [modelsError, setModelsError] = useState<string | null>(null);
   const [mcpBanner, setMcpBanner] = useState<string | null>(null);
 
-  // Show banner when loaded from MCP
+  // Show banner for legacy MCP params (briefId is handled in loadData)
   useEffect(() => {
     const contentFileIdFromUrl = searchParams.get("contentFileId");
     const promptFromUrl = searchParams.get("prompt");
     if (contentFileIdFromUrl && promptFromUrl) {
       setMcpBanner("Sent from Quasar MCP — reference page selected and prompt pre-filled. Review and click Generate Post when ready.");
-      // Clear the URL params after 8 seconds
-      const timer = setTimeout(() => setMcpBanner(null), 8000);
-      return () => clearTimeout(timer);
     }
   }, [searchParams]);
 

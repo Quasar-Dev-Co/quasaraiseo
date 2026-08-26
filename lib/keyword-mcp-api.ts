@@ -5,6 +5,15 @@ function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+export interface PendingPostBrief {
+  id: string;
+  contentFileId: string | null;
+  prompt: string;
+  title: string | null;
+  keyword: string | null;
+  createdAt: string;
+}
+
 export interface ModelRecord {
   id: string;
   label?: string;
@@ -85,6 +94,14 @@ export const keywordMcpApi = {
       headers: { ...authHeaders() },
     });
     if (!resp.ok) throw new Error(`Failed to get session: ${resp.status}`);
+    return resp.json();
+  },
+
+  async getPendingPostBrief(briefId: string): Promise<{ brief: PendingPostBrief }> {
+    const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/pending-post-briefs/${briefId}`, {
+      headers: { ...authHeaders() },
+    });
+    if (!resp.ok) throw new Error(`Failed to get pending post brief: ${resp.status}`);
     return resp.json();
   },
 
