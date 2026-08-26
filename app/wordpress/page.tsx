@@ -9,6 +9,7 @@ import {
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMinLoading } from "@/lib/use-min-loading";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ import {
 function WordPressContent() {
   const [sites, setSites] = useState<WordPressSite[]>([]);
   const [loading, setLoading] = useState(true);
+  const showSkeleton = useMinLoading(loading, 800);
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showConnectForm, setShowConnectForm] = useState(false);
@@ -82,7 +84,7 @@ function WordPressContent() {
     }
   };
 
-  if (loading) {
+  if (showSkeleton) {
     return (
       <RequireAuth>
         <DashboardLayout>

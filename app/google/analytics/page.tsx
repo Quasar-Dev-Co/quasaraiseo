@@ -14,6 +14,7 @@ import { RequireAuth } from "@/components/auth/require-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMinLoading } from "@/lib/use-min-loading";
 import {
   googleApi,
   type AnalyticsProperty,
@@ -56,6 +57,7 @@ export default function AnalyticsPage() {
   const [selectedProperty, setSelectedProperty] = useState<string>("");
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const showSkeleton = useMinLoading(loading, 800);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rangeDays, setRangeDays] = useState(30);
@@ -105,7 +107,7 @@ export default function AnalyticsPage() {
     }
   }, [selectedProperty, fetchAnalytics, rangeDays]);
 
-  if (loading) {
+  if (showSkeleton) {
     return (
       <RequireAuth>
         <DashboardLayout>

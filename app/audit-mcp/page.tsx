@@ -15,6 +15,7 @@ import { AlertDialog } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMinLoading } from "@/lib/use-min-loading";
 import {
   agentApi,
   type AgentJobRecord,
@@ -87,6 +88,7 @@ export default function AuditMcpPage() {
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const showSkeleton = useMinLoading(loading, 800);
   const [error, setError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -673,7 +675,7 @@ export default function AuditMcpPage() {
 
               {/* Skills list */}
               <div className="border-t border-slate-100 px-4 py-3 dark:border-white/5">
-                {loading ? (
+                {showSkeleton ? (
                   <div className="space-y-2 py-3">
                     {Array.from({ length: 3 }).map((_, i) => (
                       <div key={i} className="rounded-xl border border-slate-100 p-3 dark:border-white/5">

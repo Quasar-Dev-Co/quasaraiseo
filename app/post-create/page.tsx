@@ -36,6 +36,7 @@ import {
 import { ModelSelector, usePersistentModel } from "@/components/ModelSelector";
 import { brandingApi, type Branding } from "@/lib/branding-api";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMinLoading } from "@/lib/use-min-loading";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   idle: { label: "Idle", color: "bg-slate-100 text-slate-600 border-slate-200", icon: Clock },
@@ -185,6 +186,7 @@ function PostCreateContent() {
   };
 
   const [loading, setLoading] = useState(true);
+  const showSkeleton = useMinLoading(loading, 800);
   const [error, setError] = useState<string | null>(null);
 
   const insertImagesIntoBody = (body: string, images: GeneratedImage[]): string => {
@@ -1470,7 +1472,7 @@ function PostCreateContent() {
 
               {/* Skills list */}
               <div className="border-t border-slate-100 px-4 py-3 dark:border-white/5">
-                {loading ? (
+                {showSkeleton ? (
                   <div className="space-y-2 py-3">
                     {Array.from({ length: 3 }).map((_, i) => (
                       <div key={i} className="rounded-xl border border-slate-100 p-3 dark:border-white/5">

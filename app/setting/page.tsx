@@ -13,6 +13,7 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMinLoading } from "@/lib/use-min-loading";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { googleApi, type GoogleStatus, type DeviceInfo } from "@/lib/google-api";
@@ -140,6 +141,7 @@ function SettingsInner() {
   // Branding state
   const [brandings, setBrandings] = useState<Branding[]>([]);
   const [brandingLoading, setBrandingLoading] = useState(false);
+  const showBrandingSkeleton = useMinLoading(brandingLoading, 800);
   const [brandingSaving, setBrandingSaving] = useState(false);
   const [extractingBrand, setExtractingBrand] = useState(false);
   const [extractionStep, setExtractionStep] = useState("");
@@ -1129,7 +1131,7 @@ function SettingsInner() {
               )}
 
               {/* Branding List */}
-              {brandingLoading ? (
+              {showBrandingSkeleton ? (
                 <div className="space-y-3 py-4">
                   {Array.from({ length: 3 }).map((_, i) => (
                     <div key={i} className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMinLoading } from "@/lib/use-min-loading";
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
@@ -58,6 +59,7 @@ export default function TaskManagementPage() {
 
   const [tasks, setTasks] = useState<ApiSeoTask[]>([]);
   const [loading, setLoading] = useState(true);
+  const showSkeleton = useMinLoading(loading, 800);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"board" | "list">("board");
   const [showNewTask, setShowNewTask] = useState(false);
@@ -453,7 +455,7 @@ export default function TaskManagementPage() {
       )}
 
       {/* Loading state */}
-      {loading ? (
+      {showSkeleton ? (
         <div className="px-6 py-8 lg:px-8">
           {/* Stats skeleton */}
           <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-5">
