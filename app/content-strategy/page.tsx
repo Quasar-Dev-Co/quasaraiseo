@@ -24,6 +24,7 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ModelSelector, usePersistentModel } from "@/components/ModelSelector";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // ─── Tool icons ───
 
@@ -356,8 +357,26 @@ function QuasarMcpContent() {
           <div className="flex-1 overflow-y-auto px-4 py-6 min-h-0">
             <div className="mx-auto max-w-3xl space-y-4">
 
-              {/* Welcome */}
-              {messages.length === 0 && (
+              {/* Loading skeleton when session is not loaded yet */}
+              {!session ? (
+                <div className="space-y-4 py-8">
+                  <div className="flex gap-3">
+                    <Skeleton className="size-8 shrink-0 rounded-lg" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                      <Skeleton className="h-4 w-2/3" />
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <Skeleton className="size-8 shrink-0 rounded-lg" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-2/3" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </div>
+                  </div>
+                </div>
+              ) : messages.length === 0 ? (
                 <div className="py-12 text-center">
                   <div className="mx-auto mb-4 grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-xl">
                     <Bot className="size-8" />
@@ -391,7 +410,7 @@ function QuasarMcpContent() {
                     ))}
                   </div>
                 </div>
-              )}
+              ) : null}
 
               {/* Messages */}
               {messages.map((msg, i) => (

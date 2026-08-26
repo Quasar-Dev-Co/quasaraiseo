@@ -9,6 +9,7 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   googleApi,
   type GoogleStatus,
@@ -88,8 +89,23 @@ export default function GoogleSheetsPage() {
     return (
       <RequireAuth>
         <DashboardLayout>
-          <div className="flex h-[60vh] items-center justify-center">
-            <Loader2 className="size-8 animate-spin text-fuchsia-500" />
+          <div className="px-6 py-8 lg:px-8">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="mt-2 h-4 w-72" />
+            <div className="mt-8 space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="size-8 rounded-lg" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="mt-1.5 h-3 w-56" />
+                    </div>
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </DashboardLayout>
       </RequireAuth>

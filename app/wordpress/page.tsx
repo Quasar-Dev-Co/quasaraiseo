@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -85,8 +86,35 @@ function WordPressContent() {
     return (
       <RequireAuth>
         <DashboardLayout>
-          <div className="flex h-[60vh] items-center justify-center">
-            <Loader2 className="size-8 animate-spin text-fuchsia-500" />
+          <div className="px-6 py-8 lg:px-8">
+            <div className="mb-8 flex items-center justify-between">
+              <div>
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="mt-2 h-4 w-72" />
+              </div>
+              <Skeleton className="h-10 w-36 rounded-lg" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="rounded-2xl border border-slate-200 p-5 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="size-10 rounded-lg" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="mt-2 h-3 w-48" />
+                    </div>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-3/4" />
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <Skeleton className="h-8 w-20 rounded-lg" />
+                    <Skeleton className="h-8 w-20 rounded-lg" />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </DashboardLayout>
       </RequireAuth>

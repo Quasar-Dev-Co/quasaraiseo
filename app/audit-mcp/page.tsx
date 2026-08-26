@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { AlertDialog } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   agentApi,
   type AgentJobRecord,
@@ -673,8 +674,22 @@ export default function AuditMcpPage() {
               {/* Skills list */}
               <div className="border-t border-slate-100 px-4 py-3 dark:border-white/5">
                 {loading ? (
-                  <div className="py-6 text-center">
-                    <Loader2 className="mx-auto size-5 animate-spin text-slate-400" />
+                  <div className="space-y-2 py-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="rounded-xl border border-slate-100 p-3 dark:border-white/5">
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="size-8 rounded-lg" />
+                          <div className="flex-1">
+                            <Skeleton className="h-4 w-28" />
+                            <Skeleton className="mt-1.5 h-3 w-40" />
+                          </div>
+                        </div>
+                        <div className="mt-2 flex gap-2">
+                          <Skeleton className="h-5 w-16 rounded-full" />
+                          <Skeleton className="h-5 w-12 rounded-full" />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : skills.length === 0 ? (
                   <div className="py-6 text-center">

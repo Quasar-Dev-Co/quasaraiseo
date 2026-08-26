@@ -13,6 +13,7 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   googleApi,
   type SearchConsoleSite,
@@ -105,8 +106,21 @@ export default function SearchConsolePage() {
     return (
       <RequireAuth>
         <DashboardLayout>
-          <div className="flex h-[60vh] items-center justify-center">
-            <Loader2 className="size-8 animate-spin text-fuchsia-500" />
+          <div className="px-6 py-8 lg:px-8">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="mt-2 h-4 w-72" />
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="rounded-2xl border border-slate-200 p-5 dark:border-slate-700">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="mt-2 h-8 w-16" />
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 rounded-2xl border border-slate-200 p-6 dark:border-slate-700">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="mt-4 h-64 w-full rounded-lg" />
+            </div>
           </div>
         </DashboardLayout>
       </RequireAuth>

@@ -12,6 +12,7 @@ import {
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { googleApi, type GoogleStatus, type DeviceInfo } from "@/lib/google-api";
@@ -1129,8 +1130,23 @@ function SettingsInner() {
 
               {/* Branding List */}
               {brandingLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="size-6 animate-spin text-slate-400" />
+                <div className="space-y-3 py-4">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="size-10 rounded-lg" />
+                        <div className="flex-1">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="mt-1.5 h-3 w-48" />
+                        </div>
+                        <Skeleton className="h-8 w-16 rounded-lg" />
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        <Skeleton className="h-3 w-full" />
+                        <Skeleton className="h-3 w-3/4" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : brandings.length === 0 ? (
                 <article className={`${card} p-12 text-center`}>
