@@ -499,7 +499,15 @@ function PostCreateContent() {
   };
 
   const handleSelectTopic = (topic: SuggestedTopic) => {
-    setPrompt(`Write a cluster post about: ${topic.title}\n\nTarget keyword: ${topic.keyword}\n\nFocus: ${topic.description}\n\nThis post should link up to the pillar page and cover this topic in depth (700-1200 words).`);
+    const selectedFile = contentFiles.find((f) => f.id === selectedContentFileId);
+    const refTitle = selectedFile ? selectedFile.fileName.replace(/\.md$/, "").replace(/_\d+$/, "").replace(/-/g, " ").replace(/(pillar|cluster)/gi, "").trim() : "the reference page";
+    setPrompt(`Write a focused, SEO-friendly blog post titled "${topic.title}"
+
+Target keyword: ${topic.keyword}
+
+What to cover: ${topic.description}
+
+This post should support and link UP to the ${refTitle} reference page. It must be a narrower, deeper angle — do NOT rewrite the reference page. Target 1,200–2,000 words. Include relevant H2s, a short answer-first intro, internal links (one link upward to the reference page and, if relevant, one sideways to a related topic), a specific CTA for CodeMyPixel, and Article + FAQPage schema markup.`);
     setSuggestedTopics([]);
   };
 
