@@ -119,6 +119,20 @@ export interface GenerationJob {
   completedAt: string | null;
 }
 
+export interface ContentFile {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  createdAt: string;
+  jobPrompt: string;
+}
+
+export interface SuggestedTopic {
+  title: string;
+  keyword: string;
+  description: string;
+}
+
 export const wordpressApi = {
   // ─── Skills ───
   async listPostSkills(): Promise<{ skills: PostSkillRecord[] }> {
@@ -210,6 +224,7 @@ export const wordpressApi = {
     brandingId?: string;
     companyName?: string;
     url?: string;
+    contentFileId?: string;
   }): Promise<{ job: GenerationJob }> {
     const res = await fetch(`${BACKEND_URL}/api/wordpress/generate-content`, {
       method: "POST",
@@ -219,6 +234,28 @@ export const wordpressApi = {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.message ?? "Failed to start generation");
+    }
+    return res.json();
+  },
+
+  // ─── Content Files (saved pillar/cluster pages from Quasar MCP) ───
+
+  async listContentFiles(): Promise<{ files: ContentFile[] }> {
+    const res = await fetch(`${BACKEND_URL}/api/wordpress/content-files`, {
+      headers: { ...authHeaders() },
+    });
+    if (!res.ok) return { files: [] };
+    return res.json();
+  },
+
+  async suggestTopicsFromPillar(fileId: string): Promise<{ topics: SuggestedTopic[] }> {
+    const res = await fetch(`${BACKEND_URL}/api/wordpress/content-files/${fileId}/suggest-topics`, {
+      method: "POST",
+      headers: { ...authHeaders() },
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message ?? "Failed to suggest topics");
     }
     return res.json();
   },

@@ -30,6 +30,8 @@ import {
   type GenerationJob,
   type GeneratedContent,
   type GeneratedImage,
+  type ContentFile,
+  type SuggestedTopic,
 } from "@/lib/wordpress-api";
 import { ModelSelector, usePersistentModel } from "@/components/ModelSelector";
 import { brandingApi, type Branding } from "@/lib/branding-api";
@@ -61,6 +63,13 @@ function PostCreateContent() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Content files (saved pillar/cluster pages from Quasar MCP)
+  const [contentFiles, setContentFiles] = useState<ContentFile[]>([]);
+  const [selectedContentFileId, setSelectedContentFileId] = useState<string | null>(null);
+  const [suggestedTopics, setSuggestedTopics] = useState<SuggestedTopic[]>([]);
+  const [loadingTopics, setLoadingTopics] = useState(false);
+  const [topicsError, setTopicsError] = useState<string | null>(null);
 
   // Branding
   const [brands, setBrands] = useState<Branding[]>([]);
@@ -236,15 +245,17 @@ function PostCreateContent() {
 
   const loadData = useCallback(async () => {
     try {
-      const [skillsRes, sitesRes, jobsRes, brandsRes] = await Promise.all([
+      const [skillsRes, sitesRes, jobsRes, brandsRes, contentFilesRes] = await Promise.all([
         wordpressApi.listPostSkills(),
         wordpressApi.getSites(),
         wordpressApi.listGenerationJobs(),
         brandingApi.getAll(),
+        wordpressApi.listContentFiles(),
       ]);
       setSkills(skillsRes.skills);
       setGenJobs(jobsRes.jobs || []);
       setBrands(brandsRes);
+      setContentFiles(contentFilesRes.files || []);
       const defaultBrand = brandsRes.find((b) => b.isDefault);
       if (defaultBrand) setSelectedBrandId(defaultBrand.id);
       const connected = sitesRes.filter((s) => s.connected);
@@ -417,6 +428,7 @@ function PostCreateContent() {
         brandingId: selectedBrandId || undefined,
         companyName: selectedBrand?.companyName || undefined,
         url: selectedBrand?.website || undefined,
+        contentFileId: selectedContentFileId || undefined,
       });
       setGenJobs((prev) => [res.job, ...prev]);
       setGenerationStep("AI is processing your request...");
@@ -424,6 +436,26 @@ function PostCreateContent() {
       setGenError(err instanceof Error ? err.message : "Failed to start generation");
       setGenerating(false);
     }
+  };
+
+  const handleSuggestTopics = async () => {
+    if (!selectedContentFileId) return;
+    setLoadingTopics(true);
+    setTopicsError(null);
+    setSuggestedTopics([]);
+    try {
+      const result = await wordpressApi.suggestTopicsFromPillar(selectedContentFileId);
+      setSuggestedTopics(result.topics || []);
+    } catch (err) {
+      setTopicsError(err instanceof Error ? err.message : "Failed to suggest topics");
+    } finally {
+      setLoadingTopics(false);
+    }
+  };
+
+  const handleSelectTopic = (topic: SuggestedTopic) => {
+    setPrompt(`Write a cluster post about: ${topic.title}\n\nTarget keyword: ${topic.keyword}\n\nFocus: ${topic.description}\n\nThis post should link up to the pillar page and cover this topic in depth (700-1200 words).`);
+    setSuggestedTopics([]);
   };
 
   const handleGenerateImages = async () => {
@@ -662,6 +694,81 @@ function PostCreateContent() {
                   </div>
                 )}
 
+                {/* Pillar/Cluster reference file selector */}
+                {contentFiles.length > 0 && (
+                  <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4 dark:border-blue-400/20 dark:bg-blue-400/5">
+                    <div className="flex items-center gap-2">
+                      <Layers className="size-4 text-blue-600 dark:text-blue-400" />
+                      <label className="text-xs font-bold uppercase text-blue-700 dark:text-blue-300">Reference Page from Quasar MCP</label>
+                    </div>
+                    <p className="mt-1 text-[11px] text-blue-600/80 dark:text-blue-400/70">
+                      Select a saved pillar/cluster page to use as context. The AI will match its tone, keywords, and link to it.
+                    </p>
+                    <div className="mt-3 flex items-center gap-2">
+                      <select
+                        value={selectedContentFileId || ""}
+                        onChange={(e) => {
+                          setSelectedContentFileId(e.target.value || null);
+                          setSuggestedTopics([]);
+                        }}
+                        className="flex-1 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-blue-400/20 dark:bg-slate-900 dark:text-slate-300"
+                      >
+                        <option value="">No reference page</option>
+                        {contentFiles.map((f) => (
+                          <option key={f.id} value={f.id}>
+                            {f.fileName.replace(/\.md$/, "").replace(/_\d+$/, "")} — {formatDate(f.createdAt)}
+                          </option>
+                        ))}
+                      </select>
+                      {selectedContentFileId && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleSuggestTopics}
+                          disabled={loadingTopics}
+                          className="border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-400/30 dark:text-blue-300 dark:hover:bg-blue-400/10"
+                        >
+                          {loadingTopics ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+                          Suggest Topics
+                        </Button>
+                      )}
+                    </div>
+                    {selectedContentFileId && (
+                      <div className="mt-2 text-[11px] text-blue-600 dark:text-blue-400">
+                        <CheckCircle2 className="mr-1 inline size-3" />
+                        AI will use this page as reference context for generation
+                      </div>
+                    )}
+                    {topicsError && (
+                      <div className="mt-2 flex items-center gap-2 text-[11px] text-red-600 dark:text-red-400">
+                        <AlertCircle className="size-3" /> {topicsError}
+                      </div>
+                    )}
+                    {/* Suggested topics */}
+                    {suggestedTopics.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">Suggested cluster post topics — click to use:</p>
+                        {suggestedTopics.map((topic, i) => (
+                          <button
+                            key={i}
+                            onClick={() => handleSelectTopic(topic)}
+                            className="block w-full rounded-lg border border-blue-200 bg-white p-3 text-left transition-all hover:border-blue-400 hover:shadow-sm dark:border-blue-400/20 dark:bg-slate-900 dark:hover:border-blue-400/40"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{topic.title}</p>
+                                <p className="mt-0.5 text-[11px] text-blue-600 dark:text-blue-400">Keyword: {topic.keyword}</p>
+                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{topic.description}</p>
+                              </div>
+                              <ArrowRight className="mt-1 size-4 shrink-0 text-blue-400" />
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Generate button */}
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-xs text-slate-500 dark:text-slate-400">
@@ -672,6 +779,11 @@ function PostCreateContent() {
                       </span>
                     ) : (
                       <span className="text-amber-600 dark:text-amber-400">Select a skill from the sidebar →</span>
+                    )}
+                    {selectedContentFileId && (
+                      <span className="ml-2 inline-flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
+                        <Layers className="size-3.5" /> + reference page
+                      </span>
                     )}
                   </div>
                   <Button
