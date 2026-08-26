@@ -19,10 +19,11 @@ Last updated: 2026-08-24
 | WordPress publishing | Have | `/post-create` |
 | Branding extraction | Have | Branding module |
 | PDF report generation | Have | Keyword MCP `/content-strategy` — 19 pages, 200+ keywords |
-| Content strategy (pillar/cluster) | Built now | `/content-strategy` (Quasar MCP) |
-| Keyword research tool | Built now | `/content-strategy` (Quasar MCP) |
-| Content gap analysis | Built now | In keyword research PDF |
-| Competitor analysis | Built now | In keyword research PDF |
+| Content strategy (pillar/cluster) | Have | `/content-strategy` (Quasar MCP) → `/post-create` |
+| Keyword research tool | Have | `/content-strategy` (Quasar MCP) |
+| Content gap analysis | Have | In keyword research PDF |
+| Competitor analysis | Have | In keyword research PDF |
+| Pillar→Cluster post generation | Have | `/post-create` reference page selector |
 | Schema markup generator | Missing | — |
 | Rank tracking | Missing | — |
 | Backlink analysis | Missing | — |
