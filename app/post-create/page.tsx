@@ -458,6 +458,19 @@ function PostCreateContent() {
     setSuggestedTopics([]);
   };
 
+  const handleDeleteContentFile = async (fileId: string) => {
+    try {
+      await wordpressApi.deleteContentFile(fileId);
+      setContentFiles((prev) => prev.filter((f) => f.id !== fileId));
+      if (selectedContentFileId === fileId) {
+        setSelectedContentFileId(null);
+        setSuggestedTopics([]);
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to delete file");
+    }
+  };
+
   const handleGenerateImages = async () => {
     if (!generatedContent?.imagePrompts || generatedContent.imagePrompts.length === 0) return;
     setGeneratingImages(true);
@@ -696,31 +709,97 @@ function PostCreateContent() {
 
                 {/* Pillar/Cluster reference file selector */}
                 {contentFiles.length > 0 && (
-                  <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4 dark:border-blue-400/20 dark:bg-blue-400/5">
-                    <div className="flex items-center gap-2">
-                      <Layers className="size-4 text-blue-600 dark:text-blue-400" />
-                      <label className="text-xs font-bold uppercase text-blue-700 dark:text-blue-300">Reference Page from Quasar MCP</label>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-700 dark:bg-slate-800/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Layers className="size-4 text-slate-600 dark:text-slate-400" />
+                        <label className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300">Reference Pages from Quasar MCP</label>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] text-slate-500">{contentFiles.length} saved</Badge>
                     </div>
-                    <p className="mt-1 text-[11px] text-blue-600/80 dark:text-blue-400/70">
-                      Select a saved pillar/cluster page to use as context. The AI will match its tone, keywords, and link to it.
+                    <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                      Select a saved page to use as context. The AI will match its tone, keywords, and link to it.
                     </p>
-                    <div className="mt-3 flex items-center gap-2">
-                      <select
-                        value={selectedContentFileId || ""}
-                        onChange={(e) => {
-                          setSelectedContentFileId(e.target.value || null);
-                          setSuggestedTopics([]);
-                        }}
-                        className="flex-1 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-blue-400/20 dark:bg-slate-900 dark:text-slate-300"
-                      >
-                        <option value="">No reference page</option>
-                        {contentFiles.map((f) => (
-                          <option key={f.id} value={f.id}>
-                            {f.fileName.replace(/\.md$/, "").replace(/_\d+$/, "")} — {formatDate(f.createdAt)}
-                          </option>
-                        ))}
-                      </select>
-                      {selectedContentFileId && (
+
+                    {/* File cards */}
+                    <div className="mt-3 space-y-2">
+                      {contentFiles.map((f) => {
+                        const isPillar = f.pageType === "pillar";
+                        const isCluster = f.pageType === "cluster";
+                        const isSelected = selectedContentFileId === f.id;
+                        const displayName = f.fileName.replace(/\.md$/, "").replace(/_\d+$/, "");
+
+                        return (
+                          <div
+                            key={f.id}
+                            className={`group flex items-center gap-3 rounded-lg border p-3 transition-all cursor-pointer ${
+                              isSelected
+                                ? isPillar
+                                  ? "border-purple-300 bg-purple-50 dark:border-purple-400/40 dark:bg-purple-400/10"
+                                  : isCluster
+                                  ? "border-teal-300 bg-teal-50 dark:border-teal-400/40 dark:bg-teal-400/10"
+                                  : "border-blue-300 bg-blue-50 dark:border-blue-400/40 dark:bg-blue-400/10"
+                                : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600"
+                            }`}
+                            onClick={() => {
+                              setSelectedContentFileId(isSelected ? null : f.id);
+                              setSuggestedTopics([]);
+                            }}
+                          >
+                            {/* Icon */}
+                            <div className={`grid size-9 shrink-0 place-items-center rounded-lg ${
+                              isPillar
+                                ? "bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white"
+                                : isCluster
+                                ? "bg-gradient-to-br from-teal-500 to-cyan-600 text-white"
+                                : "bg-gradient-to-br from-slate-400 to-slate-600 text-white"
+                            }`}>
+                              {isPillar ? <Building2 className="size-4" /> : isCluster ? <Layers className="size-4" /> : <FileText className="size-4" />}
+                            </div>
+
+                            {/* Content */}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">{displayName}</p>
+                                <Badge variant="outline" className={`shrink-0 text-[9px] uppercase ${
+                                  isPillar
+                                    ? "border-purple-200 text-purple-600 dark:border-purple-400/30 dark:text-purple-400"
+                                    : isCluster
+                                    ? "border-teal-200 text-teal-600 dark:border-teal-400/30 dark:text-teal-400"
+                                    : "border-slate-200 text-slate-500 dark:border-slate-600 dark:text-slate-400"
+                                }`}>
+                                  {isPillar ? "Pillar" : isCluster ? "Cluster" : "Page"}
+                                </Badge>
+                              </div>
+                              <p className="mt-0.5 text-[10px] text-slate-400">{formatDate(f.createdAt)} · {formatBytes(f.fileSize)}</p>
+                            </div>
+
+                            {/* Selected check */}
+                            {isSelected && (
+                              <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
+                            )}
+
+                            {/* Delete button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm("Delete this reference page? This cannot be undone.")) {
+                                  handleDeleteContentFile(f.id);
+                                }
+                              }}
+                              className="shrink-0 rounded-md p-1.5 text-slate-400 opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 dark:hover:bg-red-400/10"
+                              title="Delete"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Action buttons */}
+                    {selectedContentFileId && (
+                      <div className="mt-3 flex items-center gap-2">
                         <Button
                           size="sm"
                           variant="outline"
@@ -731,28 +810,36 @@ function PostCreateContent() {
                           {loadingTopics ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
                           Suggest Topics
                         </Button>
-                      )}
-                    </div>
-                    {selectedContentFileId && (
-                      <div className="mt-2 text-[11px] text-blue-600 dark:text-blue-400">
-                        <CheckCircle2 className="mr-1 inline size-3" />
-                        AI will use this page as reference context for generation
+                        <button
+                          onClick={() => {
+                            setSelectedContentFileId(null);
+                            setSuggestedTopics([]);
+                          }}
+                          className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                        >
+                          Clear selection
+                        </button>
                       </div>
                     )}
+
                     {topicsError && (
                       <div className="mt-2 flex items-center gap-2 text-[11px] text-red-600 dark:text-red-400">
                         <AlertCircle className="size-3" /> {topicsError}
                       </div>
                     )}
+
                     {/* Suggested topics */}
                     {suggestedTopics.length > 0 && (
                       <div className="mt-3 space-y-2">
-                        <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">Suggested cluster post topics — click to use:</p>
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="size-3.5 text-blue-500" />
+                          <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">Suggested cluster post topics — click to use:</p>
+                        </div>
                         {suggestedTopics.map((topic, i) => (
                           <button
                             key={i}
                             onClick={() => handleSelectTopic(topic)}
-                            className="block w-full rounded-lg border border-blue-200 bg-white p-3 text-left transition-all hover:border-blue-400 hover:shadow-sm dark:border-blue-400/20 dark:bg-slate-900 dark:hover:border-blue-400/40"
+                            className="block w-full rounded-lg border border-slate-200 bg-white p-3 text-left transition-all hover:border-blue-400 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-400/40"
                           >
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex-1">
@@ -780,11 +867,21 @@ function PostCreateContent() {
                     ) : (
                       <span className="text-amber-600 dark:text-amber-400">Select a skill from the sidebar →</span>
                     )}
-                    {selectedContentFileId && (
-                      <span className="ml-2 inline-flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
-                        <Layers className="size-3.5" /> + reference page
-                      </span>
-                    )}
+                    {selectedContentFileId && (() => {
+                      const sf = contentFiles.find((f) => f.id === selectedContentFileId);
+                      const isPillar = sf?.pageType === "pillar";
+                      const isCluster = sf?.pageType === "cluster";
+                      return (
+                        <span className={`ml-2 inline-flex items-center gap-1.5 ${
+                          isPillar ? "text-purple-600 dark:text-purple-400"
+                          : isCluster ? "text-teal-600 dark:text-teal-400"
+                          : "text-blue-600 dark:text-blue-400"
+                        }`}>
+                          {isPillar ? <Building2 className="size-3.5" /> : isCluster ? <Layers className="size-3.5" /> : <FileText className="size-3.5" />}
+                          + {isPillar ? "pillar" : isCluster ? "cluster" : "reference"}
+                        </span>
+                      );
+                    })()}
                   </div>
                   <Button
                     size="lg"

@@ -125,6 +125,7 @@ export interface ContentFile {
   fileSize: number;
   createdAt: string;
   jobPrompt: string;
+  pageType: "pillar" | "cluster" | "page";
 }
 
 export interface SuggestedTopic {
@@ -256,6 +257,18 @@ export const wordpressApi = {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.message ?? "Failed to suggest topics");
+    }
+    return res.json();
+  },
+
+  async deleteContentFile(fileId: string): Promise<{ success: boolean }> {
+    const res = await fetch(`${BACKEND_URL}/api/wordpress/content-files/${fileId}`, {
+      method: "DELETE",
+      headers: { ...authHeaders() },
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message ?? "Failed to delete file");
     }
     return res.json();
   },
