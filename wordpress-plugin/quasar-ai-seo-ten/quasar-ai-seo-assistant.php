@@ -385,6 +385,135 @@ add_action('rest_api_init', function () {
             return quasar_check_token($request);
         },
     ]);
+
+    // ─── Site Settings (meta title, description, SEO) ───
+
+    register_rest_route($namespace, '/site-settings', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            $settings = [
+                'blog_name'        => get_option('blogname', ''),
+                'blog_description' => get_option('blogdescription', ''),
+                'site_url'         => home_url(),
+                'site_language'    => get_bloginfo('language'),
+                'timezone'         => get_option('timezone_string', ''),
+                'permalink_structure' => get_option('permalink_structure', ''),
+            ];
+
+            // Yoast SEO
+            $wpseo_titles = get_option('wpseo_titles', []);
+            if (is_array($wpseo_titles)) {
+                $settings['yoast_homepage_title'] = isset($wpseo_titles['title-home-wpseo']) ? $wpseo_titles['title-home-wpseo'] : '';
+                $settings['yoast_homepage_description'] = isset($wpseo_titles['metadesc-home-wpseo']) ? $wpseo_titles['metadesc-home-wpseo'] : '';
+            }
+
+            // Rank Math
+            $rankmath_titles = get_option('rank-math-options-titles', []);
+            if (is_array($rankmath_titles)) {
+                $settings['rankmath_homepage_title'] = isset($rankmath_titles['homepage_title']) ? $rankmath_titles['homepage_title'] : '';
+                $settings['rankmath_homepage_description'] = isset($rankmath_titles['homepage_description']) ? $rankmath_titles['homepage_description'] : '';
+            }
+
+            // Detect which SEO plugin is active
+            $settings['seo_plugin'] = 'none';
+            if (is_plugin_active('wordpress-seo/wp-seo.php') || is_plugin_active('yoast-seo/yoast-seo.php')) {
+                $settings['seo_plugin'] = 'yoast';
+            } elseif (is_plugin_active('seo-by-rank-math/rank-math.php')) {
+                $settings['seo_plugin'] = 'rankmath';
+            }
+
+            return rest_ensure_response([
+                'success'  => true,
+                'settings' => $settings,
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    register_rest_route($namespace, '/site-settings', [
+        'methods'  => 'POST',
+        'callback' => function ($request) {
+            $params = json_decode($request->get_body(), true);
+
+            $updated = [];
+
+            // Update core blog name
+            if (isset($params['blog_name']) && !empty($params['blog_name'])) {
+                $old = get_option('blogname', '');
+                update_option('blogname', sanitize_text_field($params['blog_name']));
+                $updated['blog_name'] = ['old' => $old, 'new' => $params['blog_name']];
+            }
+
+            // Update core blog description
+            if (isset($params['blog_description'])) {
+                $old = get_option('blogdescription', '');
+                update_option('blogdescription', sanitize_text_field($params['blog_description']));
+                $updated['blog_description'] = ['old' => $old, 'new' => $params['blog_description']];
+            }
+
+            // Update Yoast homepage title
+            if (isset($params['yoast_homepage_title']) && !empty($params['yoast_homepage_title'])) {
+                $wpseo_titles = get_option('wpseo_titles', []);
+                if (!is_array($wpseo_titles)) {
+                    $wpseo_titles = [];
+                }
+                $old = isset($wpseo_titles['title-home-wpseo']) ? $wpseo_titles['title-home-wpseo'] : '';
+                $wpseo_titles['title-home-wpseo'] = sanitize_text_field($params['yoast_homepage_title']);
+                update_option('wpseo_titles', $wpseo_titles);
+                $updated['yoast_homepage_title'] = ['old' => $old, 'new' => $params['yoast_homepage_title']];
+            }
+
+            // Update Yoast homepage description
+            if (isset($params['yoast_homepage_description']) && !empty($params['yoast_homepage_description'])) {
+                $wpseo_titles = get_option('wpseo_titles', []);
+                if (!is_array($wpseo_titles)) {
+                    $wpseo_titles = [];
+                }
+                $old = isset($wpseo_titles['metadesc-home-wpseo']) ? $wpseo_titles['metadesc-home-wpseo'] : '';
+                $wpseo_titles['metadesc-home-wpseo'] = sanitize_textarea_field($params['yoast_homepage_description']);
+                update_option('wpseo_titles', $wpseo_titles);
+                $updated['yoast_homepage_description'] = ['old' => $old, 'new' => $params['yoast_homepage_description']];
+            }
+
+            // Update Rank Math homepage title
+            if (isset($params['rankmath_homepage_title']) && !empty($params['rankmath_homepage_title'])) {
+                $rankmath_titles = get_option('rank-math-options-titles', []);
+                if (!is_array($rankmath_titles)) {
+                    $rankmath_titles = [];
+                }
+                $old = isset($rankmath_titles['homepage_title']) ? $rankmath_titles['homepage_title'] : '';
+                $rankmath_titles['homepage_title'] = sanitize_text_field($params['rankmath_homepage_title']);
+                update_option('rank-math-options-titles', $rankmath_titles);
+                $updated['rankmath_homepage_title'] = ['old' => $old, 'new' => $params['rankmath_homepage_title']];
+            }
+
+            // Update Rank Math homepage description
+            if (isset($params['rankmath_homepage_description']) && !empty($params['rankmath_homepage_description'])) {
+                $rankmath_titles = get_option('rank-math-options-titles', []);
+                if (!is_array($rankmath_titles)) {
+                    $rankmath_titles = [];
+                }
+                $old = isset($rankmath_titles['homepage_description']) ? $rankmath_titles['homepage_description'] : '';
+                $rankmath_titles['homepage_description'] = sanitize_textarea_field($params['rankmath_homepage_description']);
+                update_option('rank-math-options-titles', $rankmath_titles);
+                $updated['rankmath_homepage_description'] = ['old' => $old, 'new' => $params['rankmath_homepage_description']];
+            }
+
+            if (empty($updated)) {
+                return new WP_Error('no_changes', 'No settings were provided to update.', ['status' => 400]);
+            }
+
+            return rest_ensure_response([
+                'success' => true,
+                'updated' => $updated,
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
 });
 
 // Admin menu
