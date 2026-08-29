@@ -286,6 +286,151 @@ add_action('rest_api_init', function () {
         },
     ]);
 
+    // ─── Per-Post SEO Metadata ───
+
+    register_rest_route($namespace, '/posts/(?P<id>\\d+)/meta', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            $post_id = (int) $request['id'];
+            $post = get_post($post_id);
+            if (!$post) {
+                return new WP_Error('not_found', 'Post not found.', ['status' => 404]);
+            }
+
+            $meta = [
+                'post_id'    => $post_id,
+                'title'      => $post->post_title,
+                'content'    => $post->post_content,
+                'excerpt'    => $post->post_excerpt,
+                'status'     => $post->post_status,
+                'permalink'  => get_permalink($post_id),
+                'slug'       => $post->post_name,
+                'post_type'  => $post->post_type,
+                'date'       => $post->post_date,
+            ];
+
+            // Yoast SEO per-post meta
+            $meta['yoast_title']       = get_post_meta($post_id, '_yoast_wpseo_title', true);
+            $meta['yoast_description'] = get_post_meta($post_id, '_yoast_wpseo_metadesc', true);
+            $meta['yoast_focus_keyword'] = get_post_meta($post_id, '_yoast_wpseo_focuskw', true);
+
+            // RankMath per-post meta
+            $meta['rankmath_title']       = get_post_meta($post_id, 'rank_math_title', true);
+            $meta['rankmath_description'] = get_post_meta($post_id, 'rank_math_description', true);
+            $meta['rankmath_focus_keyword'] = get_post_meta($post_id, 'rank_math_focus_keyword', true);
+
+            // Detect SEO plugin
+            $meta['seo_plugin'] = 'none';
+            if (is_plugin_active('wordpress-seo/wp-seo.php') || is_plugin_active('yoast-seo/yoast-seo.php')) {
+                $meta['seo_plugin'] = 'yoast';
+            } elseif (is_plugin_active('seo-by-rank-math/rank-math.php')) {
+                $meta['seo_plugin'] = 'rankmath';
+            }
+
+            // Categories and tags
+            $meta['categories'] = wp_get_post_categories($post_id, ['fields' => 'names']);
+            $meta['tags']       = wp_get_post_tags($post_id, ['fields' => 'names']);
+
+            return rest_ensure_response([
+                'success' => true,
+                'meta'    => $meta,
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    register_rest_route($namespace, '/posts/(?P<id>\\d+)/meta', [
+        'methods'  => 'PATCH',
+        'callback' => function ($request) {
+            $post_id = (int) $request['id'];
+            $post = get_post($post_id);
+            if (!$post) {
+                return new WP_Error('not_found', 'Post not found.', ['status' => 404]);
+            }
+
+            $params = json_decode($request->get_body(), true);
+            $updated = [];
+
+            // Update post title
+            if (isset($params['title']) && !empty($params['title'])) {
+                $old_title = $post->post_title;
+                wp_update_post(['ID' => $post_id, 'post_title' => sanitize_text_field($params['title'])]);
+                $updated['title'] = ['old' => $old_title, 'new' => $params['title']];
+            }
+
+            // Update post excerpt
+            if (isset($params['excerpt'])) {
+                $old_excerpt = $post->post_excerpt;
+                wp_update_post(['ID' => $post_id, 'post_excerpt' => sanitize_text_field($params['excerpt'])]);
+                $updated['excerpt'] = ['old' => $old_excerpt, 'new' => $params['excerpt']];
+            }
+
+            // Update slug
+            if (isset($params['slug']) && !empty($params['slug'])) {
+                $old_slug = $post->post_name;
+                wp_update_post(['ID' => $post_id, 'post_name' => sanitize_title($params['slug'])]);
+                $updated['slug'] = ['old' => $old_slug, 'new' => sanitize_title($params['slug'])];
+            }
+
+            // Update Yoast title
+            if (isset($params['yoast_title'])) {
+                $old = get_post_meta($post_id, '_yoast_wpseo_title', true);
+                update_post_meta($post_id, '_yoast_wpseo_title', sanitize_text_field($params['yoast_title']));
+                $updated['yoast_title'] = ['old' => $old, 'new' => $params['yoast_title']];
+            }
+
+            // Update Yoast description
+            if (isset($params['yoast_description'])) {
+                $old = get_post_meta($post_id, '_yoast_wpseo_metadesc', true);
+                update_post_meta($post_id, '_yoast_wpseo_metadesc', sanitize_textarea_field($params['yoast_description']));
+                $updated['yoast_description'] = ['old' => $old, 'new' => $params['yoast_description']];
+            }
+
+            // Update Yoast focus keyword
+            if (isset($params['yoast_focus_keyword'])) {
+                $old = get_post_meta($post_id, '_yoast_wpseo_focuskw', true);
+                update_post_meta($post_id, '_yoast_wpseo_focuskw', sanitize_text_field($params['yoast_focus_keyword']));
+                $updated['yoast_focus_keyword'] = ['old' => $old, 'new' => $params['yoast_focus_keyword']];
+            }
+
+            // Update RankMath title
+            if (isset($params['rankmath_title'])) {
+                $old = get_post_meta($post_id, 'rank_math_title', true);
+                update_post_meta($post_id, 'rank_math_title', sanitize_text_field($params['rankmath_title']));
+                $updated['rankmath_title'] = ['old' => $old, 'new' => $params['rankmath_title']];
+            }
+
+            // Update RankMath description
+            if (isset($params['rankmath_description'])) {
+                $old = get_post_meta($post_id, 'rank_math_description', true);
+                update_post_meta($post_id, 'rank_math_description', sanitize_textarea_field($params['rankmath_description']));
+                $updated['rankmath_description'] = ['old' => $old, 'new' => $params['rankmath_description']];
+            }
+
+            // Update RankMath focus keyword
+            if (isset($params['rankmath_focus_keyword'])) {
+                $old = get_post_meta($post_id, 'rank_math_focus_keyword', true);
+                update_post_meta($post_id, 'rank_math_focus_keyword', sanitize_text_field($params['rankmath_focus_keyword']));
+                $updated['rankmath_focus_keyword'] = ['old' => $old, 'new' => $params['rankmath_focus_keyword']];
+            }
+
+            if (empty($updated)) {
+                return new WP_Error('no_changes', 'No metadata fields were provided to update.', ['status' => 400]);
+            }
+
+            return rest_ensure_response([
+                'success' => true,
+                'updated' => $updated,
+                'permalink' => get_permalink($post_id),
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
     register_rest_route($namespace, '/categories', [
         'methods'  => 'GET',
         'callback' => function ($request) {
