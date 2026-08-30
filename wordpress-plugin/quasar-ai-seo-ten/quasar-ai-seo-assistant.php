@@ -536,6 +536,9 @@ add_action('rest_api_init', function () {
     register_rest_route($namespace, '/site-settings', [
         'methods'  => 'GET',
         'callback' => function ($request) {
+            // Force fresh data — bypass LiteSpeed/object cache
+            wp_cache_delete('alloptions', 'options');
+
             $settings = [
                 'blog_name'        => get_option('blogname', ''),
                 'blog_description' => get_option('blogdescription', ''),
@@ -567,10 +570,15 @@ add_action('rest_api_init', function () {
                 $settings['seo_plugin'] = 'rankmath';
             }
 
-            return rest_ensure_response([
+            $response = rest_ensure_response([
                 'success'  => true,
                 'settings' => $settings,
             ]);
+            // Prevent LiteSpeed/CDN from caching this response
+            $response->header('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+            $response->header('Pragma', 'no-cache');
+            $response->header('Expires', '0');
+            return $response;
         },
         'permission_callback' => function ($request) {
             return quasar_check_token($request);
@@ -650,9 +658,48 @@ add_action('rest_api_init', function () {
                 return new WP_Error('no_changes', 'No settings were provided to update.', ['status' => 400]);
             }
 
+            // Flush WordPress caches so changes are visible immediately
+            wp_cache_flush();
+            if (function_exists('wp_cache_delete')) {
+                wp_cache_delete('alloptions', 'options');
+            }
+            // Flush LiteSpeed Cache (common on Hostinger)
+            if (class_exists('LiteSpeed\Purge')) {
+                \LiteSpeed\Purge::purge_all();
+            }
+            if (class_exists('LiteSpeed_Cache_Purge')) {
+                LiteSpeed_Cache_Purge::purge_all();
+            }
+            if (class_exists('LiteSpeed_Cache_API')) {
+                LiteSpeed_Cache_API::action_purge_all();
+            }
+            // Try do_action hooks that LiteSpeed listens to
+            do_action('litespeed_purge_all');
+            do_action('litespeed_cache_purge_all');
+            // Flush other popular caching plugins
+            if (function_exists('wp_cache_clean_cache')) {
+                wp_cache_clean_cache();
+            }
+            if (function_exists('w3tc_flush_all')) {
+                w3tc_flush_all();
+            }
+            if (function_exists('wp_rocket_clean_domain')) {
+                wp_rocket_clean_domain();
+            }
+            // Trigger WordPress core actions
+            clean_post_cache(get_option('page_on_front'));
+            do_action('after_switch_theme');
+
+            // Read back the actual values to confirm
+            $confirm = [
+                'blog_name'        => get_option('blogname', ''),
+                'blog_description' => get_option('blogdescription', ''),
+            ];
+
             return rest_ensure_response([
                 'success' => true,
                 'updated' => $updated,
+                'confirmed' => $confirm,
             ]);
         },
         'permission_callback' => function ($request) {
