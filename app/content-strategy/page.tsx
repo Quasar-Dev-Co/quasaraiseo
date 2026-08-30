@@ -561,6 +561,39 @@ function ChatMessageItem({ message, onQuickReply }: { message: McpChatMessage; o
     if (c.includes("confirm") && c.includes("structure")) {
       quickReplies.push({ label: "Looks good, start writing", text: "Looks good, start writing" });
     }
+
+    // ─── WordPress site metadata workflow buttons ───
+    // When MCP asks if user wants to research/propose metadata
+    if (c.includes("would you like me to research") || c.includes("want me to research") || c.includes("propose an seo")) {
+      quickReplies.push({ label: "Yes, research and propose", text: "Yes, research and propose" });
+    }
+    // When MCP asks if user wants to apply the recommended metadata
+    if (c.includes("would you like me to apply") || c.includes("want me to apply") || c.includes("apply the recommended")) {
+      quickReplies.push({ label: "Yes, apply it", text: "Yes, apply it" });
+      quickReplies.push({ label: "No, make changes", text: "No, make changes" });
+    }
+    // When MCP asks about optimizing homepage or posts
+    if (c.includes("optimize the site") || c.includes("optimize my homepage") || c.includes("optimize the homepage")) {
+      quickReplies.push({ label: "Optimize homepage metadata", text: "Optimize my homepage metadata" });
+      quickReplies.push({ label: "Optimize my posts", text: "Optimize my posts" });
+    }
+    // When MCP asks which post to optimize
+    if (c.includes("which post do you want") || c.includes("which post would you like") || c.includes("which post")) {
+      quickReplies.push({ label: "Optimize post 1", text: "Optimize post 1" });
+    }
+    // When MCP asks if user wants to optimize the next post
+    if (c.includes("optimize the next post") || c.includes("optimize another post")) {
+      quickReplies.push({ label: "Yes, optimize next post", text: "Yes, optimize the next post" });
+      quickReplies.push({ label: "No, that's enough", text: "No, that's enough for now" });
+    }
+    // When MCP shows current site settings and asks what to do
+    if (c.includes("site title:") && c.includes("description:") && c.includes("would you like")) {
+      quickReplies.push({ label: "Yes, optimize it", text: "Yes, optimize it" });
+    }
+    // When MCP confirms changes were applied
+    if (c.includes("changes are now live") || c.includes("updated successfully")) {
+      quickReplies.push({ label: "Optimize my posts too", text: "Now optimize my posts" });
+    }
   }
 
   return (
