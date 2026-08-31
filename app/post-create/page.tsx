@@ -561,7 +561,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
     setGeneratingImages(true);
     setImageError(null);
     try {
-      const result = await wordpressApi.generateImages(generatedContent.imagePrompts, selectedBrandId || undefined);
+      const result = await wordpressApi.generateImages(generatedContent.imagePrompts, selectedBrandId || undefined, generatedContent.title, generatedContent.headings);
       setGeneratedImages(result.images);
       const updatedBody = insertImagesIntoBody(generatedContent.body, result.images);
       setGeneratedContent({ ...generatedContent, body: updatedBody });

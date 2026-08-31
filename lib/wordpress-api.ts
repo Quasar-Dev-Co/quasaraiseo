@@ -177,11 +177,11 @@ export const wordpressApi = {
   },
 
   // ─── Image Generation ───
-  async generateImages(imagePrompts: Array<{ placement: string; prompt: string }>, brandingId?: string): Promise<{ images: GeneratedImage[] }> {
+  async generateImages(imagePrompts: Array<{ placement: string; prompt: string }>, brandingId?: string, title?: string, headings?: string[]): Promise<{ images: GeneratedImage[] }> {
     const res = await fetch(`${BACKEND_URL}/api/wordpress/generate-images`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ imagePrompts, brandingId }),
+      body: JSON.stringify({ imagePrompts, brandingId, title, headings }),
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
