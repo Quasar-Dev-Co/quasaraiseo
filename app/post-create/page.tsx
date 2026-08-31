@@ -211,7 +211,7 @@ function PostCreateContent() {
     let updatedBody = body;
     for (const img of images) {
       const fullUrl = wordpressApi.imageUrl(img.url);
-      const imgTag = `<figure class="wp-block-image"><img src="${fullUrl}" alt="${img.placement}" class="wp-image-generated" /><figcaption>${img.placement.replace(/-/g, " ")}</figcaption></figure>`;
+      const imgTag = `<figure class="wp-block-image"><img src="${fullUrl}" alt="" class="wp-image-generated" /></figure>`;
 
       if (img.placement === "featured") {
         // Insert featured image right after the first heading/title (h1 or h2) or at the very start
