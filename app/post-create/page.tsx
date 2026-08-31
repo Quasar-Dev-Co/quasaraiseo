@@ -1126,9 +1126,9 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                   </div>
                   <div className="flex gap-1.5">
                     <Button size="sm" variant="outline" onClick={handleCopyContent}><Copy className="size-3.5" /> Copy</Button>
-                    <Button size="sm" variant="outline" onClick={() => openPreview(generatedContent)}><Eye className="size-3.5" /> View Content</Button>
+                    <Button type="button" size="sm" variant="outline" onClick={() => openPreview(generatedContent)}><Eye className="size-3.5" /> View Content</Button>
                     {wpSites.length > 0 && (
-                      <Button size="sm" className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700" onClick={() => openPublishModal(generatedContent)}><Send className="size-3.5" /> Use for Publishing</Button>
+                      <Button type="button" size="sm" className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700" onClick={() => openPublishModal(generatedContent)}><Send className="size-3.5" /> Use for Publishing</Button>
                     )}
                   </div>
                 </header>
@@ -1293,6 +1293,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                                   <Eye className="size-3.5" /> View Content
                                 </Button>
                                 <Button
+                                  type="button"
                                   size="sm"
                                   className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700"
                                   onClick={() => {
@@ -1709,7 +1710,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                   <Button size="sm" variant="outline" className="border-slate-600 text-white hover:bg-slate-700 hover:text-white" onClick={() => navigator.clipboard.writeText(`${previewContent.title}\n\n${previewContent.metaDescription}\n\n${previewContent.body}`)}>
                     <Copy className="size-3.5" /> Copy
                   </Button>
-                  <Button size="sm" className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700" onClick={() => { if (previewContent) openPublishModal(previewContent); setPreviewOpen(false); }}>
+                  <Button type="button" size="sm" className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700" onClick={() => { if (previewContent) openPublishModal(previewContent); setPreviewOpen(false); }}>
                     <Send className="size-3.5" /> Publish
                   </Button>
                 </>
@@ -2053,6 +2054,7 @@ function PublishModal({
           <div className="flex gap-3 pt-2">
             <Button size="lg" variant="outline" className="flex-1" onClick={onClose} disabled={publishing}>Cancel</Button>
             <Button
+              type="button"
               size="lg"
               className="flex-1 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700"
               onClick={onPublish}
