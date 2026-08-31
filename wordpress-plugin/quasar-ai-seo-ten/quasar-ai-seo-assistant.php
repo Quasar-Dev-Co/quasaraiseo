@@ -168,9 +168,12 @@ add_action('rest_api_init', function () {
             $content = wp_kses_post($raw_content);
 
             // Re-attach the schema blocks as proper <script type="application/ld+json"> tags
+            // NO — don't append to content. WordPress strips <script> from post_content.
+            // Instead, save as post meta and output via wp_head hook.
+            $all_schema_blocks = [];
             if (!empty($schema_blocks)) {
                 foreach ($schema_blocks as $schema_json) {
-                    $content .= "\n" . '<script type="application/ld+json">' . $schema_json . '</script>';
+                    $all_schema_blocks[] = $schema_json;
                 }
             }
 
@@ -179,7 +182,7 @@ add_action('rest_api_init', function () {
             if (!empty($schema_json_field)) {
                 $decoded_schema = json_decode($schema_json_field, true);
                 if (json_last_error() === JSON_ERROR_NONE && is_array($decoded_schema)) {
-                    $content .= "\n" . '<script type="application/ld+json">' . $schema_json_field . '</script>';
+                    $all_schema_blocks[] = $schema_json_field;
                 }
             }
 
@@ -215,6 +218,12 @@ add_action('rest_api_init', function () {
 
             update_post_meta($post_id, '_quasar_ai_seo_post', true);
             update_post_meta($post_id, '_quasar_created_at', current_time('mysql'));
+
+            // Save schema JSON-LD as post meta (NOT in post_content — WordPress strips <script> tags)
+            // Output via wp_head hook (see quasar_ai_seo_output_schema below)
+            if (!empty($all_schema_blocks)) {
+                update_post_meta($post_id, '_quasar_schema_json', $all_schema_blocks);
+            }
 
             if (!empty($categories)) {
                 $cat_ids = [];
@@ -289,14 +298,14 @@ add_action('rest_api_init', function () {
                 $raw_content = $params['content'];
 
                 // Extract JSON-LD schema blocks BEFORE wp_kses_post
-                $schema_blocks = [];
+                $update_schema_blocks = [];
                 $raw_content = preg_replace_callback(
                     '/<script\s+type=["\']application\/ld\+json["\'][^>]*>(.*?)<\/script>/is',
-                    function ($matches) use (&$schema_blocks) {
+                    function ($matches) use (&$update_schema_blocks) {
                         $json = trim($matches[1]);
                         $decoded = json_decode($json, true);
                         if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                            $schema_blocks[] = $json;
+                            $update_schema_blocks[] = $json;
                         }
                         return '';
                     },
@@ -306,11 +315,11 @@ add_action('rest_api_init', function () {
                 // Also catch raw JSON blocks (schema as plain text)
                 $raw_content = preg_replace_callback(
                     '/\{[\s]*"@context"\s*:\s*"https?:\/\/schema\.org"[\s\S]*\}(?:\s*\{[\s\S]*?\})*/s',
-                    function ($matches) use (&$schema_blocks) {
+                    function ($matches) use (&$update_schema_blocks) {
                         $json = trim($matches[0]);
                         $decoded = json_decode($json, true);
                         if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                            $schema_blocks[] = $json;
+                            $update_schema_blocks[] = $json;
                         }
                         return '';
                     },
@@ -319,9 +328,12 @@ add_action('rest_api_init', function () {
 
                 $content = wp_kses_post($raw_content);
 
-                if (!empty($schema_blocks)) {
-                    foreach ($schema_blocks as $schema_json) {
-                        $content .= "\n" . '<script type="application/ld+json">' . $schema_json . '</script>';
+                // Also accept schema_json field from backend
+                $schema_json_field = isset($params['schema_json']) ? $params['schema_json'] : '';
+                if (!empty($schema_json_field)) {
+                    $decoded_schema = json_decode($schema_json_field, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded_schema)) {
+                        $update_schema_blocks[] = $schema_json_field;
                     }
                 }
 
@@ -338,6 +350,11 @@ add_action('rest_api_init', function () {
 
             if (is_wp_error($result)) {
                 return new WP_Error('update_failed', $result->get_error_message(), ['status' => 500]);
+            }
+
+            // Save schema JSON-LD as post meta on update too
+            if (isset($update_schema_blocks) && !empty($update_schema_blocks)) {
+                update_post_meta($post_id, '_quasar_schema_json', $update_schema_blocks);
             }
 
             $post = get_post($post_id);
@@ -1340,3 +1357,30 @@ function quasar_render_settings() {
     </div>
     <?php
 }
+
+/**
+ * Output JSON-LD schema in the page <head> for posts that have schema saved as post meta.
+ * This is the proper way to add structured data in WordPress — NOT in post_content
+ * (which gets <script> tags stripped by wp_kses_post and wp_insert_post filters).
+ */
+function quasar_ai_seo_output_schema() {
+    if (!is_single()) {
+        return;
+    }
+    $post_id = get_the_ID();
+    if (!$post_id) {
+        return;
+    }
+    $schema_blocks = get_post_meta($post_id, '_quasar_schema_json', true);
+    if (empty($schema_blocks) || !is_array($schema_blocks)) {
+        return;
+    }
+    foreach ($schema_blocks as $schema_json) {
+        // Validate it's valid JSON before outputting
+        $decoded = json_decode($schema_json, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            echo "\n" . '<script type="application/ld+json">' . $schema_json . '</script>' . "\n";
+        }
+    }
+}
+add_action('wp_head', 'quasar_ai_seo_output_schema');
