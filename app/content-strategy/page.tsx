@@ -5,7 +5,7 @@ import {
   Server, Send, Bot, User, Wrench, Loader2, CheckCircle2,
   Search, Globe, FileText, FileSpreadsheet, Trash2, Download,
   CircleDot, Cpu, Activity, ChevronRight, Sparkles, Terminal,
-  Plus, MessageSquare, Paperclip, ArrowUp,
+  Plus, MessageSquare, Paperclip, ArrowUp, X,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -68,6 +68,9 @@ function QuasarMcpContent() {
   const [models, setModels] = useState<ModelRecord[]>([]);
   const { selectedModel, setModel } = usePersistentModel(models);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const toolsMenuRef = useRef<HTMLDivElement>(null);
+  const [webBuilderMode, setWebBuilderMode] = useState(false);
 
   // Load session list + get/create current session
   const loadSessions = useCallback(async () => {
@@ -95,6 +98,18 @@ function QuasarMcpContent() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isThinking, activeTools]);
 
+  // Close tools menu on outside click
+  useEffect(() => {
+    if (!toolsOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (toolsMenuRef.current && !toolsMenuRef.current.contains(e.target as Node)) {
+        setToolsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [toolsOpen]);
+
   const handleSend = async () => {
     const text = input.trim();
     if (!text || isThinking || !session) return;
@@ -106,7 +121,7 @@ function QuasarMcpContent() {
     setActiveTools([]);
 
     try {
-      const result = await keywordMcpApi.sendMessage(session.id, text, selectedModel);
+      const result = await keywordMcpApi.sendMessage(session.id, text, selectedModel, webBuilderMode ? "web-builder" : undefined);
       if (result.toolCalls && result.toolCalls.length > 0) {
         setActiveTools(result.toolCalls);
       }
@@ -147,7 +162,7 @@ function QuasarMcpContent() {
     setIsThinking(true);
     setActiveTools([]);
     try {
-      const result = await keywordMcpApi.sendMessage(session.id, text, selectedModel);
+      const result = await keywordMcpApi.sendMessage(session.id, text, selectedModel, webBuilderMode ? "web-builder" : undefined);
       if (result.toolCalls && result.toolCalls.length > 0) setActiveTools(result.toolCalls);
       const assistantMsg: McpChatMessage = {
         role: "assistant",
@@ -443,13 +458,29 @@ function QuasarMcpContent() {
             <div className="mx-auto max-w-3xl">
               {/* Rounded input card */}
               <div className="rounded-2xl border border-slate-200 bg-white shadow-sm transition-colors focus-within:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:focus-within:border-slate-500">
+                {/* Web Builder mode badge */}
+                {webBuilderMode && (
+                  <div className="flex items-center justify-between px-4 pt-3">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 px-3 py-1.5 text-xs font-bold text-blue-700 ring-1 ring-inset ring-blue-500/20 dark:text-blue-400 dark:ring-blue-400/20">
+                      <Globe className="size-3.5" />
+                      Web Builder Mode
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setWebBuilderMode(false)}
+                      className="text-xs font-medium text-slate-400 transition-colors hover:text-red-500"
+                    >
+                      Exit
+                    </button>
+                  </div>
+                )}
                 {/* Text area */}
                 <div className="px-4 pt-3 pb-1">
                   <Textarea
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Tell the agent what you need... e.g. 'find keywords for my website'"
+                    placeholder={webBuilderMode ? "Ask about your website... e.g. 'check my WordPress site' or 'rebuild my landing page'" : "Tell the agent what you need... e.g. 'find keywords for my website'"}
                     disabled={isThinking}
                     className="min-h-[44px] max-h-[120px] resize-none border-0 bg-transparent px-2 py-2 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 dark:text-white"
                     rows={1}
@@ -466,13 +497,53 @@ function QuasarMcpContent() {
                     >
                       <Paperclip className="size-4" />
                     </button>
-                    <button
-                      type="button"
-                      title="Add"
-                      className="grid size-8 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
-                    >
-                      <Plus className="size-4" />
-                    </button>
+                    <div className="relative" ref={toolsMenuRef}>
+                      <button
+                        type="button"
+                        title="Add tool"
+                        onClick={() => setToolsOpen((v) => !v)}
+                        className={`grid size-8 place-items-center rounded-lg transition-colors ${
+                          toolsOpen
+                            ? "bg-blue-100 text-blue-600 dark:bg-blue-400/20 dark:text-blue-400"
+                            : "text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+                        }`}
+                      >
+                        <Plus className={`size-4 transition-transform ${toolsOpen ? "rotate-45" : ""}`} />
+                      </button>
+                      {toolsOpen && (
+                        <div className="absolute bottom-full left-0 z-50 mb-2 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.14)] dark:border-white/10 dark:bg-slate-900 dark:shadow-[0_18px_50px_rgba(0,0,0,0.5)]">
+                          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-white/5">
+                            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Tools</span>
+                            <button
+                              type="button"
+                              onClick={() => setToolsOpen(false)}
+                              className="grid size-5 place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+                            >
+                              <X className="size-3.5" />
+                            </button>
+                          </div>
+                          <div className="max-h-72 overflow-y-auto p-1.5">
+                            <button
+                              type="button"
+                              onClick={() => { setWebBuilderMode(true); setToolsOpen(false); }}
+                              className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-400/10 dark:hover:to-purple-400/10"
+                            >
+                              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-sm transition-transform group-hover:scale-105">
+                                <Globe className="size-4" />
+                              </span>
+                              <span className="min-w-0 flex-1">
+                                <span className="block text-sm font-semibold text-slate-800 dark:text-slate-100">Web Builder</span>
+                                <span className="block truncate text-[11px] text-slate-500 dark:text-slate-400">Build & deploy websites with AI</span>
+                              </span>
+                              <ChevronRight className="size-4 shrink-0 text-slate-300 transition-colors group-hover:text-blue-500 dark:text-slate-600" />
+                            </button>
+                          </div>
+                          <div className="border-t border-slate-100 px-4 py-2 text-center text-[10px] text-slate-400 dark:border-white/5 dark:text-slate-500">
+                            More tools coming soon
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   {/* Right: model selector + send button */}
                   <div className="flex items-center gap-2">

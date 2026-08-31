@@ -105,11 +105,11 @@ export const keywordMcpApi = {
     return resp.json();
   },
 
-  async sendMessage(sessionId: string, message: string, model?: string): Promise<McpChatResponse> {
+  async sendMessage(sessionId: string, message: string, model?: string, mode?: string): Promise<McpChatResponse> {
     const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ sessionId, message, model }),
+      body: JSON.stringify({ sessionId, message, model, mode }),
     });
     if (!resp.ok) {
       const err = await resp.text();
