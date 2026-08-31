@@ -466,6 +466,13 @@ function QuasarMcpContent() {
                     >
                       <Paperclip className="size-4" />
                     </button>
+                    <button
+                      type="button"
+                      title="Add"
+                      className="grid size-8 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+                    >
+                      <Plus className="size-4" />
+                    </button>
                   </div>
                   {/* Right: model selector + send button */}
                   <div className="flex items-center gap-2">

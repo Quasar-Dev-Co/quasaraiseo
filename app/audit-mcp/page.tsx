@@ -5,7 +5,7 @@ import {
   Upload, FileArchive, Sparkles, Loader2, FileText, Download,
   Trash2, Zap, CheckCircle2, XCircle, Clock, Package, Brain,
   ArrowRight, FileSpreadsheet, FileImage, File as FileIcon, AlertCircle,
-  RotateCw, X, Plus,
+  RotateCw, X,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -659,10 +659,7 @@ export default function AuditMcpPage() {
                       className="flex w-full flex-col items-center gap-2"
                       onClick={() => fileInputRef.current?.click()}
                     >
-                      <div className="flex items-center justify-center gap-2">
-                        <Upload className="size-6 text-slate-400" />
-                        <Plus className="size-6 text-slate-400" />
-                      </div>
+                      <Upload className="size-6 text-slate-400" />
                       <p className="text-xs font-medium text-slate-600 dark:text-slate-300">Drop zip here or click to upload</p>
                       <p className="text-[10px] text-slate-400">Must contain a .md file (SKILL.md, README.md)</p>
                     </button>
