@@ -1168,12 +1168,20 @@ function SettingsInner() {
                       <div className="p-5">
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-3">
-                            <span
-                              className="grid size-11 shrink-0 place-items-center rounded-xl text-sm font-black text-white"
-                              style={{ backgroundColor: b.defaultColor }}
-                            >
-                              {b.companyName.charAt(0).toUpperCase()}
-                            </span>
+                            {b.logoUrl ? (
+                              <img
+                                src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}${b.logoUrl}`}
+                                alt={b.companyName}
+                                className="size-11 shrink-0 rounded-xl object-contain"
+                              />
+                            ) : (
+                              <span
+                                className="grid size-11 shrink-0 place-items-center rounded-xl text-sm font-black text-white"
+                                style={{ backgroundColor: b.defaultColor }}
+                              >
+                                {b.companyName.charAt(0).toUpperCase()}
+                              </span>
+                            )}
                             <div>
                               <div className="flex items-center gap-2">
                                 <h4 className="text-[14px] font-bold text-slate-900 dark:text-white">{b.companyName}</h4>
@@ -1197,12 +1205,6 @@ function SettingsInner() {
                           {b.email && <span className="flex items-center gap-1"><Mail className="size-3" /> {b.email}</span>}
                           {b.phone && <span className="flex items-center gap-1"><Phone className="size-3" /> {b.phone}</span>}
                         </div>
-
-                        {b.logoUrl && (
-                          <div className="mt-3">
-                            <img src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}${b.logoUrl}`} alt={b.companyName} className="h-8 rounded-lg object-contain" />
-                          </div>
-                        )}
 
                         <div className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-3 dark:border-white/5">
                           {!b.isDefault && (
