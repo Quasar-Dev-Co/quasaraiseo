@@ -114,6 +114,11 @@ function PostCreateContent() {
   // Content preview modal
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewContent, setPreviewContent] = useState<GeneratedContent | null>(null);
+
+  // Publish modal
+  const [publishModalOpen, setPublishModalOpen] = useState(false);
+  const [publishModalContent, setPublishModalContent] = useState<GeneratedContent | null>(null);
+
   const [editMode, setEditMode] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editMeta, setEditMeta] = useState("");
@@ -127,6 +132,18 @@ function PostCreateContent() {
     setEditSlug(content.slug);
     setEditMode(false);
     setPreviewOpen(true);
+  };
+
+  const openPublishModal = (content: GeneratedContent) => {
+    setPublishModalContent(content);
+    setPublishModalOpen(true);
+    setPublishSuccess(null);
+    setPublishError(null);
+  };
+
+  const closePublishModal = () => {
+    setPublishModalOpen(false);
+    setPublishModalContent(null);
   };
 
   const cleanBodyForPreview = (body: string): string => {
@@ -343,52 +360,67 @@ function PostCreateContent() {
   // Poll for active generation jobs
   const hasActiveJob = genJobs.some((j) => j.status === "generating" || j.status === "idle");
   const processedJobsRef = useRef<Set<string>>(new Set());
+  const imagePollingJobsRef = useRef<Set<string>>(new Set());
   const imagePollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
-    if (hasActiveJob) {
+    if (hasActiveJob || imagePollingJobsRef.current.size > 0) {
       if (pollRef.current) return;
       pollRef.current = setInterval(async () => {
-        const activeJobs = genJobs.filter((j) => j.status === "generating" || j.status === "idle");
-        for (const job of activeJobs) {
+        const jobsToCheck = genJobs.filter((j) => j.status === "generating" || j.status === "idle" || imagePollingJobsRef.current.has(j.id));
+        for (const job of jobsToCheck) {
           try {
             const res = await wordpressApi.getGenerationJob(job.id);
             setGenJobs((prev) => prev.map((j) => (j.id === job.id ? res.job : j)));
             if (res.job.status === "completed" && res.job.result) {
               if (processedJobsRef.current.has(res.job.id)) continue;
-              processedJobsRef.current.add(res.job.id);
-              setGeneratedContent(res.job.result);
-              setGenerating(false);
+
               const hasImagePrompts = res.job.result.imagePrompts && res.job.result.imagePrompts.length > 0;
               const bodyHasImages = res.job.result.body && res.job.result.body.includes("<img");
 
               if (hasImagePrompts && !bodyHasImages) {
-                // Images are being generated server-side — keep polling for the updated body
-                setGenerationStep("Generating images with AI (server-side)...");
-                setGeneratingImages(true);
-                const imageJobId = res.job.id;
-                if (imagePollRef.current) clearInterval(imagePollRef.current);
-                imagePollRef.current = setInterval(async () => {
-                  try {
-                    const imgRes = await wordpressApi.getGenerationJob(imageJobId);
-                    if (imgRes.job.result && imgRes.job.result.body && imgRes.job.result.body.includes("<img")) {
-                      setGeneratedContent(imgRes.job.result);
-                      setGenJobs((prev) => prev.map((j) => (j.id === imageJobId ? imgRes.job : j)));
-                      setImagesInserted(true);
-                      setGeneratingImages(false);
-                      setGenerationStep("Content & images ready!");
-                      if (imagePollRef.current) { clearInterval(imagePollRef.current); imagePollRef.current = null; }
-                    }
-                  } catch {}
-                }, 5000);
-              } else if (bodyHasImages) {
-                setImagesInserted(true);
-                setGenerationStep("Content & images ready!");
+                // Images are still being generated server-side; keep main loader active
+                if (!imagePollingJobsRef.current.has(res.job.id)) {
+                  imagePollingJobsRef.current.add(res.job.id);
+                  setGenerationStep("Generating images with AI (server-side)...");
+                  setGeneratingImages(true);
+                  const imageJobId = res.job.id;
+                  if (imagePollRef.current) clearInterval(imagePollRef.current);
+                  imagePollRef.current = setInterval(async () => {
+                    try {
+                      const imgRes = await wordpressApi.getGenerationJob(imageJobId);
+                      if (imgRes.job.result && imgRes.job.result.body && imgRes.job.result.body.includes("<img")) {
+                        processedJobsRef.current.add(imageJobId);
+                        imagePollingJobsRef.current.delete(imageJobId);
+                        setGeneratedContent(imgRes.job.result);
+                        setGenJobs((prev) => prev.map((j) => (j.id === imageJobId ? imgRes.job : j)));
+                        setImagesInserted(true);
+                        setGeneratingImages(false);
+                        setGenerating(false);
+                        setGenerationStep("Content & images ready!");
+                        if (imagePollRef.current) { clearInterval(imagePollRef.current); imagePollRef.current = null; }
+                      }
+                    } catch {}
+                  }, 5000);
+                }
               } else {
-                setGenerationStep("Content ready!");
+                // No images pending; mark fully complete immediately
+                processedJobsRef.current.add(res.job.id);
+                imagePollingJobsRef.current.delete(res.job.id);
+                setGeneratedContent(res.job.result);
+                setGenerating(false);
+                setGeneratingImages(false);
+                if (bodyHasImages) {
+                  setImagesInserted(true);
+                  setGenerationStep("Content & images ready!");
+                } else {
+                  setGenerationStep("Content ready!");
+                }
               }
             } else if (res.job.status === "failed") {
+              imagePollingJobsRef.current.delete(res.job.id);
               setGenError(res.job.errorMessage || "Generation failed");
               setGenerating(false);
+              setGeneratingImages(false);
             }
           } catch {}
         }
@@ -541,17 +573,18 @@ This post should support and link UP to the ${refTitle} reference page. It must 
     }
   };
 
-  const handlePublish = async () => {
-    if (!selectedSiteId || !generatedContent) return;
+  const handlePublish = async (contentToPublish?: GeneratedContent) => {
+    const content = contentToPublish || generatedContent;
+    if (!selectedSiteId || !content) return;
     setPublishing(true);
     setPublishError(null);
     setPublishSuccess(null);
     try {
       const featuredImage = generatedImages.find((img) => img.placement === "featured");
       const result = await wordpressApi.publishPost(selectedSiteId, {
-        title: generatedContent.title,
-        content: generatedContent.body,
-        excerpt: generatedContent.metaDescription,
+        title: content.title,
+        content: content.body,
+        excerpt: content.metaDescription,
         status: publishStatus,
         categories: postCategories ? postCategories.split(",").map((c) => c.trim()).filter(Boolean) : [],
         tags: postTags ? postTags.split(",").map((t) => t.trim()).filter(Boolean) : [],
@@ -1093,7 +1126,10 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                   </div>
                   <div className="flex gap-1.5">
                     <Button size="sm" variant="outline" onClick={handleCopyContent}><Copy className="size-3.5" /> Copy</Button>
-                    <Button size="sm" className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700" onClick={() => openPreview(generatedContent)}><Eye className="size-3.5" /> View Content</Button>
+                    <Button size="sm" variant="outline" onClick={() => openPreview(generatedContent)}><Eye className="size-3.5" /> View Content</Button>
+                    {wpSites.length > 0 && (
+                      <Button size="sm" className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700" onClick={() => openPublishModal(generatedContent)}><Send className="size-3.5" /> Use for Publishing</Button>
+                    )}
                   </div>
                 </header>
                 <div className="p-5">
@@ -1158,65 +1194,6 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                       <AlertCircle className="size-4 shrink-0" /> {imageError}
                     </div>
                   )}
-                </div>
-              </article>
-            )}
-
-            {/* Publishing panel */}
-            {generatedContent && wpSites.length > 0 && (
-              <article className="overflow-hidden rounded-3xl border border-fuchsia-200 bg-white dark:border-fuchsia-400/20 dark:bg-slate-900/50">
-                <header className="flex items-center justify-between gap-4 border-b border-fuchsia-100 px-6 py-5 dark:border-fuchsia-400/10">
-                  <div className="flex gap-2.75">
-                    <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Newspaper className="size-[18px]" /></span>
-                    <div>
-                      <h3 className="m-0 text-base text-slate-900 dark:text-white">Publish to WordPress</h3>
-                      <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Send the generated content to your site</p>
-                    </div>
-                  </div>
-                </header>
-                <div className="p-5 space-y-4">
-                  {publishSuccess && (
-                    <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-400">
-                      <CheckCircle2 className="size-4 shrink-0" /> {publishSuccess}
-                    </div>
-                  )}
-                  {publishError && (
-                    <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-400">
-                      <AlertCircle className="size-4 shrink-0" /> {publishError}
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-bold uppercase text-slate-500">Publish Status</label>
-                      <select
-                        value={publishStatus}
-                        onChange={(e) => setPublishStatus(e.target.value as "draft" | "publish")}
-                        className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/15 dark:bg-slate-800 dark:text-white"
-                      >
-                        <option value="draft">Draft</option>
-                        <option value="publish">Publish Immediately</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold uppercase text-slate-500">Categories (comma-separated)</label>
-                      <Input className="mt-2" placeholder="e.g. SEO, Marketing" value={postCategories} onChange={(e) => setPostCategories(e.target.value)} />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold uppercase text-slate-500">Tags (comma-separated)</label>
-                    <Input className="mt-2" placeholder="e.g. ai, content, automation" value={postTags} onChange={(e) => setPostTags(e.target.value)} />
-                  </div>
-
-                  <Button
-                    size="lg"
-                    className="w-full bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700"
-                    onClick={handlePublish}
-                    disabled={publishing || !selectedSiteId || !generatedContent}
-                  >
-                    {publishing ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-                    {publishing ? "Publishing..." : `Publish as ${publishStatus === "draft" ? "Draft" : "Published"}`}
-                  </Button>
                 </div>
               </article>
             )}
@@ -1319,8 +1296,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                                   size="sm"
                                   className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700"
                                   onClick={() => {
-                                    setGeneratedContent(job.result);
-                                    window.scrollTo({ top: 0, behavior: "smooth" });
+                                    if (job.result) openPublishModal(job.result);
                                   }}
                                 >
                                   <Send className="size-3.5" /> Use for Publishing
@@ -1367,15 +1343,29 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-slate-700 dark:text-slate-300">{job.prompt}</p>
                             <p className="text-xs text-slate-400">{formatDate(job.createdAt)}</p>
+                            {job.status === "completed" && job.result && (
+                              <p className="mt-0.5 text-xs text-slate-500">{job.result.title} · {job.result.wordCount} words</p>
+                            )}
                           </div>
-                          <Badge className={`shrink-0 ${status.color}`}>{status.label}</Badge>
-                          <button
-                            onClick={() => handleDeleteJob(job.id)}
-                            className="grid size-7 shrink-0 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-400/10 dark:hover:text-red-400"
-                            title="Delete"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </button>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <Badge className={`${status.color}`}>{status.label}</Badge>
+                            {job.status === "completed" && job.result && wpSites.length > 0 && (
+                              <Button
+                                size="xs"
+                                className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700"
+                                onClick={() => openPublishModal(job.result as GeneratedContent)}
+                              >
+                                <Send className="size-3" /> Use for Publishing
+                              </Button>
+                            )}
+                            <button
+                              onClick={() => handleDeleteJob(job.id)}
+                              className="grid size-7 shrink-0 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-400/10 dark:hover:text-red-400"
+                              title="Delete"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          </div>
                         </motion.div>
                       );
                       })}
@@ -1719,7 +1709,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                   <Button size="sm" variant="outline" className="border-slate-600 text-white hover:bg-slate-700 hover:text-white" onClick={() => navigator.clipboard.writeText(`${previewContent.title}\n\n${previewContent.metaDescription}\n\n${previewContent.body}`)}>
                     <Copy className="size-3.5" /> Copy
                   </Button>
-                  <Button size="sm" className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700" onClick={() => { setGeneratedContent(previewContent); setPreviewOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+                  <Button size="sm" className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700" onClick={() => { if (previewContent) openPublishModal(previewContent); setPreviewOpen(false); }}>
                     <Send className="size-3.5" /> Publish
                   </Button>
                 </>
@@ -1931,7 +1921,151 @@ This post should support and link UP to the ${refTitle} reference page. It must 
         </div>,
         document.body
       )}
+
+      {/* Publish to WordPress modal */}
+      <PublishModal
+        open={publishModalOpen}
+        onClose={closePublishModal}
+        content={publishModalContent}
+        wpSites={wpSites}
+        selectedSiteId={selectedSiteId}
+        setSelectedSiteId={setSelectedSiteId}
+        publishStatus={publishStatus}
+        setPublishStatus={setPublishStatus}
+        postCategories={postCategories}
+        setPostCategories={setPostCategories}
+        postTags={postTags}
+        setPostTags={setPostTags}
+        onPublish={() => publishModalContent && handlePublish(publishModalContent)}
+        publishing={publishing}
+        publishSuccess={publishSuccess}
+        publishError={publishError}
+      />
     </RequireAuth>
+  );
+}
+
+function PublishModal({
+  open,
+  onClose,
+  content,
+  wpSites,
+  selectedSiteId,
+  setSelectedSiteId,
+  publishStatus,
+  setPublishStatus,
+  postCategories,
+  setPostCategories,
+  postTags,
+  setPostTags,
+  onPublish,
+  publishing,
+  publishSuccess,
+  publishError,
+}: {
+  open: boolean;
+  onClose: () => void;
+  content: GeneratedContent | null;
+  wpSites: WordPressSite[];
+  selectedSiteId: string;
+  setSelectedSiteId: (id: string) => void;
+  publishStatus: "draft" | "publish";
+  setPublishStatus: (status: "draft" | "publish") => void;
+  postCategories: string;
+  setPostCategories: (v: string) => void;
+  postTags: string;
+  setPostTags: (v: string) => void;
+  onPublish: () => void;
+  publishing: boolean;
+  publishSuccess: string | null;
+  publishError: string | null;
+}) {
+  if (!open || !content) return null;
+  return createPortal(
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: 12 }}
+        transition={{ duration: 0.25 }}
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-fuchsia-200 bg-white shadow-2xl dark:border-fuchsia-400/20 dark:bg-slate-900"
+      >
+        <header className="flex items-center justify-between gap-4 border-b border-fuchsia-100 px-6 py-5 dark:border-fuchsia-400/10">
+          <div className="flex gap-2.75">
+            <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Newspaper className="size-[18px]" /></span>
+            <div>
+              <h3 className="m-0 text-base text-slate-900 dark:text-white">Publish to WordPress</h3>
+              <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{content.title}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="grid size-8 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300">
+            <X className="size-4" />
+          </button>
+        </header>
+        <div className="p-6 space-y-4">
+          {publishSuccess && (
+            <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-400">
+              <CheckCircle2 className="size-4 shrink-0" /> {publishSuccess}
+            </div>
+          )}
+          {publishError && (
+            <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-400">
+              <AlertCircle className="size-4 shrink-0" /> {publishError}
+            </div>
+          )}
+
+          <div>
+            <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">WordPress Site</label>
+            <select
+              value={selectedSiteId}
+              onChange={(e) => setSelectedSiteId(e.target.value)}
+              className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/15 dark:bg-slate-800 dark:text-white"
+            >
+              <option value="">Select a site...</option>
+              {wpSites.map((site) => (
+                <option key={site.id} value={site.id}>{site.siteName || site.siteUrl}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Publish Status</label>
+              <select
+                value={publishStatus}
+                onChange={(e) => setPublishStatus(e.target.value as "draft" | "publish")}
+                className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/15 dark:bg-slate-800 dark:text-white"
+              >
+                <option value="draft">Draft</option>
+                <option value="publish">Publish Immediately</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Categories</label>
+              <Input className="mt-2" placeholder="e.g. SEO, Marketing" value={postCategories} onChange={(e) => setPostCategories(e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Tags</label>
+            <Input className="mt-2" placeholder="e.g. ai, content, automation" value={postTags} onChange={(e) => setPostTags(e.target.value)} />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <Button size="lg" variant="outline" className="flex-1" onClick={onClose} disabled={publishing}>Cancel</Button>
+            <Button
+              size="lg"
+              className="flex-1 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700"
+              onClick={onPublish}
+              disabled={publishing || !selectedSiteId}
+            >
+              {publishing ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+              {publishing ? "Publishing..." : `Publish as ${publishStatus === "draft" ? "Draft" : "Published"}`}
+            </Button>
+          </div>
+        </div>
+      </motion.div>
+    </div>,
+    document.body
   );
 }
 
