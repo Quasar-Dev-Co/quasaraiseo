@@ -174,6 +174,15 @@ add_action('rest_api_init', function () {
                 }
             }
 
+            // Also accept schema_json sent as a separate field from the backend
+            $schema_json_field = isset($params['schema_json']) ? $params['schema_json'] : '';
+            if (!empty($schema_json_field)) {
+                $decoded_schema = json_decode($schema_json_field, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded_schema)) {
+                    $content .= "\n" . '<script type="application/ld+json">' . $schema_json_field . '</script>';
+                }
+            }
+
             $excerpt = isset($params['excerpt']) ? sanitize_text_field($params['excerpt']) : '';
             $status  = isset($params['status']) ? sanitize_text_field($params['status']) : 'draft';
             $categories = isset($params['categories']) ? (array) $params['categories'] : [];
