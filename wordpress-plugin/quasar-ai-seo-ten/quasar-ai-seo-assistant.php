@@ -131,7 +131,49 @@ add_action('rest_api_init', function () {
             $params = json_decode($request->get_body(), true);
 
             $title   = isset($params['title']) ? sanitize_text_field($params['title']) : '';
-            $content = isset($params['content']) ? wp_kses_post($params['content']) : '';
+            $raw_content = isset($params['content']) ? $params['content'] : '';
+
+            // Extract JSON-LD schema blocks BEFORE wp_kses_post (which strips <script> tags)
+            $schema_blocks = [];
+            $raw_content = preg_replace_callback(
+                '/<script\s+type=["\']application\/ld\+json["\'][^>]*>(.*?)<\/script>/is',
+                function ($matches) use (&$schema_blocks) {
+                    $json = trim($matches[1]);
+                    // Validate it's actual JSON-LD, not malicious code
+                    $decoded = json_decode($json, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        $schema_blocks[] = $json;
+                    }
+                    return '';
+                },
+                $raw_content
+            );
+
+            // Also catch raw JSON blocks that weren't wrapped in script tags
+            // (in case the AI returned schema as plain JSON text)
+            $raw_content = preg_replace_callback(
+                '/\{[\s]*"@context"\s*:\s*"https?:\/\/schema\.org"[\s\S]*\}(?:\s*\{[\s\S]*?\})*/s',
+                function ($matches) use (&$schema_blocks) {
+                    $json = trim($matches[0]);
+                    $decoded = json_decode($json, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        $schema_blocks[] = $json;
+                    }
+                    return '';
+                },
+                $raw_content
+            );
+
+            // Sanitize the content (without script tags)
+            $content = wp_kses_post($raw_content);
+
+            // Re-attach the schema blocks as proper <script type="application/ld+json"> tags
+            if (!empty($schema_blocks)) {
+                foreach ($schema_blocks as $schema_json) {
+                    $content .= "\n" . '<script type="application/ld+json">' . $schema_json . '</script>';
+                }
+            }
+
             $excerpt = isset($params['excerpt']) ? sanitize_text_field($params['excerpt']) : '';
             $status  = isset($params['status']) ? sanitize_text_field($params['status']) : 'draft';
             $categories = isset($params['categories']) ? (array) $params['categories'] : [];
@@ -235,7 +277,46 @@ add_action('rest_api_init', function () {
                 $post_data['post_title'] = sanitize_text_field($params['title']);
             }
             if (isset($params['content'])) {
-                $post_data['post_content'] = wp_kses_post($params['content']);
+                $raw_content = $params['content'];
+
+                // Extract JSON-LD schema blocks BEFORE wp_kses_post
+                $schema_blocks = [];
+                $raw_content = preg_replace_callback(
+                    '/<script\s+type=["\']application\/ld\+json["\'][^>]*>(.*?)<\/script>/is',
+                    function ($matches) use (&$schema_blocks) {
+                        $json = trim($matches[1]);
+                        $decoded = json_decode($json, true);
+                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                            $schema_blocks[] = $json;
+                        }
+                        return '';
+                    },
+                    $raw_content
+                );
+
+                // Also catch raw JSON blocks (schema as plain text)
+                $raw_content = preg_replace_callback(
+                    '/\{[\s]*"@context"\s*:\s*"https?:\/\/schema\.org"[\s\S]*\}(?:\s*\{[\s\S]*?\})*/s',
+                    function ($matches) use (&$schema_blocks) {
+                        $json = trim($matches[0]);
+                        $decoded = json_decode($json, true);
+                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                            $schema_blocks[] = $json;
+                        }
+                        return '';
+                    },
+                    $raw_content
+                );
+
+                $content = wp_kses_post($raw_content);
+
+                if (!empty($schema_blocks)) {
+                    foreach ($schema_blocks as $schema_json) {
+                        $content .= "\n" . '<script type="application/ld+json">' . $schema_json . '</script>';
+                    }
+                }
+
+                $post_data['post_content'] = $content;
             }
             if (isset($params['status'])) {
                 $post_data['post_status'] = sanitize_text_field($params['status']);
