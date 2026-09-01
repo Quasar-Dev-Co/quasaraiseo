@@ -498,6 +498,7 @@ function QuasarMcpContent() {
                       <Paperclip className="size-4" />
                     </button>
                     <div className="relative" ref={toolsMenuRef}>
+                      {/* "Add tool" plus button hidden for now — will re-enable later
                       <button
                         type="button"
                         title="Add tool"
@@ -510,6 +511,7 @@ function QuasarMcpContent() {
                       >
                         <Plus className={`size-4 transition-transform ${toolsOpen ? "rotate-45" : ""}`} />
                       </button>
+                      */}
                       {toolsOpen && (
                         <div className="absolute bottom-full left-0 z-50 mb-2 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.14)] dark:border-white/10 dark:bg-slate-900 dark:shadow-[0_18px_50px_rgba(0,0,0,0.5)]">
                           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-white/5">

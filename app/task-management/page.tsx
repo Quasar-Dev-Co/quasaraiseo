@@ -540,11 +540,9 @@ export default function TaskManagementPage() {
                 <Button size="sm" variant="ghost" onClick={() => setShowSheetPanel(!showSheetPanel)}>
                   <FileSpreadsheet className="size-3.5" /> Manage
                 </Button>
-                {/* "New Sheet" button hidden for now — will re-enable later
                 <Button size="sm" onClick={() => setShowSheetModal(true)} className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
                   <Plus className="size-3.5" /> New Sheet
                 </Button>
-                */}
                 {syncMsg && (
                   <span className={`text-xs font-semibold ${syncMsg.includes("Synced") || syncMsg.includes("Created") || syncMsg.includes("Deleted") || syncMsg.includes("Pulled") ? "text-blue-600 dark:text-blue-400" : "text-red-500"}`}>
                     {syncMsg}
