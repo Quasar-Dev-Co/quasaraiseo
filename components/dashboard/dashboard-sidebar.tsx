@@ -40,7 +40,7 @@ const navItems = [
 const googleItems = [
   { label: "Search Console", href: "/google/search-console", icon: Globe2 },
   { label: "Analytics", href: "/google/analytics", icon: BarChart3 },
-  { label: "Sheets", href: "/google/sheets", icon: FileSpreadsheet },
+  // { label: "Sheets", href: "/google/sheets", icon: FileSpreadsheet },
 ];
 
 const wordpressItems = [
