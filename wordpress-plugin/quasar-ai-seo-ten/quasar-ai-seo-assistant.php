@@ -538,6 +538,257 @@ add_action('rest_api_init', function () {
         },
     ]);
 
+    // ─── Web Builder: Pages endpoints (post_type = 'page') ───
+
+    register_rest_route($namespace, '/pages', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            $args = [
+                'post_type'      => 'page',
+                'post_status'    => ['publish', 'draft', 'private'],
+                'posts_per_page' => 50,
+                'orderby'        => 'date',
+                'order'          => 'DESC',
+            ];
+
+            $query = new WP_Query($args);
+            $pages = [];
+
+            foreach ($query->posts as $page) {
+                $pages[] = [
+                    'id'        => $page->ID,
+                    'title'     => $page->post_title,
+                    'status'    => $page->post_status,
+                    'permalink' => get_permalink($page->ID),
+                    'date'      => $page->post_date,
+                ];
+            }
+
+            return rest_ensure_response(['pages' => $pages]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    register_rest_route($namespace, '/pages', [
+        'methods'  => 'POST',
+        'callback' => function ($request) {
+            $params = json_decode($request->get_body(), true);
+
+            $title   = isset($params['title']) ? sanitize_text_field($params['title']) : '';
+            $raw_content = isset($params['content']) ? $params['content'] : '';
+            $status  = isset($params['status']) ? sanitize_text_field($params['status']) : 'draft';
+
+            if (empty($title) || empty($raw_content)) {
+                return new WP_Error('missing_fields', 'Title and content are required.', ['status' => 400]);
+            }
+
+            // Extract JSON-LD schema blocks BEFORE wp_kses_post
+            $schema_blocks = [];
+            $raw_content = preg_replace_callback(
+                '/<script\s+type=["\']application\/ld\+json["\'][^>]*>(.*?)<\/script>/is',
+                function ($matches) use (&$schema_blocks) {
+                    $json = trim($matches[1]);
+                    $decoded = json_decode($json, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        $schema_blocks[] = $json;
+                    }
+                    return '';
+                },
+                $raw_content
+            );
+
+            // Also accept schema_json sent as a separate field
+            $schema_json_field = isset($params['schema_json']) ? $params['schema_json'] : '';
+            if (!empty($schema_json_field)) {
+                $decoded_schema = json_decode($schema_json_field, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded_schema)) {
+                    $schema_blocks[] = $schema_json_field;
+                }
+            }
+
+            // For landing pages: extract <style> and <script> blocks BEFORE sanitization
+            // so wp_kses_post doesn't strip them and leave raw CSS/JS as visible text
+            $style_blocks = [];
+            $script_blocks = [];
+
+            // Extract <style> blocks
+            $raw_content = preg_replace_callback(
+                '/<style[^>]*>(.*?)<\/style>/is',
+                function ($matches) use (&$style_blocks) {
+                    $style_blocks[] = $matches[0];
+                    return '<!--STYLE_PLACEHOLDER_' . (count($style_blocks) - 1) . '-->';
+                },
+                $raw_content
+            );
+
+            // Extract <script> blocks (except JSON-LD which is already handled)
+            $raw_content = preg_replace_callback(
+                '/<script(?![^>]*type=["\']application\/ld\+json)[^>]*>(.*?)<\/script>/is',
+                function ($matches) use (&$script_blocks) {
+                    $script_blocks[] = $matches[0];
+                    return '<!--SCRIPT_PLACEHOLDER_' . (count($script_blocks) - 1) . '-->';
+                },
+                $raw_content
+            );
+
+            // Sanitize the HTML content (without style/script tags)
+            $content = wp_kses_post($raw_content);
+
+            // Restore <style> blocks
+            for ($i = 0; $i < count($style_blocks); $i++) {
+                $content = str_replace('<!--STYLE_PLACEHOLDER_' . $i . '-->', $style_blocks[$i], $content);
+            }
+            // Restore <script> blocks
+            for ($i = 0; $i < count($script_blocks); $i++) {
+                $content = str_replace('<!--SCRIPT_PLACEHOLDER_' . $i . '-->', $script_blocks[$i], $content);
+            }
+
+            $page_data = [
+                'post_title'   => $title,
+                'post_content' => $content,
+                'post_status'  => $status,
+                'post_type'    => 'page',
+            ];
+
+            $page_id = wp_insert_post($page_data, true);
+
+            if (is_wp_error($page_id)) {
+                return new WP_Error('insert_failed', $page_id->get_error_message(), ['status' => 500]);
+            }
+
+            update_post_meta($page_id, '_quasar_ai_seo_page', true);
+            update_post_meta($page_id, '_quasar_created_at', current_time('mysql'));
+
+            if (!empty($schema_blocks)) {
+                update_post_meta($page_id, '_quasar_schema_json', $schema_blocks);
+            }
+
+            $page = get_post($page_id);
+            return rest_ensure_response([
+                'success'  => true,
+                'post_id'  => $page_id,
+                'permalink' => get_permalink($page_id),
+                'post'     => [
+                    'id'        => $page->ID,
+                    'title'     => $page->post_title,
+                    'status'    => $page->post_status,
+                    'permalink' => get_permalink($page_id),
+                ],
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    register_rest_route($namespace, '/pages/(?P<id>\\d+)', [
+        'methods'  => 'PATCH',
+        'callback' => function ($request) {
+            $page_id = (int) $request['id'];
+            $params = json_decode($request->get_body(), true);
+
+            $page = get_post($page_id);
+            if (!$page) {
+                return new WP_Error('not_found', 'Page not found.', ['status' => 404]);
+            }
+
+            $page_data = ['ID' => $page_id];
+
+            if (isset($params['title'])) {
+                $page_data['post_title'] = sanitize_text_field($params['title']);
+            }
+            if (isset($params['content'])) {
+                $raw_content = $params['content'];
+
+                // Extract JSON-LD schema blocks
+                $update_schema_blocks = [];
+                $raw_content = preg_replace_callback(
+                    '/<script\s+type=["\']application\/ld\+json["\'][^>]*>(.*?)<\/script>/is',
+                    function ($matches) use (&$update_schema_blocks) {
+                        $json = trim($matches[1]);
+                        $decoded = json_decode($json, true);
+                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                            $update_schema_blocks[] = $json;
+                        }
+                        return '';
+                    },
+                    $raw_content
+                );
+
+                // Extract <style> and <script> blocks before sanitization
+                $update_style_blocks = [];
+                $update_script_blocks = [];
+
+                $raw_content = preg_replace_callback(
+                    '/<style[^>]*>(.*?)<\/style>/is',
+                    function ($matches) use (&$update_style_blocks) {
+                        $update_style_blocks[] = $matches[0];
+                        return '<!--STYLE_PLACEHOLDER_' . (count($update_style_blocks) - 1) . '-->';
+                    },
+                    $raw_content
+                );
+
+                $raw_content = preg_replace_callback(
+                    '/<script(?![^>]*type=["\']application\/ld\+json)[^>]*>(.*?)<\/script>/is',
+                    function ($matches) use (&$update_script_blocks) {
+                        $update_script_blocks[] = $matches[0];
+                        return '<!--SCRIPT_PLACEHOLDER_' . (count($update_script_blocks) - 1) . '-->';
+                    },
+                    $raw_content
+                );
+
+                $content = wp_kses_post($raw_content);
+
+                // Restore style and script blocks
+                for ($i = 0; $i < count($update_style_blocks); $i++) {
+                    $content = str_replace('<!--STYLE_PLACEHOLDER_' . $i . '-->', $update_style_blocks[$i], $content);
+                }
+                for ($i = 0; $i < count($update_script_blocks); $i++) {
+                    $content = str_replace('<!--SCRIPT_PLACEHOLDER_' . $i . '-->', $update_script_blocks[$i], $content);
+                }
+
+                $schema_json_field = isset($params['schema_json']) ? $params['schema_json'] : '';
+                if (!empty($schema_json_field)) {
+                    $decoded_schema = json_decode($schema_json_field, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded_schema)) {
+                        $update_schema_blocks[] = $schema_json_field;
+                    }
+                }
+
+                $page_data['post_content'] = $content;
+            }
+            if (isset($params['status'])) {
+                $page_data['post_status'] = sanitize_text_field($params['status']);
+            }
+
+            $result = wp_update_post($page_data, true);
+
+            if (is_wp_error($result)) {
+                return new WP_Error('update_failed', $result->get_error_message(), ['status' => 500]);
+            }
+
+            if (!empty($update_schema_blocks)) {
+                update_post_meta($page_id, '_quasar_schema_json', $update_schema_blocks);
+            }
+
+            $page = get_post($page_id);
+            return rest_ensure_response([
+                'success' => true,
+                'post'    => [
+                    'id'        => $page->ID,
+                    'title'     => $page->post_title,
+                    'status'    => $page->post_status,
+                    'permalink' => get_permalink($page_id),
+                ],
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
     register_rest_route($namespace, '/categories', [
         'methods'  => 'GET',
         'callback' => function ($request) {
