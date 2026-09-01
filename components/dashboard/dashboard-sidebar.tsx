@@ -183,7 +183,7 @@ export function DashboardSidebar({ mobileOpen = false, onMobileClose }: { mobile
       <div className="mt-auto">
         <div className="mx-4 mb-4 h-px bg-slate-200/80 dark:bg-white/10 shrink-0" />
 
-        {/* Credits card */}
+        {/* Credits card — hidden for now, will re-enable later
         <div className="mx-3 mb-4 rounded-2xl border border-slate-200/90 bg-white/65 p-4 dark:border-white/10 dark:bg-slate-900/50">
           <div className="flex items-center gap-2">
             <Zap className="size-4 text-fuchsia-500" />
@@ -200,6 +200,7 @@ export function DashboardSidebar({ mobileOpen = false, onMobileClose }: { mobile
             Upgrade plan
           </Button>
         </div>
+        */}
 
         {/* User info + logout */}
         <div className="mx-3 mb-3 rounded-2xl border border-slate-200/90 bg-white/65 p-3 dark:border-white/10 dark:bg-slate-900/50">
