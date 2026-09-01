@@ -182,7 +182,7 @@ export function ModelSelector({ models, value, onChange, className = "", dark = 
       </button>
 
       {open && (
-        <div className={`absolute z-50 w-full min-w-[280px] rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800 ${compact ? "bottom-full mb-1" : "mt-1"}`}>
+        <div className={`absolute z-50 w-full min-w-[280px] rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800 ${compact ? "bottom-full right-0 mb-1" : "mt-1"}`}>
           <div className="border-b border-slate-100 p-2 dark:border-slate-700">
             <input
               type="text"
