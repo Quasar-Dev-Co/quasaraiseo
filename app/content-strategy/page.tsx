@@ -490,6 +490,7 @@ function QuasarMcpContent() {
                 <div className="flex items-center justify-between px-3 pb-2.5 pt-1">
                   {/* Left: upload buttons */}
                   <div className="flex items-center gap-1">
+                    {/* Attach file button hidden for now — will re-enable later
                     <button
                       type="button"
                       title="Attach file"
@@ -497,6 +498,7 @@ function QuasarMcpContent() {
                     >
                       <Paperclip className="size-4" />
                     </button>
+                    */}
                     <div className="relative" ref={toolsMenuRef}>
                       {/* "Add tool" plus button hidden for now — will re-enable later
                       <button
