@@ -169,7 +169,11 @@ export default function TaskManagementPage() {
       const taskId = draggedTaskId;
       setDraggedTaskId(null);
       setDragOverCol(null);
-      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: col, progress: col === "done" ? 100 : t.progress } : t));
+      setTasks(prev => {
+        const next = prev.map(t => t.id === taskId ? { ...t, status: col, progress: col === "done" ? 100 : t.progress } : t);
+        void syncTasksToSelectedSheet(selectedSheet, next, true);
+        return next;
+      });
       try {
         await taskApi.updateTask(taskId, { status: col, progress: col === "done" ? 100 : undefined });
       } catch (e) {
