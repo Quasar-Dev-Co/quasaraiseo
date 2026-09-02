@@ -55,6 +55,57 @@ export interface SearchConsoleDailyRow {
   position: number;
 }
 
+export interface SearchConsoleDimensionRow {
+  keys: string[];
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  position: number;
+}
+
+export interface ScDimensionFilter {
+  dimension: string;
+  operator: string;
+  expression: string;
+}
+
+export interface SitemapInfo {
+  path: string;
+  lastSubmitted: string | null;
+  lastDownloaded: string | null;
+  isPending: boolean;
+  isSitemapsIndex: boolean;
+  type: string;
+  errors: string;
+  warnings: string;
+  contents: Array<{ type: string; submitted: string; indexed: string }>;
+}
+
+export interface UrlInspectionResult {
+  inspectionResultLink?: string;
+  indexStatusResult?: {
+    verdict?: string;
+    coverageState?: string;
+    robotsTxtState?: string;
+    indexingState?: string;
+    lastCrawlTime?: string;
+    pageFetchState?: string;
+    googleCanonical?: string;
+    userCanonical?: string;
+    sitemap?: string[];
+    referringUrls?: string[];
+    crawledAs?: string;
+  };
+  mobileUsabilityResult?: {
+    verdict?: string;
+    issues?: Array<{ issueType: string; severity: string; message: string }>;
+  };
+  richResultsResult?: {
+    verdict?: string;
+    detectedItems?: Array<{ items: Array<{ name: string; issues?: Array<unknown> }> }>;
+  };
+}
+
 export interface AnalyticsProperty {
   propertyId: string;
   displayName: string;
@@ -228,6 +279,101 @@ export const googleApi = {
     }
     const data = (await res.json()) as { rows: SearchConsoleDailyRow[] };
     return data.rows;
+  },
+
+  async getSearchConsoleByDimension(
+    siteUrl: string,
+    startDate: string,
+    endDate: string,
+    options: {
+      dimensions: string[];
+      searchType?: string;
+      filters?: ScDimensionFilter[];
+      rowLimit?: number;
+    },
+  ): Promise<SearchConsoleDimensionRow[]> {
+    const params = new URLSearchParams({
+      siteUrl,
+      startDate,
+      endDate,
+      dimensions: options.dimensions.join(","),
+    });
+    if (options.searchType) params.set("searchType", options.searchType);
+    if (options.rowLimit) params.set("rowLimit", String(options.rowLimit));
+    if (options.filters && options.filters.length > 0) {
+      params.set("filters", JSON.stringify(options.filters));
+    }
+    const res = await fetch(
+      `${BACKEND_URL}/api/google/search-console/dimension?${params}`,
+      { method: "GET", headers: { ...authHeaders() } },
+    );
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message ?? "Failed to fetch Search Console dimension data");
+    }
+    const data = (await res.json()) as { rows: SearchConsoleDimensionRow[] };
+    return data.rows;
+  },
+
+  async inspectUrl(
+    siteUrl: string,
+    inspectionUrl: string,
+  ): Promise<UrlInspectionResult | null> {
+    const params = new URLSearchParams({ siteUrl, inspectionUrl });
+    const res = await fetch(
+      `${BACKEND_URL}/api/google/search-console/inspect-url?${params}`,
+      { method: "GET", headers: { ...authHeaders() } },
+    );
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message ?? "Failed to inspect URL");
+    }
+    const data = (await res.json()) as { inspectionResult: UrlInspectionResult | null };
+    return data.inspectionResult;
+  },
+
+  async getSitemaps(siteUrl: string): Promise<SitemapInfo[]> {
+    const params = new URLSearchParams({ siteUrl });
+    const res = await fetch(
+      `${BACKEND_URL}/api/google/search-console/sitemaps?${params}`,
+      { method: "GET", headers: { ...authHeaders() } },
+    );
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message ?? "Failed to fetch sitemaps");
+    }
+    const data = (await res.json()) as { sitemaps: SitemapInfo[] };
+    return data.sitemaps;
+  },
+
+  async submitSitemap(siteUrl: string, feedpath: string): Promise<void> {
+    const res = await fetch(
+      `${BACKEND_URL}/api/google/search-console/sitemaps/submit`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ siteUrl, feedpath }),
+      },
+    );
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message ?? "Failed to submit sitemap");
+    }
+  },
+
+  async deleteSitemap(siteUrl: string, feedpath: string): Promise<void> {
+    const res = await fetch(
+      `${BACKEND_URL}/api/google/search-console/sitemaps/delete`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ siteUrl, feedpath }),
+      },
+    );
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message ?? "Failed to delete sitemap");
+    }
   },
 
   async getAnalyticsProperties(): Promise<AnalyticsProperty[]> {
