@@ -244,15 +244,16 @@ export default function SearchConsolePage() {
   /* ── opportunities ───────────────────────────────────────────────── */
 
   const opportunities = useMemo(() => {
-    // CTR opportunities: position 1-10, high impressions, low CTR
+    // CTR opportunities: ranking in top 20 with impressions but low CTR
+    // Thresholds are adaptive — lower bars for small sites
     const ctrOpps = queryRows
-      .filter(r => r.position <= 10 && r.impressions >= 100 && r.ctr < 0.02)
+      .filter(r => r.position <= 20 && r.impressions >= 10 && r.ctr < 0.03)
       .sort((a, b) => b.impressions - a.impressions)
       .slice(0, 10);
 
-    // Page 2 keywords: position 11-20, decent impressions
+    // Page 2 keywords: position 11-30 with some impressions
     const page2Opps = queryRows
-      .filter(r => r.position > 10 && r.position <= 20 && r.impressions >= 50)
+      .filter(r => r.position > 10 && r.position <= 30 && r.impressions >= 10)
       .sort((a, b) => b.impressions - a.impressions)
       .slice(0, 10);
 
@@ -264,21 +265,29 @@ export default function SearchConsolePage() {
     queryRows.forEach(r => {
       const prev = prevMap.get(r.query);
       if (!prev) {
-        if (r.clicks > 0) {
+        // New query this period — rising if it has impressions
+        if (r.impressions >= 10) {
           rising.push({ query: r.query, currentClicks: r.clicks, prevClicks: 0, currentPos: r.position, prevPos: 999 });
         }
         return;
       }
+      // Track by impressions too (not just clicks) since small sites may have few clicks
+      const imprDiff = r.impressions - prev.impressions;
       const clickDiff = r.clicks - prev.clicks;
-      if (clickDiff > 0 && prev.clicks > 0) {
-        const pctGrowth = (clickDiff / prev.clicks) * 100;
-        if (pctGrowth >= 20) {
+
+      // Rising: impressions grew >= 15% OR clicks grew >= 15%
+      if (prev.impressions > 0) {
+        const imprGrowth = (imprDiff / prev.impressions) * 100;
+        const clickGrowth = prev.clicks > 0 ? (clickDiff / prev.clicks) * 100 : 0;
+        if (imprGrowth >= 15 || clickGrowth >= 15) {
           rising.push({ query: r.query, currentClicks: r.clicks, prevClicks: prev.clicks, currentPos: r.position, prevPos: prev.position });
         }
       }
-      if (clickDiff < 0 && r.clicks > 0) {
-        const pctDecline = Math.abs((clickDiff / prev.clicks) * 100);
-        if (pctDecline >= 20) {
+      // Declining: impressions dropped >= 15% OR clicks dropped >= 15%
+      if (prev.impressions > 0) {
+        const imprDecline = Math.abs((imprDiff / prev.impressions) * 100);
+        const clickDecline = prev.clicks > 0 ? Math.abs((clickDiff / prev.clicks) * 100) : 0;
+        if (imprDecline >= 15 || clickDecline >= 15) {
           declining.push({ query: r.query, currentClicks: r.clicks, prevClicks: prev.clicks, currentPos: r.position, prevPos: prev.position });
         }
       }
@@ -597,7 +606,7 @@ export default function SearchConsolePage() {
                     </div>
                   )}
                   <p className="mt-2 px-3 text-[10px] text-slate-400">
-                Position 1-10 with high impressions but low CTR — improve title & meta description
+                Position 1-20 with impressions but CTR below 3% — improve title & meta description
               </p>
                 </div>
               </div>
@@ -630,7 +639,7 @@ export default function SearchConsolePage() {
                     </div>
                   )}
                   <p className="mt-2 px-3 text-[10px] text-slate-400">
-                Position 11-20 with decent impressions — close to breaking into page 1
+                Position 11-30 with impressions — close to breaking into page 1
               </p>
                 </div>
               </div>
