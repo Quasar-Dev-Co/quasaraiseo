@@ -127,6 +127,24 @@ export interface AnalyticsData {
   totals: Array<{ metric: string; value: number }>;
 }
 
+export interface AnalyticsReportRow {
+  dimensionValues: string[];
+  metricValues: number[];
+}
+
+export interface AnalyticsReport {
+  rows: AnalyticsReportRow[];
+  totals: Array<{ metric: string; value: number }>;
+  metrics: string[];
+  dimensions: string[];
+}
+
+export interface RealtimeReport {
+  totalActiveUsers: number;
+  totalPageViews: number;
+  byCountry: Array<{ country: string; activeUsers: number; pageViews: number }>;
+}
+
 export interface GoogleSheet {
   id: string;
   name: string;
@@ -404,6 +422,60 @@ export const googleApi = {
       throw new Error(data.message ?? "Failed to fetch Analytics data");
     }
     return res.json() as Promise<AnalyticsData>;
+  },
+
+  async getAnalyticsReport(
+    propertyId: string,
+    options: {
+      startDate: string;
+      endDate: string;
+      prevStartDate?: string;
+      prevEndDate?: string;
+      dimensions: string[];
+      metrics: string[];
+      filterField?: string;
+      filterValue?: string;
+      orderBy?: string;
+      orderDesc?: boolean;
+      limit?: number;
+    },
+  ): Promise<AnalyticsReport> {
+    const params = new URLSearchParams({
+      propertyId,
+      startDate: options.startDate,
+      endDate: options.endDate,
+      dimensions: options.dimensions.join(","),
+      metrics: options.metrics.join(","),
+    });
+    if (options.prevStartDate) params.set("prevStartDate", options.prevStartDate);
+    if (options.prevEndDate) params.set("prevEndDate", options.prevEndDate);
+    if (options.filterField) params.set("filterField", options.filterField);
+    if (options.filterValue) params.set("filterValue", options.filterValue);
+    if (options.orderBy) params.set("orderBy", options.orderBy);
+    if (options.orderDesc !== undefined) params.set("orderDesc", String(options.orderDesc));
+    if (options.limit) params.set("limit", String(options.limit));
+    const res = await fetch(
+      `${BACKEND_URL}/api/google/analytics/report?${params}`,
+      { method: "GET", headers: { ...authHeaders() } },
+    );
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message ?? "Failed to fetch Analytics report");
+    }
+    return res.json() as Promise<AnalyticsReport>;
+  },
+
+  async getRealtimeReport(propertyId: string): Promise<RealtimeReport> {
+    const params = new URLSearchParams({ propertyId });
+    const res = await fetch(
+      `${BACKEND_URL}/api/google/analytics/realtime?${params}`,
+      { method: "GET", headers: { ...authHeaders() } },
+    );
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message ?? "Failed to fetch realtime report");
+    }
+    return res.json() as Promise<RealtimeReport>;
   },
 
   async getSheets(): Promise<GoogleSheet[]> {
