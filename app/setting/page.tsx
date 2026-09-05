@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense, useRef } from "react";
+import { useState, useEffect, useCallback, Suspense, useRef, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Settings, CheckCircle2, Circle, Loader2, ChevronRight,
@@ -169,6 +169,7 @@ function SettingsInner() {
   const [modelsLoading, setModelsLoading] = useState(false);
   const [modelsSyncing, setModelsSyncing] = useState(false);
   const [modelsFilter, setModelsFilter] = useState<"all" | "openai" | "openrouter" | "new">("all");
+  const [modelsSearch, setModelsSearch] = useState("");
   const [syncResult, setSyncResult] = useState<{
     openai: { total: number; new: number };
     openrouter: { total: number; new: number };
@@ -355,6 +356,17 @@ function SettingsInner() {
   useEffect(() => {
     fetchDiscoveredModels();
   }, [fetchDiscoveredModels, modelsFilter]);
+
+  // Client-side search filter on the already-loaded models
+  const filteredModels = useMemo(() => {
+    if (!modelsSearch.trim()) return discoveredModels;
+    const q = modelsSearch.toLowerCase().trim();
+    return discoveredModels.filter(m =>
+      m.modelId.toLowerCase().includes(q) ||
+      (m.modelName?.toLowerCase().includes(q) ?? false) ||
+      m.provider.toLowerCase().includes(q),
+    );
+  }, [discoveredModels, modelsSearch]);
 
   const handleSyncModels = async () => {
     setModelsSyncing(true);
@@ -1572,8 +1584,8 @@ function SettingsInner() {
                   </div>
                 )}
 
-                {/* Filter buttons */}
-                <div className="mb-3 flex flex-wrap gap-2">
+                {/* Filter buttons + Search */}
+                <div className="mb-3 flex flex-wrap items-center gap-2">
                   {[
                     { id: "all", label: "All Models" },
                     { id: "new", label: "New (7 days)" },
@@ -1592,6 +1604,24 @@ function SettingsInner() {
                       {f.label}
                     </button>
                   ))}
+                  <div className="relative ml-auto min-w-[200px] flex-1 sm:max-w-xs">
+                    <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={modelsSearch}
+                      onChange={(e) => setModelsSearch(e.target.value)}
+                      placeholder="Search models..."
+                      className="w-full rounded-lg border border-slate-200 bg-white py-1.5 pl-9 pr-3 text-[12px] text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                    />
+                    {modelsSearch && (
+                      <button
+                        onClick={() => setModelsSearch("")}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Models table */}
@@ -1600,9 +1630,11 @@ function SettingsInner() {
                     <div className="flex h-32 items-center justify-center">
                       <Loader2 className="size-5 animate-spin text-fuchsia-500" />
                     </div>
-                  ) : discoveredModels.length === 0 ? (
+                  ) : filteredModels.length === 0 ? (
                     <div className="flex h-32 items-center justify-center text-[12px] text-slate-400">
-                      No models discovered yet. Click "Refresh Models" to sync.
+                      {modelsSearch
+                        ? `No models found matching "${modelsSearch}".`
+                        : "No models discovered yet. Click \"Refresh Models\" to sync."}
                     </div>
                   ) : (
                     <div className="max-h-[400px] overflow-y-auto">
@@ -1618,7 +1650,7 @@ function SettingsInner() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50 dark:divide-white/5">
-                          {discoveredModels.map((m) => {
+                          {filteredModels.map((m) => {
                             const isNew = Date.now() - new Date(m.discoveredAt).getTime() < 7 * 24 * 60 * 60 * 1000;
                             return (
                               <tr key={m.id} className={`transition-colors hover:bg-slate-50 dark:hover:bg-white/5 ${isNew ? "bg-fuchsia-50/30 dark:bg-fuchsia-400/5" : ""}`}>
@@ -1658,13 +1690,14 @@ function SettingsInner() {
                 </div>
 
                 {/* Stats summary */}
-                {discoveredModels.length > 0 && (
+                {filteredModels.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-slate-500 dark:text-slate-400">
-                    <span><strong className="text-slate-700 dark:text-slate-300">{discoveredModels.length}</strong> total models</span>
-                    <span><strong className="text-slate-700 dark:text-slate-300">{discoveredModels.filter(m => m.isFree).length}</strong> free models</span>
-                    <span><strong className="text-slate-700 dark:text-slate-300">{discoveredModels.filter(m => m.provider === "openai").length}</strong> OpenAI</span>
-                    <span><strong className="text-slate-700 dark:text-slate-300">{discoveredModels.filter(m => m.provider === "openrouter").length}</strong> OpenRouter</span>
-                    <span><strong className="text-fuchsia-600 dark:text-fuchsia-400">{discoveredModels.filter(m => Date.now() - new Date(m.discoveredAt).getTime() < 7 * 24 * 60 * 60 * 1000).length}</strong> new this week</span>
+                    {modelsSearch && <span className="font-bold text-fuchsia-600 dark:text-fuchsia-400">Showing {filteredModels.length} of {discoveredModels.length}</span>}
+                    {!modelsSearch && <span><strong className="text-slate-700 dark:text-slate-300">{discoveredModels.length}</strong> total models</span>}
+                    <span><strong className="text-slate-700 dark:text-slate-300">{filteredModels.filter(m => m.isFree).length}</strong> free</span>
+                    <span><strong className="text-slate-700 dark:text-slate-300">{filteredModels.filter(m => m.provider === "openai").length}</strong> OpenAI</span>
+                    <span><strong className="text-slate-700 dark:text-slate-300">{filteredModels.filter(m => m.provider === "openrouter").length}</strong> OpenRouter</span>
+                    <span><strong className="text-fuchsia-600 dark:text-fuchsia-400">{filteredModels.filter(m => Date.now() - new Date(m.discoveredAt).getTime() < 7 * 24 * 60 * 60 * 1000).length}</strong> new this week</span>
                   </div>
                 )}
               </div>
