@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { googleApi, type GoogleStatus, type DeviceInfo } from "@/lib/google-api";
 import { brandingApi, type Branding, type BrandingInput } from "@/lib/branding-api";
-import { aiProviderApi, type AiProvider as ProviderType } from "@/lib/ai-provider-api";
+import { aiProviderApi, type AiProvider as ProviderType, type DiscoveredModel } from "@/lib/ai-provider-api";
 
 const GIcon = ({ c }: { c?: string }) => (
   <svg className={c} viewBox="0 0 24 24">
@@ -163,6 +163,17 @@ function SettingsInner() {
   const [aiTestResult, setAiTestResult] = useState<{ success: boolean; message: string; modelCount?: number; testModel?: string; testResponse?: string } | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiSuccess, setAiSuccess] = useState<string | null>(null);
+
+  // Discovered models state
+  const [discoveredModels, setDiscoveredModels] = useState<DiscoveredModel[]>([]);
+  const [modelsLoading, setModelsLoading] = useState(false);
+  const [modelsSyncing, setModelsSyncing] = useState(false);
+  const [modelsFilter, setModelsFilter] = useState<"all" | "openai" | "openrouter" | "new">("all");
+  const [syncResult, setSyncResult] = useState<{
+    openai: { total: number; new: number };
+    openrouter: { total: number; new: number };
+    newModels: Array<{ provider: string; modelId: string; modelName: string | null; isFree: boolean; discoveredAt: string }>;
+  } | null>(null);
   const [brandingForm, setBrandingForm] = useState<BrandingInput>({
     companyName: "",
     description: "",
@@ -318,6 +329,51 @@ function SettingsInner() {
       await reloadAiSettings();
     } catch (err) {
       setAiError(err instanceof Error ? err.message : "Failed to remove key.");
+    }
+  };
+
+  // ─── Discovered models handlers ───
+  const fetchDiscoveredModels = useCallback(async (filter: "all" | "openai" | "openrouter" | "new" = modelsFilter) => {
+    setModelsLoading(true);
+    try {
+      if (filter === "new") {
+        const res = await aiProviderApi.getDiscoveredModels({ onlyNew: true, days: 7 });
+        setDiscoveredModels(res.models);
+      } else {
+        const res = await aiProviderApi.getDiscoveredModels({
+          provider: filter === "all" ? undefined : filter,
+        });
+        setDiscoveredModels(res.models);
+      }
+    } catch {
+      setDiscoveredModels([]);
+    } finally {
+      setModelsLoading(false);
+    }
+  }, [modelsFilter]);
+
+  useEffect(() => {
+    fetchDiscoveredModels();
+  }, [fetchDiscoveredModels, modelsFilter]);
+
+  const handleSyncModels = async () => {
+    setModelsSyncing(true);
+    setAiError(null);
+    setSyncResult(null);
+    try {
+      const result = await aiProviderApi.syncModels();
+      setSyncResult(result);
+      const totalNew = result.newModels.length;
+      if (totalNew > 0) {
+        setAiSuccess(`Sync complete! ${totalNew} new model${totalNew !== 1 ? "s" : ""} discovered.`);
+      } else {
+        setAiSuccess("Sync complete! No new models found. All models are already in the database.");
+      }
+      await fetchDiscoveredModels();
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : "Model sync failed.");
+    } finally {
+      setModelsSyncing(false);
     }
   };
 
@@ -1468,6 +1524,150 @@ function SettingsInner() {
                   )}
                 </div>
               )}
+
+              {/* ─── New Models Section ─── */}
+              <div className="mt-8 border-t border-slate-200 pt-6 dark:border-white/10">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <h4 className="flex items-center gap-2 text-[15px] font-black text-slate-900 dark:text-white">
+                      <Sparkles className="size-4 text-fuchsia-500" />
+                      Discovered Models
+                    </h4>
+                    <p className="mt-1 text-[12px] text-slate-500 dark:text-slate-400">
+                      Models are auto-synced every hour via Vercel Cron. Click refresh to sync manually.
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleSyncModels}
+                    disabled={modelsSyncing}
+                    className="gap-1.5"
+                  >
+                    {modelsSyncing ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
+                    {modelsSyncing ? "Syncing..." : "Refresh Models"}
+                  </Button>
+                </div>
+
+                {/* Sync result */}
+                {syncResult && (
+                  <div className="mb-4 rounded-xl border border-fuchsia-200 bg-fuchsia-50/50 p-3 dark:border-fuchsia-400/20 dark:bg-fuchsia-400/5">
+                    <p className="text-[12px] font-bold text-fuchsia-800 dark:text-fuchsia-400">
+                      Last sync: OpenAI {syncResult.openai.total} models ({syncResult.openai.new} new) · OpenRouter {syncResult.openrouter.total} models ({syncResult.openrouter.new} new)
+                    </p>
+                    {syncResult.newModels.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {syncResult.newModels.slice(0, 10).map((m, i) => (
+                          <div key={i} className="flex items-center gap-2 text-[11px] text-fuchsia-700 dark:text-fuchsia-400/80">
+                            <span className="rounded bg-fuchsia-100 px-1.5 py-0.5 font-bold uppercase dark:bg-fuchsia-400/15">{m.provider}</span>
+                            <span className="font-mono font-semibold">{m.modelId}</span>
+                            {m.isFree && <span className="rounded bg-emerald-100 px-1.5 py-0.5 font-bold text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400">FREE</span>}
+                          </div>
+                        ))}
+                        {syncResult.newModels.length > 10 && (
+                          <p className="text-[10px] text-fuchsia-600 dark:text-fuchsia-400/60">...and {syncResult.newModels.length - 10} more</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Filter buttons */}
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {[
+                    { id: "all", label: "All Models" },
+                    { id: "new", label: "New (7 days)" },
+                    { id: "openai", label: "OpenAI" },
+                    { id: "openrouter", label: "OpenRouter" },
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      onClick={() => setModelsFilter(f.id as "all" | "openai" | "openrouter" | "new")}
+                      className={`rounded-lg px-3 py-1.5 text-[11px] font-bold transition-colors ${
+                        modelsFilter === f.id
+                          ? "bg-fuchsia-600 text-white"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Models table */}
+                <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10">
+                  {modelsLoading ? (
+                    <div className="flex h-32 items-center justify-center">
+                      <Loader2 className="size-5 animate-spin text-fuchsia-500" />
+                    </div>
+                  ) : discoveredModels.length === 0 ? (
+                    <div className="flex h-32 items-center justify-center text-[12px] text-slate-400">
+                      No models discovered yet. Click "Refresh Models" to sync.
+                    </div>
+                  ) : (
+                    <div className="max-h-[400px] overflow-y-auto">
+                      <table className="w-full text-sm">
+                        <thead className="sticky top-0 bg-slate-50 dark:bg-slate-900/80">
+                          <tr className="border-b border-slate-200 dark:border-white/10">
+                            <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">Provider</th>
+                            <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">Model ID</th>
+                            <th className="px-4 py-2.5 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">Context</th>
+                            <th className="px-4 py-2.5 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">Input $/1M</th>
+                            <th className="px-4 py-2.5 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">Output $/1M</th>
+                            <th className="px-4 py-2.5 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">Discovered</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50 dark:divide-white/5">
+                          {discoveredModels.map((m) => {
+                            const isNew = Date.now() - new Date(m.discoveredAt).getTime() < 7 * 24 * 60 * 60 * 1000;
+                            return (
+                              <tr key={m.id} className={`transition-colors hover:bg-slate-50 dark:hover:bg-white/5 ${isNew ? "bg-fuchsia-50/30 dark:bg-fuchsia-400/5" : ""}`}>
+                                <td className="px-4 py-2.5">
+                                  <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase ${
+                                    m.provider === "openai"
+                                      ? "bg-slate-900 text-white"
+                                      : "bg-gradient-to-br from-purple-600 to-pink-600 text-white"
+                                  }`}>
+                                    {m.provider === "openai" ? "AI" : "OR"}
+                                  </span>
+                                </td>
+                                <td className="max-w-[280px] truncate px-4 py-2.5 font-mono text-[11px] font-semibold text-slate-900 dark:text-white">
+                                  {m.modelId}
+                                  {m.isFree && <span className="ml-1.5 rounded bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400">FREE</span>}
+                                  {isNew && <span className="ml-1.5 rounded bg-fuchsia-100 px-1.5 py-0.5 text-[9px] font-bold text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-400">NEW</span>}
+                                </td>
+                                <td className="px-4 py-2.5 text-right text-[11px] text-slate-500 dark:text-slate-400">
+                                  {m.contextLength ? `${(m.contextLength / 1000).toFixed(0)}K` : "—"}
+                                </td>
+                                <td className="px-4 py-2.5 text-right text-[11px] text-slate-500 dark:text-slate-400">
+                                  {m.inputCostPer1M !== null ? `$${m.inputCostPer1M.toFixed(2)}` : "—"}
+                                </td>
+                                <td className="px-4 py-2.5 text-right text-[11px] text-slate-500 dark:text-slate-400">
+                                  {m.outputCostPer1M !== null ? `$${m.outputCostPer1M.toFixed(2)}` : "—"}
+                                </td>
+                                <td className="px-4 py-2.5 text-right text-[10px] text-slate-400">
+                                  {new Date(m.discoveredAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {/* Stats summary */}
+                {discoveredModels.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-slate-500 dark:text-slate-400">
+                    <span><strong className="text-slate-700 dark:text-slate-300">{discoveredModels.length}</strong> total models</span>
+                    <span><strong className="text-slate-700 dark:text-slate-300">{discoveredModels.filter(m => m.isFree).length}</strong> free models</span>
+                    <span><strong className="text-slate-700 dark:text-slate-300">{discoveredModels.filter(m => m.provider === "openai").length}</strong> OpenAI</span>
+                    <span><strong className="text-slate-700 dark:text-slate-300">{discoveredModels.filter(m => m.provider === "openrouter").length}</strong> OpenRouter</span>
+                    <span><strong className="text-fuchsia-600 dark:text-fuchsia-400">{discoveredModels.filter(m => Date.now() - new Date(m.discoveredAt).getTime() < 7 * 24 * 60 * 60 * 1000).length}</strong> new this week</span>
+                  </div>
+                )}
+              </div>
 
               {/* Info card */}
               <article className="rounded-2xl border border-blue-200/50 bg-blue-50/40 p-4 dark:border-blue-400/15 dark:bg-blue-400/5">

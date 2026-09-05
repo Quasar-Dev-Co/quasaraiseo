@@ -72,6 +72,33 @@ async function providerRequest<T>(
   return response.json() as Promise<T>;
 }
 
+export interface DiscoveredModel {
+  id: string;
+  provider: string;
+  modelId: string;
+  modelName: string | null;
+  contextLength: number | null;
+  inputCostPer1M: number | null;
+  outputCostPer1M: number | null;
+  isFree: boolean;
+  discoveredAt: string;
+  lastSeenAt: string;
+}
+
+export interface SyncResult {
+  openai: { total: number; new: number };
+  openrouter: { total: number; new: number };
+  newModels: Array<{
+    provider: string;
+    modelId: string;
+    modelName: string | null;
+    inputCostPer1M: number | null;
+    outputCostPer1M: number | null;
+    isFree: boolean;
+    discoveredAt: string;
+  }>;
+}
+
 export const aiProviderApi = {
   async getSettings(): Promise<{ settings: AiProviderSettings | null }> {
     return providerRequest<{ settings: AiProviderSettings | null }>("/api/ai-provider");
@@ -133,6 +160,27 @@ export const aiProviderApi = {
 
   async listModels(): Promise<{ models: AiProviderModel[] }> {
     return providerRequest<{ models: AiProviderModel[] }>("/api/ai-provider/models");
+  },
+
+  async getDiscoveredModels(filters?: {
+    provider?: string;
+    onlyNew?: boolean;
+    days?: number;
+  }): Promise<{ models: DiscoveredModel[] }> {
+    const params = new URLSearchParams();
+    if (filters?.provider) params.set("provider", filters.provider);
+    if (filters?.onlyNew) params.set("onlyNew", "true");
+    if (filters?.days) params.set("days", String(filters.days));
+    const qs = params.toString();
+    return providerRequest<{ models: DiscoveredModel[] }>(
+      `/api/ai-provider/discovered-models${qs ? `?${qs}` : ""}`,
+    );
+  },
+
+  async syncModels(): Promise<SyncResult> {
+    return providerRequest<SyncResult>("/api/ai-provider/sync-models", {
+      method: "POST",
+    });
   },
 
   isAiProviderApiError(error: unknown): error is AiProviderApiError {
