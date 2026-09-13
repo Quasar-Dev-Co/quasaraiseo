@@ -7,6 +7,7 @@ import {
   CircleDot, Cpu, Activity, ChevronRight, Sparkles, Terminal,
   Plus, MessageSquare, Paperclip, ArrowUp, X, BarChart3,
   ShieldCheck, Wand2, Code2, Image, FilePlus, Edit3, Layout,
+  Info, Eye, Calendar, Layers, FolderTree, GitBranch, Settings,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -49,6 +50,22 @@ const TOOL_ICONS: Record<string, typeof Search> = {
   update_post: Edit3,
   delete_post: Trash2,
   update_custom_render: Code2,
+  get_site_info: Info,
+  get_content: Eye,
+  publish_content: Send,
+  schedule_content: Calendar,
+  get_global_render: Layout,
+  update_global_render: Layout,
+  list_categories: FolderTree,
+  list_tags: FolderTree,
+  get_revisions: GitBranch,
+  get_media: Image,
+  get_schema: Code2,
+  regenerate_schema_type: Wand2,
+  save_schema_type: Code2,
+  delete_schema_type: Trash2,
+  get_schema_settings: Settings,
+  update_schema_settings: Settings,
 };
 
 function getToolLabel(tool: string, args: Record<string, unknown>): string {
@@ -71,6 +88,22 @@ function getToolLabel(tool: string, args: Record<string, unknown>): string {
   if (tool === "update_post") return `Updating post ${args.postId || ""}`;
   if (tool === "delete_post") return `Deleting post ${args.postId || ""}`;
   if (tool === "update_custom_render") return `Updating custom render on post ${args.postId || ""}`;
+  if (tool === "get_site_info") return "Fetching site info";
+  if (tool === "get_content") return `Fetching content: ${args.postId || args.slug || ""}`;
+  if (tool === "publish_content") return `Publishing post ${args.postId || ""}`;
+  if (tool === "schedule_content") return `Scheduling post ${args.postId || ""}`;
+  if (tool === "get_global_render") return "Fetching global render settings";
+  if (tool === "update_global_render") return "Updating global render settings";
+  if (tool === "list_categories") return "Fetching categories";
+  if (tool === "list_tags") return "Fetching tags";
+  if (tool === "get_revisions") return `Fetching revisions for post ${args.postId || ""}`;
+  if (tool === "get_media") return `Fetching media ${args.mediaId || ""}`;
+  if (tool === "get_schema") return `Fetching schema from ${String(args.url || "").slice(0, 50)}`;
+  if (tool === "regenerate_schema_type") return `Regenerating ${args.schemaType || ""} schema`;
+  if (tool === "save_schema_type") return `Saving ${args.schemaType || ""} schema`;
+  if (tool === "delete_schema_type") return `Deleting ${args.schemaType || ""} schema`;
+  if (tool === "get_schema_settings") return "Fetching schema settings";
+  if (tool === "update_schema_settings") return "Updating schema settings";
   return tool;
 }
 
