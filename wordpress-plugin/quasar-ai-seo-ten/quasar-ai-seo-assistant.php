@@ -1064,9 +1064,286 @@ add_action('rest_api_init', function () {
             return quasar_check_token($request);
         },
     ]);
-});
 
-// Admin menu
+    // ─── Tags ───
+    register_rest_route($namespace, '/tags', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            $tags = get_tags([
+                'taxonomy'   => 'post_tag',
+                'hide_empty' => false,
+                'number'     => 100,
+            ]);
+
+            $result = [];
+            foreach ($tags as $tag) {
+                $result[] = [
+                    'id'    => (int) $tag->term_id,
+                    'name'  => $tag->name,
+                    'slug'  => $tag->slug,
+                    'count' => (int) $tag->count,
+                ];
+            }
+
+            return rest_ensure_response(['tags' => $result]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    // ─── Media search ───
+    register_rest_route($namespace, '/media', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            $search = sanitize_text_field($request->get_param('search'));
+            $per_page = (int) $request->get_param('per_page') ?: 20;
+            if ($per_page > 100) $per_page = 100;
+
+            $query_args = [
+                'post_type'      => 'attachment',
+                'post_status'    => 'inherit',
+                'posts_per_page' => $per_page,
+            ];
+            if ($search) {
+                $query_args['s'] = $search;
+            }
+
+            $query = new WP_Query($query_args);
+            $result = [];
+
+            foreach ($query->posts as $post) {
+                $result[] = [
+                    'id'         => (int) $post->ID,
+                    'title'      => $post->post_title,
+                    'url'        => wp_get_attachment_url($post->ID),
+                    'alt'        => get_post_meta($post->ID, '_wp_attachment_image_alt', true),
+                    'mime_type'  => $post->post_mime_type,
+                    'sizes'      => wp_get_attachment_metadata($post->ID)['sizes'] ?? [],
+                ];
+            }
+
+            return rest_ensure_response(['media' => $result, 'total' => (int) $query->found_posts]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    // ─── Single media item ───
+    register_rest_route($namespace, '/media/(?P<id>\d+)', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            $id = (int) $request->get_param('id');
+            $post = get_post($id);
+            if (!$post || $post->post_type !== 'attachment') {
+                return new WP_Error('not_found', 'Media item not found', ['status' => 404]);
+            }
+
+            $meta = wp_get_attachment_metadata($id);
+            return rest_ensure_response([
+                'id'           => (int) $post->ID,
+                'title'        => $post->post_title,
+                'url'          => wp_get_attachment_url($id),
+                'alt'          => get_post_meta($id, '_wp_attachment_image_alt', true),
+                'caption'      => $post->post_excerpt,
+                'description'  => $post->post_content,
+                'mime_type'    => $post->post_mime_type,
+                'sizes'        => $meta['sizes'] ?? [],
+                'width'        => $meta['width'] ?? 0,
+                'height'       => $meta['height'] ?? 0,
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    // ─── Post revisions ───
+    register_rest_route($namespace, '/posts/(?P<id>\d+)/revisions', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            $id = (int) $request->get_param('id');
+            $revisions = wp_get_post_revisions($id, ['posts_per_page' => 20]);
+            $result = [];
+
+            foreach ($revisions as $rev) {
+                $result[] = [
+                    'id'        => (int) $rev->ID,
+                    'date'      => $rev->post_date,
+                    'author'    => get_the_author_meta('display_name', $rev->post_author),
+                    'title'     => $rev->post_title,
+                    'preview'   => wp_strip_all_tags($rev->post_content),
+                ];
+            }
+
+            return rest_ensure_response(['revisions' => $result]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    // ─── Publish post ───
+    register_rest_route($namespace, '/posts/(?P<id>\d+)/publish', [
+        'methods'  => 'POST',
+        'callback' => function ($request) {
+            $id = (int) $request->get_param('id');
+            $post = get_post($id);
+            if (!$post) {
+                return new WP_Error('not_found', 'Post not found', ['status' => 404]);
+            }
+
+            wp_update_post([
+                'ID'          => $id,
+                'post_status' => 'publish',
+                'post_date'   => current_time('mysql'),
+                'post_date_gmt' => current_time('mysql', 1),
+            ]);
+
+            return rest_ensure_response([
+                'success' => true,
+                'id'      => $id,
+                'status'  => 'publish',
+                'url'     => get_permalink($id),
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    // ─── Schedule post ───
+    register_rest_route($namespace, '/posts/(?P<id>\d+)/schedule', [
+        'methods'  => 'POST',
+        'callback' => function ($request) {
+            $id = (int) $request->get_param('id');
+            $scheduled_at = sanitize_text_field($request->get_param('scheduled_at'));
+            if (!$scheduled_at) {
+                return new WP_Error('missing_date', 'scheduled_at is required', ['status' => 400]);
+            }
+
+            $post = get_post($id);
+            if (!$post) {
+                return new WP_Error('not_found', 'Post not found', ['status' => 404]);
+            }
+
+            $timestamp = strtotime($scheduled_at);
+            if (!$timestamp) {
+                return new WP_Error('invalid_date', 'Invalid date format', ['status' => 400]);
+            }
+
+            wp_update_post([
+                'ID'            => $id,
+                'post_status'   => 'future',
+                'post_date'     => date('Y-m-d H:i:s', $timestamp),
+                'post_date_gmt' => gmdate('Y-m-d H:i:s', $timestamp),
+            ]);
+
+            return rest_ensure_response([
+                'success'      => true,
+                'id'           => $id,
+                'status'       => 'future',
+                'scheduled_at' => date('Y-m-d H:i:s', $timestamp),
+                'url'          => get_permalink($id),
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    // ─── Custom render ───
+    register_rest_route($namespace, '/posts/(?P<id>\d+)/custom-render', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            $id = (int) $request->get_param('id');
+            return rest_ensure_response([
+                'html'    => get_post_meta($id, '_quasar_custom_html', true),
+                'css'     => get_post_meta($id, '_quasar_custom_css', true),
+                'js'      => get_post_meta($id, '_quasar_custom_js', true),
+                'enabled' => get_post_meta($id, '_quasar_custom_render_enabled', true) === '1',
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    register_rest_route($namespace, '/posts/(?P<id>\d+)/custom-render', [
+        'methods'  => 'POST',
+        'callback' => function ($request) {
+            $id = (int) $request->get_param('id');
+            $params = json_decode($request->get_body(), true);
+
+            $post = get_post($id);
+            if (!$post) {
+                return new WP_Error('not_found', 'Post not found', ['status' => 404]);
+            }
+
+            if (isset($params['html'])) {
+                update_post_meta($id, '_quasar_custom_html', wp_kses_post($params['html']));
+            }
+            if (isset($params['css'])) {
+                update_post_meta($id, '_quasar_custom_css', $params['css']);
+            }
+            if (isset($params['js'])) {
+                update_post_meta($id, '_quasar_custom_js', $params['js']);
+            }
+            if (isset($params['enabled'])) {
+                update_post_meta($id, '_quasar_custom_render_enabled', $params['enabled'] ? '1' : '0');
+            }
+
+            return rest_ensure_response([
+                'success' => true,
+                'message'  => 'Custom render updated',
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    // ─── Global render ───
+    register_rest_route($namespace, '/global-render', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            return rest_ensure_response([
+                'header' => get_option('quasar_global_header', ''),
+                'footer' => get_option('quasar_global_footer', ''),
+                'head'   => get_option('quasar_global_head', ''),
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    register_rest_route($namespace, '/global-render', [
+        'methods'  => 'POST',
+        'callback' => function ($request) {
+            $params = json_decode($request->get_body(), true);
+
+            if (isset($params['header'])) {
+                update_option('quasar_global_header', wp_kses_post($params['header']));
+            }
+            if (isset($params['footer'])) {
+                update_option('quasar_global_footer', wp_kses_post($params['footer']));
+            }
+            if (isset($params['head'])) {
+                update_option('quasar_global_head', $params['head']);
+            }
+
+            return rest_ensure_response([
+                'success' => true,
+                'message' => 'Global render updated',
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+});
 add_action('admin_menu', function () {
     add_menu_page(
         'Quasar AI SEO',
