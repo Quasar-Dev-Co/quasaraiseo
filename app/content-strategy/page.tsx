@@ -5,7 +5,8 @@ import {
   Server, Send, Bot, User, Wrench, Loader2, CheckCircle2,
   Search, Globe, FileText, FileSpreadsheet, Trash2, Download,
   CircleDot, Cpu, Activity, ChevronRight, Sparkles, Terminal,
-  Plus, MessageSquare, Paperclip, ArrowUp, X,
+  Plus, MessageSquare, Paperclip, ArrowUp, X, BarChart3,
+  ShieldCheck, Wand2, Code2, Image, FilePlus, Edit3, Layout,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -35,6 +36,19 @@ const TOOL_ICONS: Record<string, typeof Search> = {
   save_keyword_report: FileText,
   generate_pdf: FileText,
   generate_csv: FileSpreadsheet,
+  get_search_console_sites: Globe,
+  get_search_console_data: Globe,
+  get_analytics_properties: BarChart3,
+  get_analytics_data: BarChart3,
+  analyze_seo: ShieldCheck,
+  fix_seo: Wand2,
+  generate_schema: Code2,
+  extract_design: Layout,
+  search_media: Image,
+  create_post: FilePlus,
+  update_post: Edit3,
+  delete_post: Trash2,
+  update_custom_render: Code2,
 };
 
 function getToolLabel(tool: string, args: Record<string, unknown>): string {
@@ -44,6 +58,19 @@ function getToolLabel(tool: string, args: Record<string, unknown>): string {
   if (tool === "save_keyword_report") return "Saving keyword report";
   if (tool === "generate_pdf") return "Generating PDF";
   if (tool === "generate_csv") return "Generating CSV";
+  if (tool === "get_search_console_sites") return "Fetching Search Console sites";
+  if (tool === "get_search_console_data") return "Fetching Search Console data";
+  if (tool === "get_analytics_properties") return "Fetching Analytics properties";
+  if (tool === "get_analytics_data") return "Fetching Analytics data";
+  if (tool === "analyze_seo") return `Analyzing SEO: ${String(args.url || "").slice(0, 50)}`;
+  if (tool === "fix_seo") return `Fixing SEO on post ${args.postId || ""}`;
+  if (tool === "generate_schema") return `Generating ${args.schemaType || ""} schema`;
+  if (tool === "extract_design") return `Extracting design from ${String(args.url || "").slice(0, 50)}`;
+  if (tool === "search_media") return `Searching media: "${args.search || ""}"`;
+  if (tool === "create_post") return `Creating post: "${String(args.title || "").slice(0, 40)}"`;
+  if (tool === "update_post") return `Updating post ${args.postId || ""}`;
+  if (tool === "delete_post") return `Deleting post ${args.postId || ""}`;
+  if (tool === "update_custom_render") return `Updating custom render on post ${args.postId || ""}`;
   return tool;
 }
 
