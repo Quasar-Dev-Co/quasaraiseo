@@ -1382,78 +1382,126 @@ add_action('admin_head', function () {
     }
     ?>
     <style>
-    .quasar-wrap { max-width: 1200px; margin: 20px auto; }
-    .quasar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
-    .quasar-header h1 { font-size: 26px; font-weight: 800; color: #1a1a2e; margin: 0; }
-    .quasar-subtitle { color: #666; font-size: 14px; margin: 5px 0 0; }
-    .quasar-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; }
-    .quasar-badge-connected { background: #e8f5e9; color: #2e7d32; }
-    .quasar-badge-disconnected { background: #ffebee; color: #c62828; }
-    .quasar-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-    .quasar-dot-green { background: #4caf50; box-shadow: 0 0 6px rgba(76,175,80,0.5); }
-    .quasar-dot-red { background: #f44336; }
-    .quasar-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; margin-bottom: 24px; overflow: hidden; }
-    .quasar-card-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #f0f0f0; }
-    .quasar-card-header h2 { margin: 0; font-size: 17px; font-weight: 700; color: #1a1a2e; }
-    .quasar-connect-card { text-align: center; padding: 60px 40px; }
-    .quasar-connect-icon { width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, #d946ef, #8b5cf6); border-radius: 20px; display: flex; align-items: center; justify-content: center; }
-    .quasar-connect-icon .dashicons { font-size: 40px; width: 40px; height: 40px; color: #fff; }
-    .quasar-connect-card h2 { font-size: 24px; font-weight: 800; color: #1a1a2e; margin: 0 0 12px; }
-    .quasar-connect-card p { color: #666; font-size: 15px; max-width: 500px; margin: 0 auto 24px; line-height: 1.6; }
-    .quasar-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: none; transition: all 0.2s; }
-    .quasar-btn .dashicons { font-size: 16px; width: 16px; height: 16px; }
+    .quasar-wrap { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+
+    .quasar-hero { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid #e5e7eb; }
+    .quasar-hero-left { display: flex; align-items: center; gap: 16px; }
+    .quasar-logo { flex-shrink: 0; }
+    .quasar-hero-title { font-size: 28px; font-weight: 800; color: #111827; margin: 0; letter-spacing: -0.5px; }
+    .quasar-hero-sub { font-size: 14px; color: #6b7280; margin: 4px 0 0; }
+    .quasar-hero-status { flex-shrink: 0; }
+    .quasar-status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; }
+    .quasar-status-connected { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+    .quasar-status-disconnected { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+    .quasar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+
+    .quasar-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; overflow: hidden; transition: all 0.2s ease; }
+    .quasar-card-animated:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.06); transform: translateY(-1px); }
+    .quasar-card-header { display: flex; align-items: center; gap: 12px; padding: 20px 24px; border-bottom: 1px solid #f3f4f6; }
+    .quasar-card-header h2 { margin: 0; font-size: 16px; font-weight: 700; color: #111827; }
+    .quasar-card-body { padding: 20px 24px; }
+    .quasar-card-desc { font-size: 13px; color: #6b7280; margin: 0 0 16px; line-height: 1.5; }
+    .quasar-card-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .quasar-icon-blue { background: #eff6ff; color: #3b82f6; }
+    .quasar-icon-purple { background: #f3e8ff; color: #8b5cf6; }
+    .quasar-icon-green { background: #ecfdf5; color: #10b981; }
+    .quasar-icon-red { background: #fef2f2; color: #ef4444; }
+    .quasar-icon-orange { background: #fff7ed; color: #f59e0b; }
+
+    .quasar-field { margin-bottom: 16px; }
+    .quasar-field:last-child { margin-bottom: 0; }
+    .quasar-label { display: block; font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .quasar-field-value { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #374151; }
+    .quasar-field-value code { background: #f9fafb; padding: 6px 10px; border-radius: 6px; font-size: 13px; font-family: 'SF Mono', Monaco, 'Courier New', monospace; border: 1px solid #e5e7eb; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .quasar-copy-btn { background: none; border: none; cursor: pointer; color: #9ca3af; padding: 4px; border-radius: 4px; transition: all 0.2s; flex-shrink: 0; }
+    .quasar-copy-btn:hover { color: #d946ef; background: #fdf4ff; }
+
+    .quasar-token-display { display: flex; align-items: center; gap: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px 16px; }
+    .quasar-token-display code { flex: 1; font-family: 'SF Mono', Monaco, 'Courier New', monospace; font-size: 12px; color: #374151; word-break: break-all; line-height: 1.5; }
+
+    .quasar-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; transition: all 0.2s; }
     .quasar-btn-primary { background: linear-gradient(135deg, #d946ef, #8b5cf6); color: #fff; }
-    .quasar-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(217,70,239,0.3); color: #fff; }
-    .quasar-btn-outline { background: transparent; border: 2px solid #e0e0e0; color: #666; }
+    .quasar-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(217,70,239,0.3); color: #fff; }
+    .quasar-btn-outline { background: transparent; border: 2px solid #e5e7eb; color: #6b7280; }
     .quasar-btn-outline:hover { border-color: #d946ef; color: #d946ef; }
-    .quasar-btn-danger { background: #fee2e2; color: #dc2626; }
-    .quasar-btn-danger:hover { background: #fecaca; }
-    .quasar-btn-sm { padding: 6px 12px; font-size: 12px; }
-    .quasar-connect-help { margin-top: 20px; font-size: 13px; color: #999; }
-    .quasar-connect-help a { color: #d946ef; text-decoration: none; font-weight: 600; }
+    .quasar-btn-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .quasar-btn-danger:hover { background: #fee2e2; }
+    .quasar-btn-large { padding: 14px 28px; font-size: 14px; }
+    .quasar-btn-copied { background: #ecfdf5 !important; color: #059669 !important; border-color: #a7f3d0 !important; }
+
+    .quasar-connect-hero { text-align: center; padding: 48px 40px; }
+    .quasar-connect-illustration { margin-bottom: 24px; }
+    .quasar-connect-hero h2 { font-size: 22px; font-weight: 800; color: #111827; margin: 0 0 8px; }
+    .quasar-connect-hero p { font-size: 14px; color: #6b7280; max-width: 400px; margin: 0 auto 24px; line-height: 1.6; }
+    .quasar-connect-hero .quasar-token-display { max-width: 500px; margin: 0 auto 20px; }
+
+    .quasar-step { display: flex; align-items: flex-start; gap: 16px; padding: 16px 0; border-bottom: 1px solid #f3f4f6; }
+    .quasar-step:last-child { border-bottom: none; padding-bottom: 0; }
+    .quasar-step-num { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #d946ef, #8b5cf6); color: #fff; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .quasar-step-title { font-size: 14px; font-weight: 700; color: #111827; }
+    .quasar-step-desc { font-size: 13px; color: #6b7280; margin-top: 2px; }
+
+    .quasar-action-btn { display: flex; align-items: center; gap: 14px; padding: 16px; border: 1px solid #e5e7eb; border-radius: 12px; text-decoration: none; margin-bottom: 10px; transition: all 0.2s; }
+    .quasar-action-btn:last-child { margin-bottom: 0; }
+    .quasar-action-btn:hover { border-color: #d946ef; background: #fdf4ff; }
+    .quasar-action-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .quasar-action-title { font-size: 14px; font-weight: 700; color: #111827; }
+    .quasar-action-desc { font-size: 12px; color: #6b7280; }
+
+    .quasar-danger-card { border-color: #fecaca; margin-top: 24px; }
+    .quasar-danger-card .quasar-card-header { border-bottom-color: #fecaca; }
+
+    .quasar-table { width: 100%; border-collapse: collapse; }
+    .quasar-table th { text-align: left; padding: 14px 24px; font-size: 12px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #f3f4f6; }
+    .quasar-table td { padding: 14px 24px; border-bottom: 1px solid #f5f5f5; font-size: 14px; }
+    .quasar-table tr:last-child td { border-bottom: none; }
+    .quasar-post-title a { font-weight: 600; color: #111827; text-decoration: none; }
+    .quasar-post-title a:hover { color: #d946ef; }
+
+    .quasar-status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+    .quasar-status-published { background: #ecfdf5; color: #059669; }
+    .quasar-status-draft { background: #fff7ed; color: #d97706; }
+    .quasar-status-scheduled { background: #f3e8ff; color: #7c3aed; }
+
     .quasar-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px; }
-    .quasar-stat-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 24px; display: flex; align-items: center; gap: 16px; }
+    .quasar-stat-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 24px; display: flex; align-items: center; gap: 16px; }
     .quasar-stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .quasar-stat-icon .dashicons { font-size: 24px; width: 24px; height: 24px; color: #fff; }
     .quasar-stat-icon-blue { background: #3b82f6; }
     .quasar-stat-icon-orange { background: #f59e0b; }
     .quasar-stat-icon-purple { background: #8b5cf6; }
     .quasar-stat-icon-green { background: #10b981; }
-    .quasar-stat-value { font-size: 28px; font-weight: 800; color: #1a1a2e; line-height: 1; }
-    .quasar-stat-label { font-size: 12px; color: #999; font-weight: 600; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .quasar-table { width: 100%; border-collapse: collapse; }
-    .quasar-table th { text-align: left; padding: 14px 24px; font-size: 12px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #f0f0f0; }
-    .quasar-table td { padding: 14px 24px; border-bottom: 1px solid #f5f5f5; font-size: 14px; }
-    .quasar-table tr:last-child td { border-bottom: none; }
-    .quasar-post-title a { font-weight: 600; color: #1a1a2e; text-decoration: none; }
-    .quasar-post-title a:hover { color: #d946ef; }
-    .quasar-status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
-    .quasar-status-published { background: #e8f5e9; color: #2e7d32; }
-    .quasar-status-draft { background: #fff3e0; color: #e65100; }
-    .quasar-status-scheduled { background: #f3e5f5; color: #7b1fa2; }
-    .quasar-empty-state { text-align: center; padding: 60px 40px; }
-    .quasar-empty-state .dashicons { font-size: 48px; width: 48px; height: 48px; color: #ddd; margin-bottom: 16px; }
-    .quasar-empty-state h3 { font-size: 18px; font-weight: 700; color: #1a1a2e; margin: 0 0 8px; }
-    .quasar-empty-state p { color: #999; margin: 0 0 20px; }
+    .quasar-stat-value { font-size: 28px; font-weight: 800; color: #111827; line-height: 1; }
+    .quasar-stat-label { font-size: 12px; color: #9ca3af; font-weight: 600; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
     .quasar-overview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 24px; }
-    .quasar-overview-item { text-align: center; padding: 20px; background: #f9f9f9; border-radius: 10px; }
+    .quasar-overview-item { text-align: center; padding: 20px; background: #f9fafb; border-radius: 12px; }
     .quasar-overview-item .dashicons { font-size: 28px; width: 28px; height: 28px; color: #d946ef; margin-bottom: 8px; }
-    .quasar-overview-value { display: block; font-size: 24px; font-weight: 800; color: #1a1a2e; }
-    .quasar-overview-label { display: block; font-size: 12px; color: #999; font-weight: 600; margin-top: 4px; }
-    .quasar-token { font-size: 12px; word-break: break-all; background: #f5f5f5; padding: 8px 12px; border-radius: 6px; display: inline-block; }
-    .quasar-token-box { background: #f9f9f9; border: 1px dashed #ddd; border-radius: 10px; padding: 16px; margin: 20px auto; max-width: 500px; text-align: left; }
-    .quasar-token-box label { display: block; font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-    .quasar-token-box .quasar-token { display: block; width: 100%; margin-bottom: 12px; box-sizing: border-box; background: #fff; border: 1px solid #e0e0e0; font-family: monospace; font-size: 13px; }
+    .quasar-overview-value { display: block; font-size: 24px; font-weight: 800; color: #111827; }
+    .quasar-overview-label { display: block; font-size: 12px; color: #9ca3af; font-weight: 600; margin-top: 4px; }
+
+    .quasar-token { font-size: 12px; word-break: break-all; background: #f9fafb; padding: 8px 12px; border-radius: 6px; display: inline-block; border: 1px solid #e5e7eb; }
+
+    .quasar-empty-state { text-align: center; padding: 60px 40px; }
+    .quasar-empty-state .dashicons { font-size: 48px; width: 48px; height: 48px; color: #d1d5db; margin-bottom: 16px; }
+    .quasar-empty-state h3 { font-size: 18px; font-weight: 700; color: #111827; margin: 0 0 8px; }
+    .quasar-empty-state p { color: #9ca3af; margin: 0 0 20px; }
+
     .quasar-loading { display: inline-block; border: 2px solid #f3f3f3; border-top: 2px solid #d946ef; border-radius: 50%; width: 16px; height: 16px; animation: quasar-spin 1s linear infinite; }
     @keyframes quasar-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
     .quasar-toast { position: fixed; top: 32px; right: 32px; padding: 14px 24px; border-radius: 10px; font-size: 14px; font-weight: 600; z-index: 9999; animation: quasar-slide-in 0.3s ease; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
     .quasar-toast-success { background: #10b981; color: #fff; }
     .quasar-toast-error { background: #ef4444; color: #fff; }
     @keyframes quasar-slide-in { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
     @media (max-width: 768px) {
+        .quasar-grid { grid-template-columns: 1fr; }
         .quasar-stats-grid { grid-template-columns: repeat(2, 1fr); }
         .quasar-overview-grid { grid-template-columns: 1fr; }
-        .quasar-header { flex-direction: column; gap: 16px; align-items: flex-start; }
+        .quasar-hero { flex-direction: column; gap: 16px; align-items: flex-start; }
+        .quasar-token-display { flex-direction: column; }
     }
     </style>
     <?php
@@ -1643,20 +1691,35 @@ function quasar_render_dashboard() {
 
     ?>
     <div class="wrap quasar-wrap">
-        <div class="quasar-header">
-            <div class="quasar-header-left">
-                <h1>Quasar AI SEO Dashboard</h1>
-                <p class="quasar-subtitle">Manage your AI-generated content and WordPress connection</p>
+        <div class="quasar-hero">
+            <div class="quasar-hero-left">
+                <div class="quasar-logo">
+                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="40" height="40" rx="10" fill="url(#grad1)"/>
+                        <path d="M20 8L25 15L20 22L15 15L20 8Z" fill="white"/>
+                        <path d="M20 18L27 27L20 36L13 27L20 18Z" fill="white" opacity="0.7"/>
+                        <defs>
+                            <linearGradient id="grad1" x1="0" y1="0" x2="40" y2="40">
+                                <stop offset="0%" stop-color="#d946ef"/>
+                                <stop offset="100%" stop-color="#8b5cf6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="quasar-hero-title">Quasar AI SEO Dashboard</h1>
+                    <p class="quasar-hero-sub">Manage your AI-generated content and WordPress connection</p>
+                </div>
             </div>
-            <div class="quasar-header-right">
+            <div class="quasar-hero-status">
                 <?php if ($connected): ?>
-                    <span class="quasar-badge quasar-badge-connected">
-                        <span class="quasar-dot quasar-dot-green"></span>
-                        Connected to Quasar AI SEO
+                    <span class="quasar-status-badge quasar-status-connected">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Connected
                     </span>
                 <?php else: ?>
-                    <span class="quasar-badge quasar-badge-disconnected">
-                        <span class="quasar-dot quasar-dot-red"></span>
+                    <span class="quasar-status-badge quasar-status-disconnected">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                         Not Connected
                     </span>
                 <?php endif; ?>
@@ -1664,29 +1727,36 @@ function quasar_render_dashboard() {
         </div>
 
         <?php if (!$connected): ?>
-            <div class="quasar-card quasar-connect-card">
-                <div class="quasar-connect-icon">
-                    <span class="dashicons dashicons-admin-links"></span>
+            <div class="quasar-card quasar-card-animated quasar-connect-hero">
+                <div class="quasar-connect-illustration">
+                    <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="10" y="20" width="100" height="80" rx="8" fill="#f0f0f0"/>
+                        <rect x="20" y="30" width="40" height="8" rx="4" fill="#d946ef" opacity="0.3"/>
+                        <rect x="20" y="42" width="60" height="6" rx="3" fill="#e0e0e0"/>
+                        <rect x="20" y="52" width="50" height="6" rx="3" fill="#e0e0e0"/>
+                        <rect x="20" y="62" width="55" height="6" rx="3" fill="#e0e0e0"/>
+                        <rect x="70" y="30" width="30" height="30" rx="4" fill="#d946ef" opacity="0.1"/>
+                        <circle cx="85" cy="45" r="8" fill="#d946ef" opacity="0.2"/>
+                        <path d="M85 40v10M80 45h10" stroke="#d946ef" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
                 </div>
                 <h2>Connect to Quasar AI SEO</h2>
                 <p>Click the button below to open Quasar AI SEO and complete the connection. This will enable one-click publishing of AI-generated content directly to your site.</p>
-
-                <div class="quasar-token-box">
-                    <label>Connection Token</label>
-                    <code class="quasar-token"><?php echo esc_html($token); ?></code>
-                    <button type="button" class="quasar-btn quasar-btn-outline quasar-btn-sm" id="quasar-copy-token" data-token="<?php echo esc_attr($token); ?>">
+                <div class="quasar-token-display">
+                    <code id="quasar-token-text"><?php echo esc_html($token); ?></code>
+                    <button class="quasar-btn quasar-btn-primary quasar-btn-copy" data-copy="<?php echo esc_attr($token); ?>">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/></svg>
                         Copy Token
                     </button>
                 </div>
-
                 <?php
                 $connect_url = add_query_arg([
                     'siteUrl' => rawurlencode(home_url()),
                     'token'   => rawurlencode($token),
                 ], QUASAR_FRONTEND_URL . '/wordpress');
                 ?>
-                <a id="quasar-connect-btn" href="<?php echo esc_url($connect_url); ?>" target="_blank" class="quasar-btn quasar-btn-primary">
-                    <span class="dashicons dashicons-admin-plugins"></span>
+                <a id="quasar-connect-btn" href="<?php echo esc_url($connect_url); ?>" target="_blank" class="quasar-btn quasar-btn-primary quasar-btn-large">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     Connect to Quasar AI SEO
                 </a>
                 <p class="quasar-connect-help">
@@ -1733,11 +1803,14 @@ function quasar_render_dashboard() {
                 </div>
             </div>
 
-            <div class="quasar-card">
+            <div class="quasar-card quasar-card-animated">
                 <div class="quasar-card-header">
+                    <div class="quasar-card-icon quasar-icon-blue">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
                     <h2>Posts Published via Quasar AI SEO</h2>
                     <a href="<?php echo esc_url(QUASAR_FRONTEND_URL . '/post-create'); ?>" target="_blank" class="quasar-btn quasar-btn-primary quasar-btn-sm">
-                        <span class="dashicons dashicons-plus-alt"></span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                         Create New Post
                     </a>
                 </div>
@@ -1785,8 +1858,11 @@ function quasar_render_dashboard() {
                 <?php endif; ?>
             </div>
 
-            <div class="quasar-card">
+            <div class="quasar-card quasar-card-animated">
                 <div class="quasar-card-header">
+                    <div class="quasar-card-icon quasar-icon-green">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 3v18h18M7 12l4-4 4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
                     <h2>Site Overview</h2>
                 </div>
                 <div class="quasar-overview-grid">
@@ -1815,74 +1891,243 @@ function quasar_render_dashboard() {
 function quasar_render_settings() {
     $connected = get_option('quasar_connection_status', 'disconnected') === 'connected';
     $token = get_option('quasar_connection_token', '');
+    $site_url = home_url();
+    $site_name = get_bloginfo('name');
+    $rest_url = rest_url('quasar-ai-seo/v1');
+    $frontend_url = QUASAR_FRONTEND_URL;
 
     ?>
     <div class="wrap quasar-wrap">
-        <h1>Quasar AI SEO Settings</h1>
-
-        <div class="quasar-card">
-            <div class="quasar-card-header">
-                <h2>Connection Details</h2>
+        <!-- Hero Header -->
+        <div class="quasar-hero">
+            <div class="quasar-hero-left">
+                <div class="quasar-logo">
+                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="40" height="40" rx="10" fill="url(#grad1)"/>
+                        <path d="M20 8L25 15L20 22L15 15L20 8Z" fill="white"/>
+                        <path d="M20 18L27 27L20 36L13 27L20 18Z" fill="white" opacity="0.7"/>
+                        <defs>
+                            <linearGradient id="grad1" x1="0" y1="0" x2="40" y2="40">
+                                <stop offset="0%" stop-color="#d946ef"/>
+                                <stop offset="100%" stop-color="#8b5cf6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="quasar-hero-title">Quasar AI SEO</h1>
+                    <p class="quasar-hero-sub">Connect your WordPress site to the AI SEO platform</p>
+                </div>
             </div>
-            <table class="form-table">
-                <tr>
-                    <th scope="row">Connection Status</th>
-                    <td>
-                        <?php if ($connected): ?>
-                            <span class="quasar-badge quasar-badge-connected">
-                                <span class="quasar-dot quasar-dot-green"></span>
-                                Connected
-                            </span>
-                        <?php else: ?>
-                            <span class="quasar-badge quasar-badge-disconnected">
-                                <span class="quasar-dot quasar-dot-red"></span>
-                                Not Connected
-                            </span>
-                        <?php endif; ?>
-                    </td>
-                </tr>
-                <tr>
-                    <th scope="row">Site URL</th>
-                    <td><code><?php echo esc_html(home_url()); ?></code></td>
-                </tr>
-                <tr>
-                    <th scope="row">Site Name</th>
-                    <td><?php echo esc_html(get_bloginfo('name')); ?></td>
-                </tr>
-                <tr>
-                    <th scope="row">Connection Token</th>
-                    <td><code class="quasar-token"><?php echo esc_html($token); ?></code></td>
-                </tr>
-                <tr>
-                    <th scope="row">REST API Endpoint</th>
-                    <td><code><?php echo esc_url(rest_url('quasar-ai-seo/v1')); ?></code></td>
-                </tr>
-            </table>
+            <div class="quasar-hero-status">
+                <?php if ($connected): ?>
+                    <span class="quasar-status-badge quasar-status-connected">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Connected
+                    </span>
+                <?php else: ?>
+                    <span class="quasar-status-badge quasar-status-disconnected">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                        Not Connected
+                    </span>
+                <?php endif; ?>
+            </div>
         </div>
 
         <?php if ($connected): ?>
-            <div class="quasar-card">
+        <!-- Connected State -->
+        <div class="quasar-grid">
+            <!-- Connection Card -->
+            <div class="quasar-card quasar-card-animated">
                 <div class="quasar-card-header">
-                    <h2>Disconnect</h2>
+                    <div class="quasar-card-icon quasar-icon-blue">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <h2>Connection Details</h2>
                 </div>
-                <p>Disconnecting will remove the connection between this site and your Quasar AI SEO account. You can reconnect at any time.</p>
+                <div class="quasar-card-body">
+                    <div class="quasar-field">
+                        <label class="quasar-label">Site URL</label>
+                        <div class="quasar-field-value">
+                            <code><?php echo esc_html($site_url); ?></code>
+                            <button class="quasar-copy-btn" data-copy="<?php echo esc_attr($site_url); ?>" title="Copy">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="quasar-field">
+                        <label class="quasar-label">Site Name</label>
+                        <div class="quasar-field-value">
+                            <span><?php echo esc_html($site_name); ?></span>
+                        </div>
+                    </div>
+                    <div class="quasar-field">
+                        <label class="quasar-label">REST API Endpoint</label>
+                        <div class="quasar-field-value">
+                            <code><?php echo esc_html($rest_url); ?></code>
+                            <button class="quasar-copy-btn" data-copy="<?php echo esc_attr($rest_url); ?>" title="Copy">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Token Card -->
+            <div class="quasar-card quasar-card-animated">
+                <div class="quasar-card-header">
+                    <div class="quasar-card-icon quasar-icon-purple">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" stroke-width="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" stroke-width="2"/></svg>
+                    </div>
+                    <h2>Connection Token</h2>
+                </div>
+                <div class="quasar-card-body">
+                    <p class="quasar-card-desc">Copy this token and paste it in your Quasar AI SEO dashboard to connect this site.</p>
+                    <div class="quasar-token-display">
+                        <code id="quasar-token-text"><?php echo esc_html($token); ?></code>
+                        <button class="quasar-btn quasar-btn-primary quasar-btn-copy" data-copy="<?php echo esc_attr($token); ?>">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/></svg>
+                            Copy Token
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Card -->
+            <div class="quasar-card quasar-card-animated">
+                <div class="quasar-card-header">
+                    <div class="quasar-card-icon quasar-icon-green">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <h2>Quick Actions</h2>
+                </div>
+                <div class="quasar-card-body">
+                    <a href="<?php echo esc_url($frontend_url); ?>" target="_blank" class="quasar-action-btn">
+                        <div class="quasar-action-icon quasar-icon-purple">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <div>
+                            <div class="quasar-action-title">Open Dashboard</div>
+                            <div class="quasar-action-desc">Go to Quasar AI SEO</div>
+                        </div>
+                    </a>
+                    <a href="<?php echo esc_url($frontend_url . '/post-create'); ?>" target="_blank" class="quasar-action-btn">
+                        <div class="quasar-action-icon quasar-icon-blue">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <div>
+                            <div class="quasar-action-title">Create Post</div>
+                            <div class="quasar-action-desc">Generate AI content</div>
+                        </div>
+                    </a>
+                    <a href="<?php echo esc_url($frontend_url . '/content-strategy'); ?>" target="_blank" class="quasar-action-btn">
+                        <div class="quasar-action-icon quasar-icon-green">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <div>
+                            <div class="quasar-action-title">Content Strategy</div>
+                            <div class="quasar-action-desc">Use MCP agent</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="quasar-card quasar-card-animated quasar-danger-card">
+            <div class="quasar-card-header">
+                <div class="quasar-card-icon quasar-icon-red">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <h2>Danger Zone</h2>
+            </div>
+            <div class="quasar-card-body">
+                <p class="quasar-card-desc">Disconnecting will remove the connection between this site and your Quasar AI SEO account. You can reconnect at any time.</p>
                 <button id="quasar-disconnect-btn" class="quasar-btn quasar-btn-danger">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                     Disconnect from Quasar AI SEO
                 </button>
             </div>
-        <?php endif; ?>
-
-        <div class="quasar-card">
-            <div class="quasar-card-header">
-                <h2>About Quasar AI SEO</h2>
-            </div>
-            <p>Quasar AI SEO is a comprehensive SEO platform that helps you audit websites, track rankings, and generate AI-powered content. With this plugin, you can publish AI-generated blog posts directly to your WordPress site with one click.</p>
-            <p>
-                <a href="<?php echo esc_url(QUASAR_FRONTEND_URL); ?>" target="_blank" class="quasar-btn quasar-btn-primary">Visit Quasar AI SEO</a>
-                <a href="<?php echo esc_url(QUASAR_FRONTEND_URL . '/post-create'); ?>" target="_blank" class="quasar-btn quasar-btn-outline">Create a Post</a>
-            </p>
         </div>
+
+        <?php else: ?>
+        <!-- Not Connected State -->
+        <div class="quasar-card quasar-card-animated quasar-connect-hero">
+            <div class="quasar-connect-illustration">
+                <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="10" y="20" width="100" height="80" rx="8" fill="#f0f0f0"/>
+                    <rect x="20" y="30" width="40" height="8" rx="4" fill="#d946ef" opacity="0.3"/>
+                    <rect x="20" y="42" width="60" height="6" rx="3" fill="#e0e0e0"/>
+                    <rect x="20" y="52" width="50" height="6" rx="3" fill="#e0e0e0"/>
+                    <rect x="20" y="62" width="55" height="6" rx="3" fill="#e0e0e0"/>
+                    <rect x="70" y="30" width="30" height="30" rx="4" fill="#d946ef" opacity="0.1"/>
+                    <circle cx="85" cy="45" r="8" fill="#d946ef" opacity="0.2"/>
+                    <path d="M85 40v10M80 45h10" stroke="#d946ef" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <h2>Connect to Quasar AI SEO</h2>
+            <p>Copy the connection token below and paste it in your Quasar AI SEO dashboard to link this WordPress site.</p>
+            <div class="quasar-token-display">
+                <code id="quasar-token-text"><?php echo esc_html($token); ?></code>
+                <button class="quasar-btn quasar-btn-primary quasar-btn-copy" data-copy="<?php echo esc_attr($token); ?>">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/></svg>
+                    Copy Token
+                </button>
+            </div>
+            <a href="<?php echo esc_url($frontend_url); ?>" target="_blank" class="quasar-btn quasar-btn-outline quasar-btn-large">
+                Open Quasar AI SEO Dashboard
+            </a>
+        </div>
+
+        <!-- Steps -->
+        <div class="quasar-card quasar-card-animated">
+            <div class="quasar-card-header">
+                <div class="quasar-card-icon quasar-icon-blue">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/></svg>
+                </div>
+                <h2>How to Connect</h2>
+            </div>
+            <div class="quasar-card-body">
+                <div class="quasar-step">
+                    <div class="quasar-step-num">1</div>
+                    <div>
+                        <div class="quasar-step-title">Copy your connection token</div>
+                        <div class="quasar-step-desc">Click the "Copy Token" button above</div>
+                    </div>
+                </div>
+                <div class="quasar-step">
+                    <div class="quasar-step-num">2</div>
+                    <div>
+                        <div class="quasar-step-title">Open Quasar AI SEO dashboard</div>
+                        <div class="quasar-step-desc">Go to your Quasar AI SEO account settings</div>
+                    </div>
+                </div>
+                <div class="quasar-step">
+                    <div class="quasar-step-num">3</div>
+                    <div>
+                        <div class="quasar-step-title">Connect your site</div>
+                        <div class="quasar-step-desc">Paste the token and your site URL to establish the connection</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
+
+    <script>
+    document.querySelectorAll('.quasar-copy-btn, .quasar-btn-copy').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var text = this.getAttribute('data-copy') || this.closest('.quasar-token-display').querySelector('code').textContent;
+            navigator.clipboard.writeText(text).then(function() {
+                var orig = btn.innerHTML;
+                btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Copied!';
+                btn.classList.add('quasar-btn-copied');
+                setTimeout(function() { btn.innerHTML = orig; btn.classList.remove('quasar-btn-copied'); }, 2000);
+            });
+        });
+    });
+    </script>
     <?php
 }
 
