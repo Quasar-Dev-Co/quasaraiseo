@@ -42,7 +42,10 @@ export default function ForgotPasswordPage() {
       }
     } catch (err) {
       if (authApi.isAuthApiError(err)) {
-        if (err.status === 400 && /email/i.test(err.message)) {
+        if (err.status === 404) {
+          // Email not found
+          setFieldError(err.message)
+        } else if (err.status === 400 && /email/i.test(err.message)) {
           setFieldError(err.message)
         } else {
           setError(err.message)
