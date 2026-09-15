@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useEffect, useState } from "react"
+import { FormEvent, Suspense, useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -10,6 +10,27 @@ import { AuthBrandPanel } from "@/components/auth/auth-brand-panel"
 import { authApi } from "@/lib/auth-api"
 
 export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<ResetPasswordLoading />}>
+      <ResetPasswordContent />
+    </Suspense>
+  )
+}
+
+function ResetPasswordLoading() {
+  return (
+    <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[1fr_1fr]">
+      <AuthBrandPanel />
+      <div className="relative flex flex-col items-center justify-center bg-[radial-gradient(circle_at_50%_0%,rgba(217,70,239,0.08),transparent_40%),linear-gradient(180deg,#fdf4ff_0%,#f8fafc_50%,#fff_100%)] px-4 sm:px-8 py-10 sm:py-16">
+        <div className="flex items-center gap-2.5 text-slate-400">
+          <Loader2 className="size-5 animate-spin" /> Loading...
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ResetPasswordContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
