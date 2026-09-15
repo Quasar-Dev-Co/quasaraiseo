@@ -16,11 +16,19 @@ const benefits = [
   "Export to PDF and JSON for client-ready delivery",
 ]
 
+interface FieldErrors {
+  name?: string
+  email?: string
+  password?: string
+  company?: string
+}
+
 export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [agreed, setAgreed] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const { signup, isAuthenticated, loading: authLoading } = useAuth()
   const router = useRouter()
 
@@ -30,23 +38,82 @@ export default function SignupPage() {
     }
   }, [authLoading, isAuthenticated, router])
 
+  function validateClientSide(name: string, email: string, password: string): FieldErrors {
+    const errors: FieldErrors = {}
+    if (!name.trim()) {
+      errors.name = "Please enter your name."
+    }
+    if (!email.trim()) {
+      errors.email = "Email is required."
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = "Please enter a valid email address."
+    }
+    if (!password) {
+      errors.password = "Password is required."
+    } else if (password.length < 8) {
+      errors.password = "Password must be at least 8 characters."
+    }
+    return errors
+  }
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
-    setLoading(true)
+    setFieldErrors({})
 
     const form = new FormData(event.currentTarget)
-    const name = String(form.get("name") ?? "")
-    const email = String(form.get("email") ?? "")
+    const name = String(form.get("name") ?? "").trim()
+    const email = String(form.get("email") ?? "").trim()
     const password = String(form.get("password") ?? "")
-    const company = String(form.get("company") ?? "")
+    const company = String(form.get("company") ?? "").trim()
+
+    // Terms check
+    if (!agreed) {
+      setError("Please agree to the Terms of Service and Privacy Policy to continue.")
+      return
+    }
+
+    // Client-side validation
+    const clientErrors = validateClientSide(name, email, password)
+    if (Object.keys(clientErrors).length > 0) {
+      setFieldErrors(clientErrors)
+      return
+    }
+
+    setLoading(true)
 
     try {
       await signup(name, email, password, company || undefined)
       router.push("/dashboard")
     } catch (err) {
-      const message = authApi.isAuthApiError(err) ? err.message : "Something went wrong. Please try again."
-      setError(message)
+      if (authApi.isAuthApiError(err)) {
+        const status = err.status
+        const message = err.message
+
+        if (status === 409) {
+          // Email already exists
+          setFieldErrors({ email: message })
+        } else if (status === 400) {
+          // Validation error - try to map to fields
+          if (/name/i.test(message)) {
+            setFieldErrors({ name: message })
+          } else if (/email/i.test(message)) {
+            setFieldErrors({ email: message })
+          } else if (/password/i.test(message)) {
+            setFieldErrors({ password: message })
+          } else {
+            setError(message)
+          }
+        } else if (status === 429) {
+          setError(message)
+        } else {
+          setError(message)
+        }
+      } else if (err instanceof TypeError && err.message.includes("fetch")) {
+        setError("Cannot reach the server. Check your connection and try again.")
+      } else {
+        setError("Something went wrong. Please try again.")
+      }
       setLoading(false)
     }
   }
@@ -82,7 +149,7 @@ export default function SignupPage() {
             </p>
           </div>
 
-          {/* Error banner */}
+          {/* Error banner (general errors only) */}
           {error && (
             <div className="mb-5 flex items-center gap-2.5 rounded-[14px] border border-red-200 bg-red-50 px-4 py-3.5 text-sm font-semibold text-red-600">
               <TriangleAlert className="size-4.5 shrink-0" /> {error}
@@ -134,7 +201,7 @@ export default function SignupPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="grid gap-4">
+          <form onSubmit={handleSubmit} className="grid gap-4" noValidate>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <label>
                 <span className="block text-[13px] font-bold text-slate-700">Full name</span>
@@ -144,10 +211,19 @@ export default function SignupPage() {
                     name="name"
                     type="text"
                     placeholder="Jane Doe"
-                    required
-                    className="h-13 w-full rounded-[14px] border border-slate-200 bg-white px-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-400/65 focus:ring-4 focus:ring-blue-500/10"
+                    autoComplete="name"
+                    className={`h-13 w-full rounded-[14px] border bg-white px-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:ring-4 ${
+                      fieldErrors.name
+                        ? "border-red-400 focus:border-red-400 focus:ring-red-500/10"
+                        : "border-slate-200 focus:border-blue-400/65 focus:ring-blue-500/10"
+                    }`}
                   />
                 </div>
+                {fieldErrors.name && (
+                  <span className="mt-1.5 flex items-center gap-1.5 text-[12.5px] font-semibold text-red-600">
+                    <TriangleAlert className="size-3.5" /> {fieldErrors.name}
+                  </span>
+                )}
               </label>
               <label>
                 <span className="block text-[13px] font-bold text-slate-700">Company</span>
@@ -157,6 +233,7 @@ export default function SignupPage() {
                     name="company"
                     type="text"
                     placeholder="Acme Inc."
+                    autoComplete="organization"
                     className="h-13 w-full rounded-[14px] border border-slate-200 bg-white px-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-400/65 focus:ring-4 focus:ring-blue-500/10"
                   />
                 </div>
@@ -171,10 +248,19 @@ export default function SignupPage() {
                   name="email"
                   type="email"
                   placeholder="you@company.com"
-                  required
-                  className="h-13 w-full rounded-[14px] border border-slate-200 bg-white px-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-400/65 focus:ring-4 focus:ring-blue-500/10"
+                  autoComplete="email"
+                  className={`h-13 w-full rounded-[14px] border bg-white px-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:ring-4 ${
+                    fieldErrors.email
+                      ? "border-red-400 focus:border-red-400 focus:ring-red-500/10"
+                      : "border-slate-200 focus:border-blue-400/65 focus:ring-blue-500/10"
+                  }`}
                 />
               </div>
+              {fieldErrors.email && (
+                <span className="mt-1.5 flex items-center gap-1.5 text-[12.5px] font-semibold text-red-600">
+                  <TriangleAlert className="size-3.5" /> {fieldErrors.email}
+                </span>
+              )}
             </label>
 
             <label>
@@ -185,9 +271,12 @@ export default function SignupPage() {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="At least 8 characters"
-                  required
-                  minLength={8}
-                  className="h-13 w-full rounded-[14px] border border-slate-200 bg-white px-11 pr-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-400/65 focus:ring-4 focus:ring-blue-500/10"
+                  autoComplete="new-password"
+                  className={`h-13 w-full rounded-[14px] border bg-white px-11 pr-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:ring-4 ${
+                    fieldErrors.password
+                      ? "border-red-400 focus:border-red-400 focus:ring-red-500/10"
+                      : "border-slate-200 focus:border-blue-400/65 focus:ring-blue-500/10"
+                  }`}
                 />
                 <button
                   type="button"
@@ -197,9 +286,15 @@ export default function SignupPage() {
                   {showPassword ? <EyeOff className="size-[18px]" /> : <Eye className="size-[18px]" />}
                 </button>
               </div>
-              <small className="mt-2 block text-[11px] text-slate-400">
-                Use a mix of letters, numbers, and symbols for a stronger password.
-              </small>
+              {fieldErrors.password ? (
+                <span className="mt-1.5 flex items-center gap-1.5 text-[12.5px] font-semibold text-red-600">
+                  <TriangleAlert className="size-3.5" /> {fieldErrors.password}
+                </span>
+              ) : (
+                <small className="mt-2 block text-[11px] text-slate-400">
+                  Use a mix of letters, numbers, and symbols for a stronger password.
+                </small>
+              )}
             </label>
 
             <label className="flex items-start gap-2.5">
@@ -208,7 +303,6 @@ export default function SignupPage() {
                 name="terms"
                 checked={agreed}
                 onChange={(e) => setAgreed(e.target.checked)}
-                required
                 className="mt-0.5 size-4.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20"
               />
               <span className="text-[13px] leading-relaxed text-slate-600">

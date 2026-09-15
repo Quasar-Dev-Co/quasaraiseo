@@ -10,10 +10,16 @@ import { AuthBrandPanel } from "@/components/auth/auth-brand-panel"
 import { useAuth } from "@/hooks/use-auth"
 import { authApi } from "@/lib/auth-api"
 
+interface FieldErrors {
+  email?: string
+  password?: string
+}
+
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const { login, isAuthenticated, loading: authLoading } = useAuth()
   const router = useRouter()
 
@@ -23,21 +29,72 @@ export default function LoginPage() {
     }
   }, [authLoading, isAuthenticated, router])
 
+  function validateClientSide(email: string, password: string): FieldErrors {
+    const errors: FieldErrors = {}
+    if (!email.trim()) {
+      errors.email = "Email is required."
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = "Please enter a valid email address."
+    }
+    if (!password) {
+      errors.password = "Password is required."
+    }
+    return errors
+  }
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
-    setLoading(true)
+    setFieldErrors({})
 
     const form = new FormData(event.currentTarget)
-    const email = String(form.get("email") ?? "")
+    const email = String(form.get("email") ?? "").trim()
     const password = String(form.get("password") ?? "")
+
+    // Client-side validation first
+    const clientErrors = validateClientSide(email, password)
+    if (Object.keys(clientErrors).length > 0) {
+      setFieldErrors(clientErrors)
+      return
+    }
+
+    setLoading(true)
 
     try {
       await login(email, password)
       router.push("/dashboard")
     } catch (err) {
-      const message = authApi.isAuthApiError(err) ? err.message : "Something went wrong. Please try again."
-      setError(message)
+      if (authApi.isAuthApiError(err)) {
+        const status = err.status
+        const message = err.message
+
+        // Map server errors to field-level where appropriate
+        if (status === 404) {
+          // User not found
+          setFieldErrors({ email: message })
+        } else if (status === 401) {
+          // Wrong password
+          setFieldErrors({ password: message })
+        } else if (status === 400) {
+          // Validation error - try to map to fields
+          if (/email/i.test(message)) {
+            setFieldErrors({ email: message })
+          } else if (/password/i.test(message)) {
+            setFieldErrors({ password: message })
+          } else {
+            setError(message)
+          }
+        } else if (status === 429) {
+          // Rate limited
+          setError(message)
+        } else {
+          setError(message)
+        }
+      } else if (err instanceof TypeError && err.message.includes("fetch")) {
+        setError("Cannot reach the server. Check your connection and try again.")
+      } else {
+        setError("Something went wrong. Please try again.")
+      }
       setLoading(false)
     }
   }
@@ -70,7 +127,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Error banner */}
+          {/* Error banner (general errors only) */}
           {error && (
             <div className="mb-5 flex items-center gap-2.5 rounded-[14px] border border-red-200 bg-red-50 px-4 py-3.5 text-sm font-semibold text-red-600">
               <TriangleAlert className="size-4.5 shrink-0" /> {error}
@@ -110,7 +167,7 @@ export default function LoginPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="grid gap-4.5">
+          <form onSubmit={handleSubmit} className="grid gap-4.5" noValidate>
             <label>
               <span className="block text-[13px] font-bold text-slate-700">Email address</span>
               <div className="relative mt-2.25">
@@ -119,10 +176,19 @@ export default function LoginPage() {
                   name="email"
                   type="email"
                   placeholder="you@company.com"
-                  required
-                  className="h-13 w-full rounded-[14px] border border-slate-200 bg-white px-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-400/65 focus:ring-4 focus:ring-blue-500/10"
+                  autoComplete="email"
+                  className={`h-13 w-full rounded-[14px] border bg-white px-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:ring-4 ${
+                    fieldErrors.email
+                      ? "border-red-400 focus:border-red-400 focus:ring-red-500/10"
+                      : "border-slate-200 focus:border-blue-400/65 focus:ring-blue-500/10"
+                  }`}
                 />
               </div>
+              {fieldErrors.email && (
+                <span className="mt-1.5 flex items-center gap-1.5 text-[12.5px] font-semibold text-red-600">
+                  <TriangleAlert className="size-3.5" /> {fieldErrors.email}
+                </span>
+              )}
             </label>
 
             <label>
@@ -138,8 +204,12 @@ export default function LoginPage() {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
-                  required
-                  className="h-13 w-full rounded-[14px] border border-slate-200 bg-white px-11 pr-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-400/65 focus:ring-4 focus:ring-blue-500/10"
+                  autoComplete="current-password"
+                  className={`h-13 w-full rounded-[14px] border bg-white px-11 pr-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:ring-4 ${
+                    fieldErrors.password
+                      ? "border-red-400 focus:border-red-400 focus:ring-red-500/10"
+                      : "border-slate-200 focus:border-blue-400/65 focus:ring-blue-500/10"
+                  }`}
                 />
                 <button
                   type="button"
@@ -149,6 +219,11 @@ export default function LoginPage() {
                   {showPassword ? <EyeOff className="size-[18px]" /> : <Eye className="size-[18px]" />}
                 </button>
               </div>
+              {fieldErrors.password && (
+                <span className="mt-1.5 flex items-center gap-1.5 text-[12.5px] font-semibold text-red-600">
+                  <TriangleAlert className="size-3.5" /> {fieldErrors.password}
+                </span>
+              )}
             </label>
 
             <label className="flex items-center gap-2.5">
@@ -175,7 +250,7 @@ export default function LoginPage() {
 
           {/* Footer */}
           <p className="mt-7 text-center text-[14px] text-slate-500">
-            Don&apos;t have an account?{" "}
+            Don't have an account?{" "}
             <Link href="/signup" className="font-bold text-blue-600 transition-colors hover:text-blue-700">
               Create one for free
             </Link>
