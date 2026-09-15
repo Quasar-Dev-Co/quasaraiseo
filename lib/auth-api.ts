@@ -106,6 +106,20 @@ export const authApi = {
     });
   },
 
+  async forgotPassword(email: string): Promise<{ message: string; sent: boolean; devResetLink?: string }> {
+    return authRequest<{ message: string; sent: boolean; devResetLink?: string }>("/api/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  async resetPassword(token: string, password: string): Promise<{ message: string; success: boolean }> {
+    return authRequest<{ message: string; success: boolean }>("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, password }),
+    });
+  },
+
   getToken(): string | null {
     if (typeof window === "undefined") return null;
     return localStorage.getItem(TOKEN_KEY);
