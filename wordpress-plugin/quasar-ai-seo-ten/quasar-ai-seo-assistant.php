@@ -188,6 +188,11 @@ add_action('rest_api_init', function () {
 
             $excerpt = isset($params['excerpt']) ? sanitize_text_field($params['excerpt']) : '';
             $status  = isset($params['status']) ? sanitize_text_field($params['status']) : 'draft';
+            $post_type = isset($params['post_type']) ? sanitize_text_field($params['post_type']) : 'post';
+            // Validate post_type — only allow post or page
+            if (!in_array($post_type, ['post', 'page'], true)) {
+                $post_type = 'post';
+            }
             $categories = isset($params['categories']) ? (array) $params['categories'] : [];
             $tags    = isset($params['tags']) ? (array) $params['tags'] : [];
             $featured_img = isset($params['featured_image']) ? esc_url_raw($params['featured_image']) : '';
@@ -202,7 +207,7 @@ add_action('rest_api_init', function () {
                 'post_content' => $content,
                 'post_excerpt' => $excerpt,
                 'post_status'  => $status,
-                'post_type'    => 'post',
+                'post_type'    => $post_type,
             ];
 
             if (!empty($scheduled) && $status === 'future') {
