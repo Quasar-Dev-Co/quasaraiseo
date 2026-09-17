@@ -675,7 +675,6 @@ function SettingsInner() {
             <TabsTrigger value="notifications" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Bell className="size-4" /> Notifications</TabsTrigger>
             <TabsTrigger value="security" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Shield className="size-4" /> Security</TabsTrigger>
             <TabsTrigger value="workspace" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Settings className="size-4" /> Workspace</TabsTrigger>
-            <TabsTrigger value="branding" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Building2 className="size-4" /> Branding</TabsTrigger>
             <TabsTrigger value="ai-provider" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Sparkles className="size-4" /> AI Provider</TabsTrigger>
           </TabsList>
 

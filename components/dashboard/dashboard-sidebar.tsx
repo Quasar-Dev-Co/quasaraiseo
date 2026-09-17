@@ -20,6 +20,7 @@ import {
   FileSpreadsheet,
   Network,
   Newspaper,
+  Building2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -34,6 +35,7 @@ const navItems = [
   { label: "Audit MCP", href: "/audit-mcp", icon: Plug },
   { label: "Post Create", href: "/post-create", icon: PenLine },
   { label: "Quasar MCP", href: "/content-strategy", icon: Network },
+  { label: "Branding", href: "/branding", icon: Building2 },
   { label: "Task Management", href: "/task-management", icon: ClipboardList },
 ];
 
