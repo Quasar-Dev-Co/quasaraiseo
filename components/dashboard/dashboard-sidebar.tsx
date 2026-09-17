@@ -35,7 +35,6 @@ const navItems = [
   { label: "Audit MCP", href: "/audit-mcp", icon: Plug },
   { label: "Post Create", href: "/post-create", icon: PenLine },
   { label: "Quasar MCP", href: "/content-strategy", icon: Network },
-  { label: "Branding", href: "/branding", icon: Building2 },
   { label: "Task Management", href: "/task-management", icon: ClipboardList },
 ];
 
@@ -47,6 +46,10 @@ const googleItems = [
 
 const wordpressItems = [
   { label: "WordPress", href: "/wordpress", icon: Newspaper },
+];
+
+const identityItems = [
+  { label: "Branding", href: "/branding", icon: Building2 },
 ];
 
 const bottomItems = [
@@ -88,101 +91,136 @@ export function DashboardSidebar({ mobileOpen = false, onMobileClose }: { mobile
 
       <div className="mx-4 h-px bg-slate-200/80 dark:bg-white/10 shrink-0" />
 
-      {/* Nav items */}
-      <nav className="flex flex-col gap-1 px-3 pt-4">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => onMobileClose?.()}
-              className={cn(
-                "relative group flex min-h-[44px] items-center gap-3 rounded-xl px-3.5 text-[13px] font-semibold transition-all duration-200",
-                active
-                  ? "bg-gradient-to-r from-fuchsia-500/15 via-purple-500/10 to-transparent text-fuchsia-950 dark:text-fuchsia-300 font-bold"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
-              )}
-            >
-              {active && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 h-[24px] w-1 rounded-r-full bg-gradient-to-b from-fuchsia-600 via-purple-600 to-pink-500 shadow-[0_0_12px_rgba(217,70,239,0.6)]" />
-              )}
-              <Icon className={cn("size-[18px] shrink-0", active ? "text-fuchsia-600 dark:text-fuchsia-400" : "")} />
-              <span>{item.label}</span>
-              {active && <ChevronRight className="ml-auto size-4 text-fuchsia-500" />}
-            </Link>
-          );
-        })}
-      </nav>
+      <div className="flex-1 overflow-y-auto min-h-0">
+        {/* Nav items */}
+        <nav className="flex flex-col gap-1 px-3 pt-4">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => onMobileClose?.()}
+                className={cn(
+                  "relative group flex min-h-[44px] items-center gap-3 rounded-xl px-3.5 text-[13px] font-semibold transition-all duration-200",
+                  active
+                    ? "bg-gradient-to-r from-fuchsia-500/15 via-purple-500/10 to-transparent text-fuchsia-950 dark:text-fuchsia-300 font-bold"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
+                )}
+              >
+                {active && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-[24px] w-1 rounded-r-full bg-gradient-to-b from-fuchsia-600 via-purple-600 to-pink-500 shadow-[0_0_12px_rgba(217,70,239,0.6)]" />
+                )}
+                <Icon className={cn("size-[18px] shrink-0", active ? "text-fuchsia-600 dark:text-fuchsia-400" : "")} />
+                <span>{item.label}</span>
+                {active && <ChevronRight className="ml-auto size-4 text-fuchsia-500" />}
+              </Link>
+            );
+          })}
+        </nav>
 
-      <div className="mx-4 mt-4 h-px bg-slate-200/80 dark:bg-white/10 shrink-0" />
+        <div className="mx-4 mt-4 h-px bg-slate-200/80 dark:bg-white/10 shrink-0" />
 
-      {/* Google integrations */}
-      <div className="px-4 pt-3 pb-1">
-        <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">Google</span>
+        {/* Google integrations */}
+        <div className="px-4 pt-3 pb-1">
+          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">Google</span>
+        </div>
+        <nav className="flex flex-col gap-1 px-3">
+          {googleItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => onMobileClose?.()}
+                className={cn(
+                  "relative group flex min-h-[40px] items-center gap-3 rounded-xl px-3.5 text-[13px] font-semibold transition-all duration-200",
+                  active
+                    ? "bg-gradient-to-r from-fuchsia-500/15 via-purple-500/10 to-transparent text-fuchsia-950 dark:text-fuchsia-300 font-bold"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
+                )}
+              >
+                {active && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-[22px] w-1 rounded-r-full bg-gradient-to-b from-fuchsia-600 via-purple-600 to-pink-500 shadow-[0_0_12px_rgba(217,70,239,0.6)]" />
+                )}
+                <Icon className={cn("size-[17px] shrink-0", active ? "text-fuchsia-600 dark:text-fuchsia-400" : "")} />
+                <span>{item.label}</span>
+                {active && <ChevronRight className="ml-auto size-3.5 text-fuchsia-500" />}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="mx-4 mt-4 h-px bg-slate-200/80 dark:bg-white/10 shrink-0" />
+
+        {/* WordPress integrations */}
+        <div className="px-4 pt-3 pb-1">
+          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">WordPress</span>
+        </div>
+        <nav className="flex flex-col gap-1 px-3">
+          {wordpressItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => onMobileClose?.()}
+                className={cn(
+                  "relative group flex min-h-[40px] items-center gap-3 rounded-xl px-3.5 text-[13px] font-semibold transition-all duration-200",
+                  active
+                    ? "bg-gradient-to-r from-fuchsia-500/15 via-purple-500/10 to-transparent text-fuchsia-950 dark:text-fuchsia-300 font-bold"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
+                )}
+              >
+                {active && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-[22px] w-1 rounded-r-full bg-gradient-to-b from-fuchsia-600 via-purple-600 to-pink-500 shadow-[0_0_12px_rgba(217,70,239,0.6)]" />
+                )}
+                <Icon className={cn("size-[17px] shrink-0", active ? "text-fuchsia-600 dark:text-fuchsia-400" : "")} />
+                <span>{item.label}</span>
+                {active && <ChevronRight className="ml-auto size-3.5 text-fuchsia-500" />}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="mx-4 mt-4 h-px bg-slate-200/80 dark:bg-white/10 shrink-0" />
+
+        {/* Identity integrations */}
+        <div className="px-4 pt-3 pb-1">
+          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">Identity</span>
+        </div>
+        <nav className="flex flex-col gap-1 px-3 pb-4">
+          {identityItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => onMobileClose?.()}
+                className={cn(
+                  "relative group flex min-h-[40px] items-center gap-3 rounded-xl px-3.5 text-[13px] font-semibold transition-all duration-200",
+                  active
+                    ? "bg-gradient-to-r from-fuchsia-500/15 via-purple-500/10 to-transparent text-fuchsia-950 dark:text-fuchsia-300 font-bold"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
+                )}
+              >
+                {active && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-[22px] w-1 rounded-r-full bg-gradient-to-b from-fuchsia-600 via-purple-600 to-pink-500 shadow-[0_0_12px_rgba(217,70,239,0.6)]" />
+                )}
+                <Icon className={cn("size-[17px] shrink-0", active ? "text-fuchsia-600 dark:text-fuchsia-400" : "")} />
+                <span>{item.label}</span>
+                {active && <ChevronRight className="ml-auto size-3.5 text-fuchsia-500" />}
+              </Link>
+            );
+          })}
+        </nav>
       </div>
-      <nav className="flex flex-col gap-1 px-3">
-        {googleItems.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => onMobileClose?.()}
-              className={cn(
-                "relative group flex min-h-[40px] items-center gap-3 rounded-xl px-3.5 text-[13px] font-semibold transition-all duration-200",
-                active
-                  ? "bg-gradient-to-r from-fuchsia-500/15 via-purple-500/10 to-transparent text-fuchsia-950 dark:text-fuchsia-300 font-bold"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
-              )}
-            >
-              {active && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 h-[22px] w-1 rounded-r-full bg-gradient-to-b from-fuchsia-600 via-purple-600 to-pink-500 shadow-[0_0_12px_rgba(217,70,239,0.6)]" />
-              )}
-              <Icon className={cn("size-[17px] shrink-0", active ? "text-fuchsia-600 dark:text-fuchsia-400" : "")} />
-              <span>{item.label}</span>
-              {active && <ChevronRight className="ml-auto size-3.5 text-fuchsia-500" />}
-            </Link>
-          );
-        })}
-      </nav>
 
-      <div className="mx-4 mt-4 h-px bg-slate-200/80 dark:bg-white/10 shrink-0" />
-
-      {/* WordPress integrations */}
-      <div className="px-4 pt-3 pb-1">
-        <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">WordPress</span>
-      </div>
-      <nav className="flex flex-col gap-1 px-3">
-        {wordpressItems.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => onMobileClose?.()}
-              className={cn(
-                "relative group flex min-h-[40px] items-center gap-3 rounded-xl px-3.5 text-[13px] font-semibold transition-all duration-200",
-                active
-                  ? "bg-gradient-to-r from-fuchsia-500/15 via-purple-500/10 to-transparent text-fuchsia-950 dark:text-fuchsia-300 font-bold"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
-              )}
-            >
-              {active && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 h-[22px] w-1 rounded-r-full bg-gradient-to-b from-fuchsia-600 via-purple-600 to-pink-500 shadow-[0_0_12px_rgba(217,70,239,0.6)]" />
-              )}
-              <Icon className={cn("size-[17px] shrink-0", active ? "text-fuchsia-600 dark:text-fuchsia-400" : "")} />
-              <span>{item.label}</span>
-              {active && <ChevronRight className="ml-auto size-3.5 text-fuchsia-500" />}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="mt-auto">
+      <div className="mt-auto shrink-0">
         <div className="mx-4 mb-4 h-px bg-slate-200/80 dark:bg-white/10 shrink-0" />
 
         {/* Credits card — hidden for now, will re-enable later
