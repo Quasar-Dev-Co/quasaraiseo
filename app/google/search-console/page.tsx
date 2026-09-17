@@ -85,6 +85,15 @@ const TABS: Array<{ id: TabId; label: string; icon: typeof Search; dimension: st
   { id: "appearance", label: "Appearance", icon: Sparkles, dimension: "searchAppearance" },
 ];
 
+type CompareMode = "previous" | "year" | "custom" | "off";
+
+const COMPARE_MODES: Array<{ label: string; value: CompareMode }> = [
+  { label: "Compare: Previous period", value: "previous" },
+  { label: "Compare: Previous year", value: "year" },
+  { label: "Compare: Custom range", value: "custom" },
+  { label: "No comparison", value: "off" },
+];
+
 /* ── component ──────────────────────────────────────────────────────────── */
 
 export default function SearchConsolePage() {
@@ -98,6 +107,9 @@ export default function SearchConsolePage() {
   const [rangeDays, setRangeDays] = useState(28);
   const [searchType, setSearchType] = useState("web");
   const [activeTab, setActiveTab] = useState<TabId>("queries");
+  const [compareMode, setCompareMode] = useState<CompareMode>("previous");
+  const [customPrevStart, setCustomPrevStart] = useState("");
+  const [customPrevEnd, setCustomPrevEnd] = useState("");
 
   // Data
   const [queryRows, setQueryRows] = useState<SearchConsoleRow[]>([]);
@@ -105,6 +117,7 @@ export default function SearchConsolePage() {
   const [dimensionRows, setDimensionRows] = useState<SearchConsoleDimensionRow[]>([]);
   const [prevQueryRows, setPrevQueryRows] = useState<SearchConsoleRow[]>([]);
   const [prevDailyRows, setPrevDailyRows] = useState<SearchConsoleDailyRow[]>([]);
+  const [prevDimensionRows, setPrevDimensionRows] = useState<SearchConsoleDimensionRow[]>([]);
 
   // URL Inspection
   const [inspectUrlInput, setInspectUrlInput] = useState("");
@@ -120,8 +133,28 @@ export default function SearchConsolePage() {
 
   const endDate = formatDate(new Date());
   const startDate = formatDate(new Date(Date.now() - (rangeDays - 1) * 24 * 60 * 60 * 1000));
-  const prevEndDate = formatDate(new Date(Date.now() - rangeDays * 24 * 60 * 60 * 1000));
-  const prevStartDate = formatDate(new Date(Date.now() - (2 * rangeDays - 1) * 24 * 60 * 60 * 1000));
+
+  // Compute comparison period dates based on compareMode
+  let prevEndDate = endDate;
+  let prevStartDate = startDate;
+  let hasComparison = compareMode !== "off";
+
+  if (compareMode === "previous") {
+    prevEndDate = formatDate(new Date(Date.now() - rangeDays * 24 * 60 * 60 * 1000));
+    prevStartDate = formatDate(new Date(Date.now() - (2 * rangeDays - 1) * 24 * 60 * 60 * 1000));
+  } else if (compareMode === "year") {
+    const startD = new Date(startDate);
+    const endD = new Date(endDate);
+    prevStartDate = formatDate(new Date(startD.getFullYear() - 1, startD.getMonth(), startD.getDate()));
+    prevEndDate = formatDate(new Date(endD.getFullYear() - 1, endD.getMonth(), endD.getDate()));
+  } else if (compareMode === "custom") {
+    if (customPrevStart && customPrevEnd) {
+      prevStartDate = customPrevStart;
+      prevEndDate = customPrevEnd;
+    } else {
+      hasComparison = false;
+    }
+  }
 
   /* ── initial load ─────────────────────────────────────────────────── */
 
@@ -154,28 +187,39 @@ export default function SearchConsolePage() {
     setFetching(true);
     setError(null);
     try {
-      const [queryData, dailyData, prevQueryData, prevDailyData] = await Promise.all([
-        googleApi.getSearchConsoleAnalytics(selectedSite, startDate, endDate),
-        googleApi.getSearchConsoleDaily(selectedSite, startDate, endDate),
-        googleApi.getSearchConsoleAnalytics(selectedSite, prevStartDate, prevEndDate),
-        googleApi.getSearchConsoleDaily(selectedSite, prevStartDate, prevEndDate),
-      ]);
-      setQueryRows(queryData);
-      setDailyRows(dailyData);
-      setPrevQueryRows(prevQueryData);
-      setPrevDailyRows(prevDailyData);
+      if (hasComparison) {
+        const [queryData, dailyData, prevQueryData, prevDailyData] = await Promise.all([
+          googleApi.getSearchConsoleAnalytics(selectedSite, startDate, endDate),
+          googleApi.getSearchConsoleDaily(selectedSite, startDate, endDate),
+          googleApi.getSearchConsoleAnalytics(selectedSite, prevStartDate, prevEndDate),
+          googleApi.getSearchConsoleDaily(selectedSite, prevStartDate, prevEndDate),
+        ]);
+        setQueryRows(queryData);
+        setDailyRows(dailyData);
+        setPrevQueryRows(prevQueryData);
+        setPrevDailyRows(prevDailyData);
+      } else {
+        const [queryData, dailyData] = await Promise.all([
+          googleApi.getSearchConsoleAnalytics(selectedSite, startDate, endDate),
+          googleApi.getSearchConsoleDaily(selectedSite, startDate, endDate),
+        ]);
+        setQueryRows(queryData);
+        setDailyRows(dailyData);
+        setPrevQueryRows([]);
+        setPrevDailyRows([]);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to fetch analytics");
     } finally {
       setFetching(false);
     }
-  }, [selectedSite, startDate, endDate, prevStartDate, prevEndDate]);
+  }, [selectedSite, startDate, endDate, prevStartDate, prevEndDate, hasComparison]);
 
   useEffect(() => {
     if (selectedSite) {
       fetchAnalytics();
     }
-  }, [selectedSite, fetchAnalytics, rangeDays]);
+  }, [selectedSite, fetchAnalytics, rangeDays, compareMode, customPrevStart, customPrevEnd]);
 
   /* ── fetch dimension data when tab changes ───────────────────────── */
 
@@ -184,15 +228,28 @@ export default function SearchConsolePage() {
     const tab = TABS.find(t => t.id === activeTab);
     if (!tab) return;
     try {
-      const data = await googleApi.getSearchConsoleByDimension(
-        selectedSite, startDate, endDate,
-        { dimensions: [tab.dimension], searchType: searchType !== "web" ? searchType : undefined, rowLimit: 100 },
-      );
-      setDimensionRows(data);
+      const fetches = [
+        googleApi.getSearchConsoleByDimension(
+          selectedSite, startDate, endDate,
+          { dimensions: [tab.dimension], searchType: searchType !== "web" ? searchType : undefined, rowLimit: 100 },
+        ),
+      ];
+      if (hasComparison) {
+        fetches.push(
+          googleApi.getSearchConsoleByDimension(
+            selectedSite, prevStartDate, prevEndDate,
+            { dimensions: [tab.dimension], searchType: searchType !== "web" ? searchType : undefined, rowLimit: 100 },
+          ),
+        );
+      }
+      const results = await Promise.all(fetches);
+      setDimensionRows(results[0]);
+      setPrevDimensionRows(results[1] ?? []);
     } catch (e) {
       setDimensionRows([]);
+      setPrevDimensionRows([]);
     }
-  }, [selectedSite, activeTab, startDate, endDate, searchType]);
+  }, [selectedSite, activeTab, startDate, endDate, prevStartDate, prevEndDate, searchType, hasComparison]);
 
   useEffect(() => {
     fetchDimensionData();
@@ -224,22 +281,42 @@ export default function SearchConsolePage() {
       : 0;
     const avgCtr = totalImpressions > 0 ? (totalClicks / totalImpressions) : 0;
 
-    const prevClicks = prevQueryRows.reduce((s, r) => s + r.clicks, 0);
-    const prevImpressions = prevQueryRows.reduce((s, r) => s + r.impressions, 0);
-    const prevPosition = prevQueryRows.length > 0
+    const prevClicks = hasComparison ? prevQueryRows.reduce((s, r) => s + r.clicks, 0) : 0;
+    const prevImpressions = hasComparison ? prevQueryRows.reduce((s, r) => s + r.impressions, 0) : 0;
+    const prevPosition = hasComparison && prevQueryRows.length > 0
       ? prevQueryRows.reduce((s, r) => s + r.position, 0) / prevQueryRows.length
       : 0;
-    const prevCtr = prevImpressions > 0 ? (prevClicks / prevImpressions) : 0;
+    const prevCtr = hasComparison && prevImpressions > 0 ? (prevClicks / prevImpressions) : 0;
 
     return { totalClicks, totalImpressions, avgPosition, avgCtr, prevClicks, prevImpressions, prevPosition, prevCtr };
   }, [queryRows, prevQueryRows]);
 
-  const chartData = useMemo(() =>
-    dailyRows.map((r) => ({
-      label: formatScDate(r.date),
-      clicks: r.clicks,
-      impressions: r.impressions,
-    })), [dailyRows]);
+  // Build overlay chart data — align both periods by day index (1, 2, 3...)
+  // so they can be compared visually even if the actual dates differ
+  const chartData = useMemo(() => {
+    const maxLen = Math.max(dailyRows.length, prevDailyRows.length);
+    const data: Array<{ label: string; clicks: number; impressions: number; prevClicks: number; prevImpressions: number }> = [];
+    for (let i = 0; i < maxLen; i++) {
+      const cur = dailyRows[i];
+      const prev = prevDailyRows[i];
+      data.push({
+        label: cur ? formatScDate(cur.date) : `Day ${i + 1}`,
+        clicks: cur?.clicks ?? 0,
+        impressions: cur?.impressions ?? 0,
+        prevClicks: prev?.clicks ?? 0,
+        prevImpressions: prev?.impressions ?? 0,
+      });
+    }
+    return data;
+  }, [dailyRows, prevDailyRows]);
+
+  // Build a comparison label for display
+  const comparisonLabel = useMemo(() => {
+    if (!hasComparison) return null;
+    if (compareMode === "year") return `vs same period last year`;
+    if (compareMode === "custom") return `vs ${prevStartDate} to ${prevEndDate}`;
+    return `vs previous ${rangeDays} days`;
+  }, [hasComparison, compareMode, rangeDays, prevStartDate, prevEndDate]);
 
   /* ── opportunities ───────────────────────────────────────────────── */
 
@@ -261,40 +338,42 @@ export default function SearchConsolePage() {
     const rising: Array<{ query: string; currentClicks: number; prevClicks: number; currentPos: number; prevPos: number }> = [];
     const declining: Array<{ query: string; currentClicks: number; prevClicks: number; currentPos: number; prevPos: number }> = [];
 
-    const prevMap = new Map(prevQueryRows.map(r => [r.query, r]));
-    queryRows.forEach(r => {
-      const prev = prevMap.get(r.query);
-      if (!prev) {
-        // New query this period — rising if it has impressions
-        if (r.impressions >= 10) {
-          rising.push({ query: r.query, currentClicks: r.clicks, prevClicks: 0, currentPos: r.position, prevPos: 999 });
+    if (hasComparison) {
+      const prevMap = new Map(prevQueryRows.map(r => [r.query, r]));
+      queryRows.forEach(r => {
+        const prev = prevMap.get(r.query);
+        if (!prev) {
+          // New query this period — rising if it has impressions
+          if (r.impressions >= 10) {
+            rising.push({ query: r.query, currentClicks: r.clicks, prevClicks: 0, currentPos: r.position, prevPos: 999 });
+          }
+          return;
         }
-        return;
-      }
-      // Track by impressions too (not just clicks) since small sites may have few clicks
-      const imprDiff = r.impressions - prev.impressions;
-      const clickDiff = r.clicks - prev.clicks;
+        // Track by impressions too (not just clicks) since small sites may have few clicks
+        const imprDiff = r.impressions - prev.impressions;
+        const clickDiff = r.clicks - prev.clicks;
 
-      // Rising: impressions grew >= 15% OR clicks grew >= 15%
-      if (prev.impressions > 0) {
-        const imprGrowth = (imprDiff / prev.impressions) * 100;
-        const clickGrowth = prev.clicks > 0 ? (clickDiff / prev.clicks) * 100 : 0;
-        if (imprGrowth >= 15 || clickGrowth >= 15) {
-          rising.push({ query: r.query, currentClicks: r.clicks, prevClicks: prev.clicks, currentPos: r.position, prevPos: prev.position });
+        // Rising: impressions grew >= 15% OR clicks grew >= 15%
+        if (prev.impressions > 0) {
+          const imprGrowth = (imprDiff / prev.impressions) * 100;
+          const clickGrowth = prev.clicks > 0 ? (clickDiff / prev.clicks) * 100 : 0;
+          if (imprGrowth >= 15 || clickGrowth >= 15) {
+            rising.push({ query: r.query, currentClicks: r.clicks, prevClicks: prev.clicks, currentPos: r.position, prevPos: prev.position });
+          }
         }
-      }
-      // Declining: impressions dropped >= 15% OR clicks dropped >= 15%
-      if (prev.impressions > 0) {
-        const imprDecline = Math.abs((imprDiff / prev.impressions) * 100);
-        const clickDecline = prev.clicks > 0 ? Math.abs((clickDiff / prev.clicks) * 100) : 0;
-        if (imprDecline >= 15 || clickDecline >= 15) {
-          declining.push({ query: r.query, currentClicks: r.clicks, prevClicks: prev.clicks, currentPos: r.position, prevPos: prev.position });
+        // Declining: impressions dropped >= 15% OR clicks dropped >= 15%
+        if (prev.impressions > 0) {
+          const imprDecline = Math.abs((imprDiff / prev.impressions) * 100);
+          const clickDecline = prev.clicks > 0 ? Math.abs((clickDiff / prev.clicks) * 100) : 0;
+          if (imprDecline >= 15 || clickDecline >= 15) {
+            declining.push({ query: r.query, currentClicks: r.clicks, prevClicks: prev.clicks, currentPos: r.position, prevPos: prev.position });
+          }
         }
-      }
-    });
+      });
 
-    rising.sort((a, b) => (b.currentClicks - b.prevClicks) - (a.currentClicks - a.prevClicks));
-    declining.sort((a, b) => (a.currentClicks - a.prevClicks) - (b.currentClicks - b.prevClicks));
+      rising.sort((a, b) => (b.currentClicks - b.prevClicks) - (a.currentClicks - a.prevClicks));
+      declining.sort((a, b) => (a.currentClicks - a.prevClicks) - (b.currentClicks - b.prevClicks));
+    }
 
     return {
       ctrOpps,
@@ -302,7 +381,7 @@ export default function SearchConsolePage() {
       rising: rising.slice(0, 8),
       declining: declining.slice(0, 8),
     };
-  }, [queryRows, prevQueryRows]);
+  }, [queryRows, prevQueryRows, hasComparison]);
 
   /* ── URL inspection handler ──────────────────────────────────────── */
 
@@ -449,7 +528,8 @@ export default function SearchConsolePage() {
                 Google Search Console
               </h1>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                {startDate} to {endDate} · vs previous {rangeDays} days
+                {startDate} to {endDate}
+                {comparisonLabel ? ` · ${comparisonLabel}` : ""}
               </p>
             </div>
             <Button variant="outline" size="sm" onClick={fetchAnalytics} disabled={fetching}>
@@ -500,7 +580,7 @@ export default function SearchConsolePage() {
           </div>
 
           {/* Date range selector */}
-          <div className="mb-6 flex flex-wrap gap-2">
+          <div className="mb-4 flex flex-wrap gap-2">
             {DATE_RANGES.map((r) => (
               <button
                 key={r.days}
@@ -514,6 +594,62 @@ export default function SearchConsolePage() {
                 {r.label}
               </button>
             ))}
+          </div>
+
+          {/* Comparison mode selector + custom date pickers */}
+          <div className="mb-6 flex flex-wrap items-end gap-4">
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Comparison
+              </label>
+              <select
+                value={compareMode}
+                onChange={(e) => setCompareMode(e.target.value as CompareMode)}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+              >
+                {COMPARE_MODES.map((m) => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
+            </div>
+            {compareMode === "custom" && (
+              <>
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Compare from
+                  </label>
+                  <input
+                    type="date"
+                    value={customPrevStart}
+                    onChange={(e) => setCustomPrevStart(e.target.value)}
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Compare to
+                  </label>
+                  <input
+                    type="date"
+                    value={customPrevEnd}
+                    onChange={(e) => setCustomPrevEnd(e.target.value)}
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                  />
+                </div>
+              </>
+            )}
+            {hasComparison && (
+              <div className="ml-auto flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 dark:bg-slate-800">
+                <span className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
+                  <span className="inline-block h-2.5 w-2.5 rounded-full bg-fuchsia-500" />
+                  Current
+                </span>
+                <span className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
+                  <span className="inline-block h-2.5 w-2.5 rounded-full bg-slate-400" />
+                  {prevStartDate} → {prevEndDate}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Stats cards with comparison */}
@@ -533,9 +669,21 @@ export default function SearchConsolePage() {
                   Clicks & Impressions — {DATE_RANGES.find(r => r.days === rangeDays)?.label ?? "28 Days"}
                 </h2>
               </div>
-              <Badge className="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                {dailyRows.length} data points
-              </Badge>
+              <div className="flex items-center gap-3">
+                {hasComparison && (
+                  <div className="flex items-center gap-3 text-[10px] font-bold">
+                    <span className="flex items-center gap-1 text-fuchsia-600 dark:text-fuchsia-400">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full bg-fuchsia-500" /> Current
+                    </span>
+                    <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full bg-slate-400" /> Comparison
+                    </span>
+                  </div>
+                )}
+                <Badge className="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                  {dailyRows.length} data points
+                </Badge>
+              </div>
             </div>
             {fetching ? (
               <div className="flex h-40 items-center justify-center">
@@ -554,11 +702,27 @@ export default function SearchConsolePage() {
                         <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
                         <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
                       </linearGradient>
+                      <linearGradient id="prevClicksGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#a78bfa" stopOpacity={0.15} />
+                        <stop offset="100%" stopColor="#a78bfa" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="prevImprGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#94a3b8" stopOpacity={0.15} />
+                        <stop offset="100%" stopColor="#94a3b8" stopOpacity={0} />
+                      </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
                     <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#94a3b8" }} interval={Math.max(Math.floor(chartData.length / 8), 1)} tickLine={false} axisLine={false} />
                     <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={false} allowDecimals={false} />
                     <RTooltip contentStyle={{ borderRadius: "12px", border: "1px solid #e2e8f0", fontSize: "12px", fontWeight: 600 }} labelStyle={{ color: "#64748b", marginBottom: "4px" }} />
+                    {/* Comparison period (drawn first, behind) */}
+                    {hasComparison && (
+                      <>
+                        <Area type="monotone" dataKey="prevClicks" stroke="#a78bfa" strokeWidth={1.5} strokeDasharray="4 4" fill="url(#prevClicksGradient)" dot={false} activeDot={{ r: 4, fill: "#a78bfa" }} />
+                        <Area type="monotone" dataKey="prevImpressions" stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="4 4" fill="url(#prevImprGradient)" dot={false} activeDot={{ r: 4, fill: "#94a3b8" }} />
+                      </>
+                    )}
+                    {/* Current period (drawn on top) */}
                     <Area type="monotone" dataKey="clicks" stroke="#d946ef" strokeWidth={2} fill="url(#clicksGradient)" dot={false} activeDot={{ r: 5, fill: "#d946ef" }} />
                     <Area type="monotone" dataKey="impressions" stroke="#3b82f6" strokeWidth={2} fill="url(#imprGradient)" dot={false} activeDot={{ r: 5, fill: "#3b82f6" }} />
                   </AreaChart>
@@ -754,21 +918,63 @@ export default function SearchConsolePage() {
                       <tr className="border-b border-slate-100 dark:border-white/5">
                         <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-400">Query</th>
                         <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-400">Clicks</th>
+                        {hasComparison && <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-300 dark:text-slate-500">Prev</th>}
+                        {hasComparison && <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-300 dark:text-slate-500">Δ</th>}
                         <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-400">Impressions</th>
+                        {hasComparison && <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-300 dark:text-slate-500">Prev</th>}
+                        {hasComparison && <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-300 dark:text-slate-500">Δ</th>}
                         <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-400">CTR</th>
                         <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-400">Position</th>
+                        {hasComparison && <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-300 dark:text-slate-500">Prev</th>}
+                        {hasComparison && <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-300 dark:text-slate-500">Δ</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50 dark:divide-white/5">
-                      {queryRows.map((row, i) => (
-                        <tr key={`${row.query}-${i}`} className="transition-colors hover:bg-fuchsia-50/50 dark:hover:bg-fuchsia-900/10">
-                          <td className="px-6 py-3 font-semibold text-slate-900 dark:text-white">{row.query}</td>
-                          <td className="px-6 py-3 text-right font-bold text-fuchsia-600 dark:text-fuchsia-400">{row.clicks.toLocaleString()}</td>
-                          <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{row.impressions.toLocaleString()}</td>
-                          <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{(row.ctr * 100).toFixed(2)}%</td>
-                          <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{row.position.toFixed(1)}</td>
-                        </tr>
-                      ))}
+                      {queryRows.map((row, i) => {
+                        const prev = hasComparison ? prevQueryRows.find(r => r.query === row.query) : undefined;
+                        const clickDelta = prev ? formatPctChange(row.clicks, prev.clicks) : null;
+                        const imprDelta = prev ? formatPctChange(row.impressions, prev.impressions) : null;
+                        const posDelta = prev ? formatPosChange(row.position, prev.position) : null;
+                        return (
+                          <tr key={`${row.query}-${i}`} className="transition-colors hover:bg-fuchsia-50/50 dark:hover:bg-fuchsia-900/10">
+                            <td className="px-6 py-3 font-semibold text-slate-900 dark:text-white">{row.query}</td>
+                            <td className="px-6 py-3 text-right font-bold text-fuchsia-600 dark:text-fuchsia-400">{row.clicks.toLocaleString()}</td>
+                            {hasComparison && <td className="px-3 py-3 text-right text-slate-400 dark:text-slate-500">{prev ? prev.clicks.toLocaleString() : "—"}</td>}
+                            {hasComparison && (
+                              <td className="px-3 py-3 text-right">
+                                {clickDelta && prev && prev.clicks > 0 ? (
+                                  <span className={`text-[10px] font-bold ${clickDelta.isGood ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-red-500"}`}>
+                                    {clickDelta.text}
+                                  </span>
+                                ) : <span className="text-[10px] text-slate-400">—</span>}
+                              </td>
+                            )}
+                            <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{row.impressions.toLocaleString()}</td>
+                            {hasComparison && <td className="px-3 py-3 text-right text-slate-400 dark:text-slate-500">{prev ? prev.impressions.toLocaleString() : "—"}</td>}
+                            {hasComparison && (
+                              <td className="px-3 py-3 text-right">
+                                {imprDelta && prev && prev.impressions > 0 ? (
+                                  <span className={`text-[10px] font-bold ${imprDelta.isGood ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-red-500"}`}>
+                                    {imprDelta.text}
+                                  </span>
+                                ) : <span className="text-[10px] text-slate-400">—</span>}
+                              </td>
+                            )}
+                            <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{(row.ctr * 100).toFixed(2)}%</td>
+                            <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{row.position.toFixed(1)}</td>
+                            {hasComparison && <td className="px-3 py-3 text-right text-slate-400 dark:text-slate-500">{prev ? prev.position.toFixed(1) : "—"}</td>}
+                            {hasComparison && (
+                              <td className="px-3 py-3 text-right">
+                                {posDelta && prev ? (
+                                  <span className={`text-[10px] font-bold ${posDelta.isGood ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-red-500"}`}>
+                                    {posDelta.text}
+                                  </span>
+                                ) : <span className="text-[10px] text-slate-400">—</span>}
+                              </td>
+                            )}
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -784,21 +990,63 @@ export default function SearchConsolePage() {
                       <tr className="border-b border-slate-100 dark:border-white/5">
                         <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-400 capitalize">{activeTab === "appearance" ? "Search Appearance" : activeTab}</th>
                         <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-400">Clicks</th>
+                        {hasComparison && <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-300 dark:text-slate-500">Prev</th>}
+                        {hasComparison && <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-300 dark:text-slate-500">Δ</th>}
                         <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-400">Impressions</th>
+                        {hasComparison && <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-300 dark:text-slate-500">Prev</th>}
+                        {hasComparison && <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-300 dark:text-slate-500">Δ</th>}
                         <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-400">CTR</th>
                         <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-400">Position</th>
+                        {hasComparison && <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-300 dark:text-slate-500">Prev</th>}
+                        {hasComparison && <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-300 dark:text-slate-500">Δ</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50 dark:divide-white/5">
-                      {dimensionRows.map((row, i) => (
-                        <tr key={i} className="transition-colors hover:bg-fuchsia-50/50 dark:hover:bg-fuchsia-900/10">
-                          <td className="max-w-[300px] truncate px-6 py-3 font-semibold text-slate-900 dark:text-white">{row.keys[0] ?? "—"}</td>
-                          <td className="px-6 py-3 text-right font-bold text-fuchsia-600 dark:text-fuchsia-400">{row.clicks.toLocaleString()}</td>
-                          <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{row.impressions.toLocaleString()}</td>
-                          <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{(row.ctr * 100).toFixed(2)}%</td>
-                          <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{row.position.toFixed(1)}</td>
-                        </tr>
-                      ))}
+                      {dimensionRows.map((row, i) => {
+                        const prev = hasComparison ? prevDimensionRows.find(r => r.keys[0] === row.keys[0]) : undefined;
+                        const clickDelta = prev ? formatPctChange(row.clicks, prev.clicks) : null;
+                        const imprDelta = prev ? formatPctChange(row.impressions, prev.impressions) : null;
+                        const posDelta = prev ? formatPosChange(row.position, prev.position) : null;
+                        return (
+                          <tr key={i} className="transition-colors hover:bg-fuchsia-50/50 dark:hover:bg-fuchsia-900/10">
+                            <td className="max-w-[300px] truncate px-6 py-3 font-semibold text-slate-900 dark:text-white">{row.keys[0] ?? "—"}</td>
+                            <td className="px-6 py-3 text-right font-bold text-fuchsia-600 dark:text-fuchsia-400">{row.clicks.toLocaleString()}</td>
+                            {hasComparison && <td className="px-3 py-3 text-right text-slate-400 dark:text-slate-500">{prev ? prev.clicks.toLocaleString() : "—"}</td>}
+                            {hasComparison && (
+                              <td className="px-3 py-3 text-right">
+                                {clickDelta && prev && prev.clicks > 0 ? (
+                                  <span className={`text-[10px] font-bold ${clickDelta.isGood ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-red-500"}`}>
+                                    {clickDelta.text}
+                                  </span>
+                                ) : <span className="text-[10px] text-slate-400">—</span>}
+                              </td>
+                            )}
+                            <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{row.impressions.toLocaleString()}</td>
+                            {hasComparison && <td className="px-3 py-3 text-right text-slate-400 dark:text-slate-500">{prev ? prev.impressions.toLocaleString() : "—"}</td>}
+                            {hasComparison && (
+                              <td className="px-3 py-3 text-right">
+                                {imprDelta && prev && prev.impressions > 0 ? (
+                                  <span className={`text-[10px] font-bold ${imprDelta.isGood ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-red-500"}`}>
+                                    {imprDelta.text}
+                                  </span>
+                                ) : <span className="text-[10px] text-slate-400">—</span>}
+                              </td>
+                            )}
+                            <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{(row.ctr * 100).toFixed(2)}%</td>
+                            <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{row.position.toFixed(1)}</td>
+                            {hasComparison && <td className="px-3 py-3 text-right text-slate-400 dark:text-slate-500">{prev ? prev.position.toFixed(1) : "—"}</td>}
+                            {hasComparison && (
+                              <td className="px-3 py-3 text-right">
+                                {posDelta && prev ? (
+                                  <span className={`text-[10px] font-bold ${posDelta.isGood ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-red-500"}`}>
+                                    {posDelta.text}
+                                  </span>
+                                ) : <span className="text-[10px] text-slate-400">—</span>}
+                              </td>
+                            )}
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
