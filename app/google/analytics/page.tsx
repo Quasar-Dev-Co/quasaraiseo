@@ -83,6 +83,15 @@ const TABS: Array<{
   { id: "channels", label: "Channels", icon: Layers, dimension: "sessionDefaultChannelGroup" },
 ];
 
+type CompareMode = "previous" | "year" | "custom" | "off";
+
+const COMPARE_MODES: Array<{ label: string; value: CompareMode }> = [
+  { label: "Compare: Previous period", value: "previous" },
+  { label: "Compare: Previous year", value: "year" },
+  { label: "Compare: Custom range", value: "custom" },
+  { label: "No comparison", value: "off" },
+];
+
 const CHANNEL_COLORS: Record<string, string> = {
   "Organic Search": "#d946ef",
   "Direct": "#3b82f6",
@@ -111,7 +120,11 @@ export default function AnalyticsPage() {
   const [rangeDays, setRangeDays] = useState(28);
   const [activeTab, setActiveTab] = useState<TabId>("pages");
   const [reportData, setReportData] = useState<AnalyticsReport | null>(null);
+  const [prevReportData, setPrevReportData] = useState<AnalyticsReport | null>(null);
   const [reportLoading, setReportLoading] = useState(false);
+  const [compareMode, setCompareMode] = useState<CompareMode>("previous");
+  const [customPrevStart, setCustomPrevStart] = useState("");
+  const [customPrevEnd, setCustomPrevEnd] = useState("");
 
   // Realtime
   const [realtime, setRealtime] = useState<RealtimeReport | null>(null);
@@ -119,8 +132,28 @@ export default function AnalyticsPage() {
 
   const endDate = formatDate(new Date());
   const startDate = formatDate(new Date(Date.now() - (rangeDays - 1) * 24 * 60 * 60 * 1000));
-  const prevEndDate = formatDate(new Date(Date.now() - rangeDays * 24 * 60 * 60 * 1000));
-  const prevStartDate = formatDate(new Date(Date.now() - (2 * rangeDays - 1) * 24 * 60 * 60 * 1000));
+
+  // Compute comparison period dates based on compareMode
+  let prevEndDate = endDate;
+  let prevStartDate = startDate;
+  let hasComparison = compareMode !== "off";
+
+  if (compareMode === "previous") {
+    prevEndDate = formatDate(new Date(Date.now() - rangeDays * 24 * 60 * 60 * 1000));
+    prevStartDate = formatDate(new Date(Date.now() - (2 * rangeDays - 1) * 24 * 60 * 60 * 1000));
+  } else if (compareMode === "year") {
+    const startD = new Date(startDate);
+    const endD = new Date(endDate);
+    prevStartDate = formatDate(new Date(startD.getFullYear() - 1, startD.getMonth(), startD.getDate()));
+    prevEndDate = formatDate(new Date(endD.getFullYear() - 1, endD.getMonth(), endD.getDate()));
+  } else if (compareMode === "custom") {
+    if (customPrevStart && customPrevEnd) {
+      prevStartDate = customPrevStart;
+      prevEndDate = customPrevEnd;
+    } else {
+      hasComparison = false;
+    }
+  }
 
   /* ── initial load ─────────────────────────────────────────────────── */
 
@@ -153,22 +186,28 @@ export default function AnalyticsPage() {
     setFetching(true);
     setError(null);
     try {
-      const [current, previous] = await Promise.all([
-        googleApi.getAnalyticsData(selectedProperty, startDate, endDate),
-        googleApi.getAnalyticsData(selectedProperty, prevStartDate, prevEndDate),
-      ]);
-      setData(current);
-      setPrevData(previous);
+      if (hasComparison) {
+        const [current, previous] = await Promise.all([
+          googleApi.getAnalyticsData(selectedProperty, startDate, endDate),
+          googleApi.getAnalyticsData(selectedProperty, prevStartDate, prevEndDate),
+        ]);
+        setData(current);
+        setPrevData(previous);
+      } else {
+        const current = await googleApi.getAnalyticsData(selectedProperty, startDate, endDate);
+        setData(current);
+        setPrevData(null);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to fetch analytics");
     } finally {
       setFetching(false);
     }
-  }, [selectedProperty, startDate, endDate, prevStartDate, prevEndDate]);
+  }, [selectedProperty, startDate, endDate, prevStartDate, prevEndDate, hasComparison]);
 
   useEffect(() => {
     if (selectedProperty) fetchAnalytics();
-  }, [selectedProperty, fetchAnalytics, rangeDays]);
+  }, [selectedProperty, fetchAnalytics, rangeDays, compareMode, customPrevStart, customPrevEnd]);
 
   /* ── fetch dimension report when tab changes ──────────────────────── */
 
@@ -178,21 +217,38 @@ export default function AnalyticsPage() {
     if (!tab) return;
     setReportLoading(true);
     try {
-      const report = await googleApi.getAnalyticsReport(selectedProperty, {
-        startDate, endDate,
-        dimensions: [tab.dimension],
-        metrics: ["sessions", "totalUsers", "screenPageViews", "averageSessionDuration", "bounceRate", "engagementRate"],
-        orderBy: "sessions",
-        orderDesc: true,
-        limit: 50,
-      });
-      setReportData(report);
+      const fetches = [
+        googleApi.getAnalyticsReport(selectedProperty, {
+          startDate, endDate,
+          dimensions: [tab.dimension],
+          metrics: ["sessions", "totalUsers", "screenPageViews", "averageSessionDuration", "bounceRate", "engagementRate"],
+          orderBy: "sessions",
+          orderDesc: true,
+          limit: 50,
+        }),
+      ];
+      if (hasComparison) {
+        fetches.push(
+          googleApi.getAnalyticsReport(selectedProperty, {
+            startDate: prevStartDate, endDate: prevEndDate,
+            dimensions: [tab.dimension],
+            metrics: ["sessions", "totalUsers", "screenPageViews", "averageSessionDuration", "bounceRate", "engagementRate"],
+            orderBy: "sessions",
+            orderDesc: true,
+            limit: 50,
+          }),
+        );
+      }
+      const results = await Promise.all(fetches);
+      setReportData(results[0]);
+      setPrevReportData(results[1] ?? null);
     } catch {
       setReportData(null);
+      setPrevReportData(null);
     } finally {
       setReportLoading(false);
     }
-  }, [selectedProperty, activeTab, startDate, endDate]);
+  }, [selectedProperty, activeTab, startDate, endDate, prevStartDate, prevEndDate, hasComparison]);
 
   useEffect(() => {
     fetchReport();
@@ -233,22 +289,44 @@ export default function AnalyticsPage() {
       pageViews: totalsMap.pageViews ?? 0,
       avgDuration: totalsMap.avgSessionDuration ?? 0,
       bounceRate: totalsMap.bounceRate ?? 0,
-      prevSessions: prevMap.sessions ?? 0,
-      prevUsers: prevMap.totalUsers ?? 0,
-      prevPageViews: prevMap.pageViews ?? 0,
-      prevAvgDuration: prevMap.avgSessionDuration ?? 0,
-      prevBounceRate: prevMap.bounceRate ?? 0,
+      prevSessions: hasComparison ? (prevMap.sessions ?? 0) : 0,
+      prevUsers: hasComparison ? (prevMap.totalUsers ?? 0) : 0,
+      prevPageViews: hasComparison ? (prevMap.pageViews ?? 0) : 0,
+      prevAvgDuration: hasComparison ? (prevMap.avgSessionDuration ?? 0) : 0,
+      prevBounceRate: hasComparison ? (prevMap.bounceRate ?? 0) : 0,
     };
+  }, [data, prevData, hasComparison]);
+
+  // Build overlay chart data — align both periods by day index
+  const chartData = useMemo(() => {
+    const cur = data?.rows ?? [];
+    const prev = prevData?.rows ?? [];
+    const maxLen = Math.max(cur.length, prev.length);
+    const result: Array<{ label: string; sessions: number; users: number; pageViews: number; engagementRate: number; prevSessions: number; prevUsers: number; prevPageViews: number }> = [];
+    for (let i = 0; i < maxLen; i++) {
+      const c = cur[i];
+      const p = prev[i];
+      result.push({
+        label: c ? formatGaDate(c.date) : `Day ${i + 1}`,
+        sessions: c?.sessions ?? 0,
+        users: c?.users ?? 0,
+        pageViews: c?.pageViews ?? 0,
+        engagementRate: c && c.bounceRate > 0 ? (1 - c.bounceRate) * 100 : 0,
+        prevSessions: p?.sessions ?? 0,
+        prevUsers: p?.users ?? 0,
+        prevPageViews: p?.pageViews ?? 0,
+      });
+    }
+    return result;
   }, [data, prevData]);
 
-  const chartData = useMemo(() =>
-    (data?.rows ?? []).map(row => ({
-      label: formatGaDate(row.date),
-      sessions: row.sessions,
-      users: row.users,
-      pageViews: row.pageViews,
-      engagementRate: row.bounceRate > 0 ? (1 - row.bounceRate) * 100 : 0,
-    })), [data]);
+  // Comparison label for display
+  const comparisonLabel = useMemo(() => {
+    if (!hasComparison) return null;
+    if (compareMode === "year") return `vs same period last year`;
+    if (compareMode === "custom") return `vs ${prevStartDate} to ${prevEndDate}`;
+    return `vs previous ${rangeDays} days`;
+  }, [hasComparison, compareMode, rangeDays, prevStartDate, prevEndDate]);
 
   /* ── channel breakdown for pie chart ──────────────────────────────── */
 
@@ -382,7 +460,8 @@ export default function AnalyticsPage() {
                 Google Analytics
               </h1>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                {startDate} to {endDate} · vs previous {rangeDays} days
+                {startDate} to {endDate}
+                {comparisonLabel ? ` · ${comparisonLabel}` : ""}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -427,7 +506,7 @@ export default function AnalyticsPage() {
           )}
 
           {/* Date range selector */}
-          <div className="mb-6 flex flex-wrap gap-2">
+          <div className="mb-4 flex flex-wrap gap-2">
             {DATE_RANGES.map(r => (
               <button
                 key={r.days}
@@ -441,6 +520,62 @@ export default function AnalyticsPage() {
                 {r.label}
               </button>
             ))}
+          </div>
+
+          {/* Comparison mode selector + custom date pickers */}
+          <div className="mb-6 flex flex-wrap items-end gap-4">
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Comparison
+              </label>
+              <select
+                value={compareMode}
+                onChange={(e) => setCompareMode(e.target.value as CompareMode)}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+              >
+                {COMPARE_MODES.map((m) => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
+            </div>
+            {compareMode === "custom" && (
+              <>
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Compare from
+                  </label>
+                  <input
+                    type="date"
+                    value={customPrevStart}
+                    onChange={(e) => setCustomPrevStart(e.target.value)}
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Compare to
+                  </label>
+                  <input
+                    type="date"
+                    value={customPrevEnd}
+                    onChange={(e) => setCustomPrevEnd(e.target.value)}
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                  />
+                </div>
+              </>
+            )}
+            {hasComparison && (
+              <div className="ml-auto flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 dark:bg-slate-800">
+                <span className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
+                  <span className="inline-block h-2.5 w-2.5 rounded-full bg-fuchsia-500" />
+                  Current
+                </span>
+                <span className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
+                  <span className="inline-block h-2.5 w-2.5 rounded-full bg-slate-400" />
+                  {prevStartDate} → {prevEndDate}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Stats cards with comparison */}
@@ -487,9 +622,21 @@ export default function AnalyticsPage() {
                     Sessions & Users — {DATE_RANGES.find(r => r.days === rangeDays)?.label ?? "28 Days"}
                   </h2>
                 </div>
-                <Badge className="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                  {data?.rows.length ?? 0} days
-                </Badge>
+                <div className="flex items-center gap-3">
+                  {hasComparison && (
+                    <div className="flex items-center gap-3 text-[10px] font-bold">
+                      <span className="flex items-center gap-1 text-fuchsia-600 dark:text-fuchsia-400">
+                        <span className="inline-block h-2.5 w-2.5 rounded-full bg-fuchsia-500" /> Current
+                      </span>
+                      <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                        <span className="inline-block h-2.5 w-2.5 rounded-full bg-slate-400" /> Comparison
+                      </span>
+                    </div>
+                  )}
+                  <Badge className="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                    {data?.rows.length ?? 0} days
+                  </Badge>
+                </div>
               </div>
               {fetching ? (
                 <div className="flex h-40 items-center justify-center">
@@ -508,11 +655,27 @@ export default function AnalyticsPage() {
                           <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
                           <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
                         </linearGradient>
+                        <linearGradient id="prevSessionsGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#a78bfa" stopOpacity={0.15} />
+                          <stop offset="100%" stopColor="#a78bfa" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="prevUsersGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#94a3b8" stopOpacity={0.15} />
+                          <stop offset="100%" stopColor="#94a3b8" stopOpacity={0} />
+                        </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
                       <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#94a3b8" }} interval={Math.max(Math.floor(chartData.length / 8), 1)} tickLine={false} axisLine={false} />
                       <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={false} allowDecimals={false} />
                       <RTooltip contentStyle={{ borderRadius: "12px", border: "1px solid #e2e8f0", fontSize: "12px", fontWeight: 600 }} labelStyle={{ color: "#64748b", marginBottom: "4px" }} />
+                      {/* Comparison period (behind) */}
+                      {hasComparison && (
+                        <>
+                          <Area type="monotone" dataKey="prevSessions" stroke="#a78bfa" strokeWidth={1.5} strokeDasharray="4 4" fill="url(#prevSessionsGrad)" dot={false} activeDot={{ r: 4, fill: "#a78bfa" }} />
+                          <Area type="monotone" dataKey="prevUsers" stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="4 4" fill="url(#prevUsersGrad)" dot={false} activeDot={{ r: 4, fill: "#94a3b8" }} />
+                        </>
+                      )}
+                      {/* Current period (on top) */}
                       <Area type="monotone" dataKey="sessions" stroke="#d946ef" strokeWidth={2} fill="url(#sessionsGrad)" dot={false} activeDot={{ r: 5, fill: "#d946ef" }} />
                       <Area type="monotone" dataKey="users" stroke="#3b82f6" strokeWidth={2} fill="url(#usersGrad)" dot={false} activeDot={{ r: 5, fill: "#3b82f6" }} />
                     </AreaChart>
@@ -699,27 +862,68 @@ export default function AnalyticsPage() {
                         {TABS.find(t => t.id === activeTab)?.label.replace("Top ", "").replace(" Pages", "").replace("Landing ", "")}
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-400">Sessions</th>
+                      {hasComparison && <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-300 dark:text-slate-500">Prev</th>}
+                      {hasComparison && <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-300 dark:text-slate-500">Δ</th>}
                       <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-400">Users</th>
+                      {hasComparison && <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-300 dark:text-slate-500">Prev</th>}
+                      {hasComparison && <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-300 dark:text-slate-500">Δ</th>}
                       <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-400">Page Views</th>
+                      {hasComparison && <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-300 dark:text-slate-500">Prev</th>}
+                      {hasComparison && <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-300 dark:text-slate-500">Δ</th>}
                       <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-400">Avg Duration</th>
                       <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-400">Bounce</th>
                       <th className="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-400">Engagement</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50 dark:divide-white/5">
-                    {reportData.rows.slice(0, 25).map((row, i) => (
-                      <tr key={i} className="transition-colors hover:bg-fuchsia-50/50 dark:hover:bg-fuchsia-900/10">
-                        <td className="max-w-[300px] truncate px-6 py-3 font-semibold text-slate-900 dark:text-white">
-                          {row.dimensionValues[0] ?? "—"}
-                        </td>
-                        <td className="px-6 py-3 text-right font-bold text-fuchsia-600 dark:text-fuchsia-400">{row.metricValues[0]?.toLocaleString() ?? 0}</td>
-                        <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{row.metricValues[1]?.toLocaleString() ?? 0}</td>
-                        <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{row.metricValues[2]?.toLocaleString() ?? 0}</td>
-                        <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{formatDuration(row.metricValues[3] ?? 0)}</td>
-                        <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{((row.metricValues[4] ?? 0) * 100).toFixed(1)}%</td>
-                        <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{((row.metricValues[5] ?? 0) * 100).toFixed(1)}%</td>
-                      </tr>
-                    ))}
+                    {reportData.rows.slice(0, 25).map((row, i) => {
+                      const dimVal = row.dimensionValues[0] ?? "—";
+                      const prevRow = hasComparison ? prevReportData?.rows.find(r => (r.dimensionValues[0] ?? "") === dimVal) : undefined;
+                      const curSessions = row.metricValues[0] ?? 0;
+                      const prevSessions = prevRow?.metricValues[0] ?? 0;
+                      const curUsers = row.metricValues[1] ?? 0;
+                      const prevUsers = prevRow?.metricValues[1] ?? 0;
+                      const curPageViews = row.metricValues[2] ?? 0;
+                      const prevPageViews = prevRow?.metricValues[2] ?? 0;
+                      const sessionsDelta = prevSessions > 0 ? formatPctChange(curSessions, prevSessions) : null;
+                      const usersDelta = prevUsers > 0 ? formatPctChange(curUsers, prevUsers) : null;
+                      const pvDelta = prevPageViews > 0 ? formatPctChange(curPageViews, prevPageViews) : null;
+                      return (
+                        <tr key={i} className="transition-colors hover:bg-fuchsia-50/50 dark:hover:bg-fuchsia-900/10">
+                          <td className="max-w-[300px] truncate px-6 py-3 font-semibold text-slate-900 dark:text-white">{dimVal}</td>
+                          <td className="px-6 py-3 text-right font-bold text-fuchsia-600 dark:text-fuchsia-400">{curSessions.toLocaleString()}</td>
+                          {hasComparison && <td className="px-3 py-3 text-right text-slate-400 dark:text-slate-500">{prevRow ? prevSessions.toLocaleString() : "—"}</td>}
+                          {hasComparison && (
+                            <td className="px-3 py-3 text-right">
+                              {sessionsDelta ? (
+                                <span className={`text-[10px] font-bold ${sessionsDelta.positive ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-red-500"}`}>{sessionsDelta.text}</span>
+                              ) : <span className="text-[10px] text-slate-400">—</span>}
+                            </td>
+                          )}
+                          <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{curUsers.toLocaleString()}</td>
+                          {hasComparison && <td className="px-3 py-3 text-right text-slate-400 dark:text-slate-500">{prevRow ? prevUsers.toLocaleString() : "—"}</td>}
+                          {hasComparison && (
+                            <td className="px-3 py-3 text-right">
+                              {usersDelta ? (
+                                <span className={`text-[10px] font-bold ${usersDelta.positive ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-red-500"}`}>{usersDelta.text}</span>
+                              ) : <span className="text-[10px] text-slate-400">—</span>}
+                            </td>
+                          )}
+                          <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{curPageViews.toLocaleString()}</td>
+                          {hasComparison && <td className="px-3 py-3 text-right text-slate-400 dark:text-slate-500">{prevRow ? prevPageViews.toLocaleString() : "—"}</td>}
+                          {hasComparison && (
+                            <td className="px-3 py-3 text-right">
+                              {pvDelta ? (
+                                <span className={`text-[10px] font-bold ${pvDelta.positive ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-red-500"}`}>{pvDelta.text}</span>
+                              ) : <span className="text-[10px] text-slate-400">—</span>}
+                            </td>
+                          )}
+                          <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{formatDuration(row.metricValues[3] ?? 0)}</td>
+                          <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{((row.metricValues[4] ?? 0) * 100).toFixed(1)}%</td>
+                          <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{((row.metricValues[5] ?? 0) * 100).toFixed(1)}%</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
