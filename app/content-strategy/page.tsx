@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   Server, Send, Bot, User, Wrench, Loader2, CheckCircle2,
   Search, Globe, FileText, FileSpreadsheet, Trash2, Download,
@@ -8,6 +9,7 @@ import {
   Plus, MessageSquare, Paperclip, ArrowUp, X, BarChart3,
   ShieldCheck, Wand2, Code2, Image, FilePlus, Edit3, Layout,
   Info, Eye, Calendar, Layers, FolderTree, GitBranch, Settings,
+  Plug,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -23,6 +25,10 @@ import {
   type McpSessionPreview,
   type ModelRecord,
 } from "@/lib/keyword-mcp-api";
+import {
+  mcpConnectionsApi,
+  type McpConnection,
+} from "@/lib/mcp-connections-api";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ModelSelector, usePersistentModel } from "@/components/ModelSelector";
@@ -131,6 +137,35 @@ function QuasarMcpContent() {
   const [toolsOpen, setToolsOpen] = useState(false);
   const toolsMenuRef = useRef<HTMLDivElement>(null);
   const [webBuilderMode, setWebBuilderMode] = useState(false);
+  const [mcpConnections, setMcpConnections] = useState<McpConnection[]>([]);
+  const [mcpToggling, setMcpToggling] = useState(false);
+
+  // The backend uses the oldest enabled connection (createdAt asc) —
+  // mirror that here so the badge shows the server that actually routes tools.
+  const activeMcp =
+    [...mcpConnections]
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+      .find((c) => c.enabled) || null;
+
+  const handleMcpToggle = async () => {
+    if (mcpConnections.length === 0 || mcpToggling) return;
+    setMcpToggling(true);
+    try {
+      const target = activeMcp
+        ? { id: activeMcp.id, enabled: false }
+        : {
+            id: [...mcpConnections].sort(
+              (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+            )[0].id,
+            enabled: true,
+          };
+      const updated = await mcpConnectionsApi.update(target.id, { enabled: target.enabled });
+      setMcpConnections((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+    } catch {
+    } finally {
+      setMcpToggling(false);
+    }
+  };
 
   // Load session list + get/create current session
   const loadSessions = useCallback(async () => {
@@ -147,6 +182,7 @@ function QuasarMcpContent() {
         setMessages(session.messages || []);
       })
       .catch(() => {});
+    mcpConnectionsApi.getAll().then(setMcpConnections).catch(() => {});
     loadSessions();
     keywordMcpApi.listModels()
       .then(({ models }) => setModels(models))
@@ -319,6 +355,50 @@ function QuasarMcpContent() {
             <Cpu className="size-3 text-blue-500" />
             {isThinking ? "Thinking" : "Idle"}
           </Badge>
+          {/* Additional MCP switch — toggles WordPress tools routing */}
+          {mcpConnections.length === 0 ? (
+            <Link
+              href="/additional-mcp"
+              className="flex items-center gap-1.5 rounded-full border border-dashed border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:border-fuchsia-400 hover:text-fuchsia-600 dark:border-slate-700 dark:text-slate-400 dark:hover:border-fuchsia-500 dark:hover:text-fuchsia-400"
+            >
+              <Plug className="size-3" />
+              Add MCP
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={handleMcpToggle}
+              disabled={mcpToggling}
+              title={
+                activeMcp
+                  ? `Additional MCP active: ${activeMcp.name} — click to turn off (WordPress tools will use direct REST)`
+                  : "Additional MCP off — click to route WordPress tools through your MCP server"
+              }
+              className={`flex items-center gap-2 rounded-full border px-1.5 py-1 text-xs font-medium transition ${
+                activeMcp
+                  ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400"
+                  : "border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400"
+              }`}
+            >
+              {mcpToggling ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Plug className={`size-3.5 ${activeMcp ? "text-emerald-500" : "text-slate-400"}`} />
+              )}
+              <span className="max-w-36 truncate">{activeMcp ? activeMcp.name : "MCP Off"}</span>
+              <span
+                className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition ${
+                  activeMcp ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
+                }`}
+              >
+                <span
+                  className={`inline-block size-3 transform rounded-full bg-white shadow transition ${
+                    activeMcp ? "translate-x-3.5" : "translate-x-0.5"
+                  }`}
+                />
+              </span>
+            </button>
+          )}
           <Button variant="outline" size="sm" onClick={handleNewChat} className="gap-1.5 text-xs">
             <Plus className="size-3.5" />
             New Chat
