@@ -206,6 +206,33 @@ function QuasarMcpContent() {
     return () => document.removeEventListener("mousedown", handler);
   }, [toolsOpen]);
 
+  // Optimistic sidebar update: bump the session to the top and set its
+  // preview to the user's message instantly (no server round-trip wait).
+  const bumpSessionPreview = (sessionId: string, text: string) => {
+    setSessions((prev) => {
+      const idx = prev.findIndex((s) => s.id === sessionId);
+      const now = new Date().toISOString();
+      if (idx === -1) {
+        return [
+          { id: sessionId, preview: text.slice(0, 60), messageCount: 1, updatedAt: now, createdAt: now },
+          ...prev,
+        ];
+      }
+      const existing = prev[idx];
+      const rest = [...prev];
+      rest.splice(idx, 1);
+      return [
+        {
+          ...existing,
+          preview: existing.preview === "New chat" ? text.slice(0, 60) : existing.preview,
+          messageCount: existing.messageCount + 1,
+          updatedAt: now,
+        },
+        ...rest,
+      ];
+    });
+  };
+
   const handleSend = async () => {
     const text = input.trim();
     if (!text || isThinking || !session) return;
@@ -215,6 +242,7 @@ function QuasarMcpContent() {
     setInput("");
     setIsThinking(true);
     setActiveTools([]);
+    bumpSessionPreview(session.id, text);
 
     try {
       const result = await keywordMcpApi.sendMessage(session.id, text, selectedModel, webBuilderMode ? "web-builder" : undefined);
@@ -257,6 +285,7 @@ function QuasarMcpContent() {
     setMessages((prev) => [...prev, userMsg]);
     setIsThinking(true);
     setActiveTools([]);
+    bumpSessionPreview(session.id, text);
     try {
       const result = await keywordMcpApi.sendMessage(session.id, text, selectedModel, webBuilderMode ? "web-builder" : undefined);
       if (result.toolCalls && result.toolCalls.length > 0) setActiveTools(result.toolCalls);
@@ -289,6 +318,17 @@ function QuasarMcpContent() {
       setInput("");
       setIsThinking(false);
       setActiveTools([]);
+      // Optimistic: show the new chat in the list right away
+      setSessions((prev) => [
+        {
+          id: newSession.id,
+          preview: "New chat",
+          messageCount: 0,
+          updatedAt: newSession.updatedAt,
+          createdAt: newSession.createdAt,
+        },
+        ...prev,
+      ]);
       loadSessions();
     } catch {}
   };
@@ -305,6 +345,8 @@ function QuasarMcpContent() {
 
   const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    // Optimistic: remove from the list instantly
+    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
     try {
       await keywordMcpApi.clearSession(sessionId);
       // If we deleted the active session, create a new one
@@ -312,9 +354,22 @@ function QuasarMcpContent() {
         const { session: newSession } = await keywordMcpApi.createNewSession();
         setSession(newSession);
         setMessages([]);
+        setSessions((prev) => [
+          {
+            id: newSession.id,
+            preview: "New chat",
+            messageCount: 0,
+            updatedAt: newSession.updatedAt,
+            createdAt: newSession.createdAt,
+          },
+          ...prev.filter((s) => s.id !== sessionId),
+        ]);
       }
       loadSessions();
-    } catch {}
+    } catch {
+      // Roll back on failure
+      loadSessions();
+    }
   };
 
   // Collect tool calls from recent messages
