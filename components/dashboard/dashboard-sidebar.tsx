@@ -21,6 +21,7 @@ import {
   Network,
   Newspaper,
   Building2,
+  Server,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -35,6 +36,7 @@ const navItems = [
   { label: "Audit MCP", href: "/audit-mcp", icon: Plug },
   { label: "Post Create", href: "/post-create", icon: PenLine },
   { label: "Quasar MCP", href: "/content-strategy", icon: Network },
+  { label: "Additional MCP", href: "/additional-mcp", icon: Server },
   { label: "Task Management", href: "/task-management", icon: ClipboardList },
 ];
 
