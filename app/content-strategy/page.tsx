@@ -55,6 +55,12 @@ const TOOL_ICONS: Record<string, typeof Search> = {
   create_post: FilePlus,
   update_post: Edit3,
   delete_post: Trash2,
+  create_content: FilePlus,
+  update_content: Edit3,
+  delete_content: Trash2,
+  list_content: FileText,
+  update_seo: Wand2,
+  list_media: Image,
   update_custom_render: Code2,
   get_site_info: Info,
   get_content: Eye,
@@ -90,20 +96,23 @@ function getToolLabel(tool: string, args: Record<string, unknown>): string {
   if (tool === "generate_schema") return `Generating ${args.schemaType || ""} schema`;
   if (tool === "extract_design") return `Extracting design from ${String(args.url || "").slice(0, 50)}`;
   if (tool === "search_media") return `Searching media: "${args.search || ""}"`;
-  if (tool === "create_post") return `Creating post: "${String(args.title || "").slice(0, 40)}"`;
-  if (tool === "update_post") return `Updating post ${args.postId || ""}`;
-  if (tool === "delete_post") return `Deleting post ${args.postId || ""}`;
-  if (tool === "update_custom_render") return `Updating custom render on post ${args.postId || ""}`;
+  if (tool === "create_post" || tool === "create_content") return `Creating ${args.post_type === "page" ? "page" : "post"}: "${String(args.title || "").slice(0, 40)}"`;
+  if (tool === "update_post" || tool === "update_content") return `Updating post ${args.postId || args.id || ""}`;
+  if (tool === "delete_post" || tool === "delete_content") return `Deleting post ${args.postId || args.id || ""}`;
+  if (tool === "list_content") return `Listing ${args.post_type === "page" ? "pages" : "content"}`;
+  if (tool === "update_seo") return `Updating SEO on post ${args.id || args.postId || ""}`;
+  if (tool === "list_media") return `Listing media${args.search ? `: "${String(args.search).slice(0, 40)}"` : ""}`;
+  if (tool === "update_custom_render") return `Updating custom render on post ${args.postId || args.id || ""}`;
   if (tool === "get_site_info") return "Fetching site info";
-  if (tool === "get_content") return `Fetching content: ${args.postId || args.slug || ""}`;
-  if (tool === "publish_content") return `Publishing post ${args.postId || ""}`;
-  if (tool === "schedule_content") return `Scheduling post ${args.postId || ""}`;
+  if (tool === "get_content") return `Fetching content: ${args.postId || args.id || args.slug || ""}`;
+  if (tool === "publish_content") return `Publishing post ${args.postId || args.id || ""}`;
+  if (tool === "schedule_content") return `Scheduling post ${args.postId || args.id || ""}`;
   if (tool === "get_global_render") return "Fetching global render settings";
   if (tool === "update_global_render") return "Updating global render settings";
   if (tool === "list_categories") return "Fetching categories";
   if (tool === "list_tags") return "Fetching tags";
-  if (tool === "get_revisions") return `Fetching revisions for post ${args.postId || ""}`;
-  if (tool === "get_media") return `Fetching media ${args.mediaId || ""}`;
+  if (tool === "get_revisions") return `Fetching revisions for post ${args.postId || args.id || ""}`;
+  if (tool === "get_media") return `Fetching media ${args.mediaId || args.id || ""}`;
   if (tool === "get_schema") return `Fetching schema from ${String(args.url || "").slice(0, 50)}`;
   if (tool === "regenerate_schema_type") return `Regenerating ${args.schemaType || ""} schema`;
   if (tool === "save_schema_type") return `Saving ${args.schemaType || ""} schema`;
