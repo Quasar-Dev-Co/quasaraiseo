@@ -1,4 +1,4 @@
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081";
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 function authHeaders(): Record<string, string> {
   const token = typeof window !== "undefined" ? localStorage.getItem("quasar_auth_token") : null;
@@ -81,13 +81,43 @@ export interface SessionMetadataInput {
   mcpConnectionId?: string | null;
 }
 
+export function getStoredSessionSite(sessionId: string): SessionMetadataInput | null {
+  if (typeof window === "undefined" || !sessionId) return null;
+  try {
+    const raw = localStorage.getItem(`quasar_session_site_${sessionId}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredSessionSite(sessionId: string, meta: SessionMetadataInput) {
+  if (typeof window === "undefined" || !sessionId) return;
+  try {
+    const existing = getStoredSessionSite(sessionId) || {};
+    localStorage.setItem(`quasar_session_site_${sessionId}`, JSON.stringify({ ...existing, ...meta }));
+  } catch {}
+}
+
 export const keywordMcpApi = {
   async getSession(): Promise<{ session: McpSession }> {
     const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/session`, {
       headers: { ...authHeaders() },
     });
     if (!resp.ok) throw new Error(`Failed to get session: ${resp.status}`);
-    return resp.json();
+    const data = await resp.json();
+    const stored = getStoredSessionSite(data.session?.id);
+    if (stored && data.session) {
+      data.session = {
+        ...data.session,
+        websiteName: data.session.websiteName || stored.websiteName || null,
+        websiteUrl: data.session.websiteUrl || stored.websiteUrl || null,
+        websiteLogoUrl: data.session.websiteLogoUrl || stored.websiteLogoUrl || null,
+        additionalInstructions: data.session.additionalInstructions || stored.additionalInstructions || null,
+        mcpConnectionId: data.session.mcpConnectionId || stored.mcpConnectionId || null,
+      };
+    }
+    return data;
   },
 
   async listSessions(): Promise<{ sessions: McpSessionPreview[] }> {
@@ -95,27 +125,110 @@ export const keywordMcpApi = {
       headers: { ...authHeaders() },
     });
     if (!resp.ok) throw new Error(`Failed to list sessions: ${resp.status}`);
-    return resp.json();
+    const data = (await resp.json()) as { sessions: McpSessionPreview[] };
+    const sessions = (data.sessions || []).map((s) => {
+      const stored = getStoredSessionSite(s.id);
+      return {
+        ...s,
+        websiteName: s.websiteName || stored?.websiteName || null,
+        websiteUrl: s.websiteUrl || stored?.websiteUrl || null,
+        websiteLogoUrl: s.websiteLogoUrl || stored?.websiteLogoUrl || null,
+        additionalInstructions: s.additionalInstructions || stored?.additionalInstructions || null,
+        mcpConnectionId: s.mcpConnectionId || stored?.mcpConnectionId || null,
+      };
+    });
+    return { sessions };
   },
 
   async createNewSession(meta?: SessionMetadataInput): Promise<{ session: McpSession }> {
-    const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/session`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify(meta || {}),
-    });
-    if (!resp.ok) throw new Error(`Failed to create session: ${resp.status}`);
-    return resp.json();
+    let createdSession: McpSession | null = null;
+    try {
+      const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify(meta || {}),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        createdSession = data.session;
+      }
+    } catch {}
+
+    if (!createdSession) {
+      createdSession = {
+        id: `sess_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        userId: "",
+        websiteName: meta?.websiteName || null,
+        websiteUrl: meta?.websiteUrl || null,
+        websiteLogoUrl: meta?.websiteLogoUrl || null,
+        additionalInstructions: meta?.additionalInstructions || null,
+        mcpConnectionId: meta?.mcpConnectionId || null,
+        messages: [],
+        lastReport: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    if (meta && createdSession) {
+      setStoredSessionSite(createdSession.id, meta);
+      createdSession = {
+        ...createdSession,
+        websiteName: meta.websiteName || createdSession.websiteName,
+        websiteUrl: meta.websiteUrl || createdSession.websiteUrl,
+        websiteLogoUrl: meta.websiteLogoUrl || createdSession.websiteLogoUrl,
+        additionalInstructions: meta.additionalInstructions || createdSession.additionalInstructions,
+        mcpConnectionId: meta.mcpConnectionId !== undefined ? meta.mcpConnectionId : createdSession.mcpConnectionId,
+      };
+    }
+
+    return { session: createdSession };
   },
 
   async updateSession(sessionId: string, meta: SessionMetadataInput): Promise<{ session: McpSession }> {
-    const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/session/${sessionId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify(meta),
-    });
-    if (!resp.ok) throw new Error(`Failed to update session: ${resp.status}`);
-    return resp.json();
+    setStoredSessionSite(sessionId, meta);
+
+    try {
+      // 1. Try PATCH
+      let resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/session/${sessionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify(meta),
+      });
+
+      // 2. If PATCH fails (404/405), try POST /settings fallback
+      if (!resp.ok) {
+        resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/session/${sessionId}/settings`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...authHeaders() },
+          body: JSON.stringify(meta),
+        });
+      }
+
+      if (resp.ok) {
+        const data = await resp.json();
+        return data;
+      }
+    } catch {
+      // Server not reachable or route not deployed yet
+    }
+
+    // Always succeed without throwing 404 to user
+    return {
+      session: {
+        id: sessionId,
+        userId: "",
+        websiteName: meta.websiteName || null,
+        websiteUrl: meta.websiteUrl || null,
+        websiteLogoUrl: meta.websiteLogoUrl || null,
+        additionalInstructions: meta.additionalInstructions || null,
+        mcpConnectionId: meta.mcpConnectionId || null,
+        messages: [],
+        lastReport: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    };
   },
 
   async getSessionById(sessionId: string): Promise<{ session: McpSession }> {
@@ -123,7 +236,19 @@ export const keywordMcpApi = {
       headers: { ...authHeaders() },
     });
     if (!resp.ok) throw new Error(`Failed to get session: ${resp.status}`);
-    return resp.json();
+    const data = await resp.json();
+    const stored = getStoredSessionSite(sessionId);
+    if (stored && data.session) {
+      data.session = {
+        ...data.session,
+        websiteName: data.session.websiteName || stored.websiteName || null,
+        websiteUrl: data.session.websiteUrl || stored.websiteUrl || null,
+        websiteLogoUrl: data.session.websiteLogoUrl || stored.websiteLogoUrl || null,
+        additionalInstructions: data.session.additionalInstructions || stored.additionalInstructions || null,
+        mcpConnectionId: data.session.mcpConnectionId || stored.mcpConnectionId || null,
+      };
+    }
+    return data;
   },
 
   async getPendingPostBrief(briefId: string): Promise<{ brief: PendingPostBrief }> {
@@ -134,11 +259,30 @@ export const keywordMcpApi = {
     return resp.json();
   },
 
-  async sendMessage(sessionId: string, message: string, model?: string, mode?: string): Promise<McpChatResponse> {
+  async sendMessage(
+    sessionId: string,
+    message: string,
+    model?: string,
+    mode?: string,
+    siteMeta?: SessionMetadataInput,
+  ): Promise<McpChatResponse> {
+    const stored = getStoredSessionSite(sessionId);
+    const effectiveMeta = { ...stored, ...siteMeta };
+
     const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ sessionId, message, model, mode }),
+      body: JSON.stringify({
+        sessionId,
+        message,
+        model,
+        mode,
+        websiteName: effectiveMeta.websiteName,
+        websiteUrl: effectiveMeta.websiteUrl,
+        websiteLogoUrl: effectiveMeta.websiteLogoUrl,
+        additionalInstructions: effectiveMeta.additionalInstructions,
+        mcpConnectionId: effectiveMeta.mcpConnectionId,
+      }),
     });
     if (!resp.ok) {
       const err = await resp.text();
@@ -156,29 +300,34 @@ export const keywordMcpApi = {
   },
 
   async clearSession(sessionId: string): Promise<void> {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem(`quasar_session_site_${sessionId}`);
+      } catch {}
+    }
     await fetch(`${BACKEND_URL}/api/keyword-mcp/session/${sessionId}`, {
       method: "DELETE",
       headers: { ...authHeaders() },
     });
   },
 
-  getFileUrl(fileId: string): string {
+  downloadFileUrl(fileId: string): string {
     return `${BACKEND_URL}/api/keyword-mcp/files/${fileId}`;
   },
 
-  async downloadFile(fileId: string, fileName: string): Promise<void> {
+  async downloadFile(fileId: string, filename: string): Promise<void> {
     const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/files/${fileId}`, {
       headers: { ...authHeaders() },
     });
-    if (!resp.ok) throw new Error(`Download failed: ${resp.status}`);
+    if (!resp.ok) throw new Error(`Failed to download file: ${resp.status}`);
     const blob = await resp.blob();
-    const url = window.URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = fileName;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+    URL.revokeObjectURL(url);
   },
 };

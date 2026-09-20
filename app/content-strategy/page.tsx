@@ -225,6 +225,11 @@ function QuasarMcpContent() {
       .then(({ session }) => {
         setSession(session);
         setMessages(session.messages || []);
+        setSiteName(session.websiteName || "");
+        setSiteUrl(session.websiteUrl || "");
+        setSiteLogoUrl(session.websiteLogoUrl || "");
+        setInstructions(session.additionalInstructions || "");
+        setSelectedMcpId(session.mcpConnectionId || "auto");
       })
       .catch(() => {});
     mcpConnectionsApi.getAll().then(setMcpConnections).catch(() => {});
@@ -290,7 +295,20 @@ function QuasarMcpContent() {
     bumpSessionPreview(session.id, text);
 
     try {
-      const result = await keywordMcpApi.sendMessage(session.id, text, selectedModel, webBuilderMode ? "web-builder" : undefined);
+      const siteMeta = {
+        websiteName: siteName || undefined,
+        websiteUrl: siteUrl || undefined,
+        websiteLogoUrl: siteLogoUrl || undefined,
+        additionalInstructions: instructions || undefined,
+        mcpConnectionId: selectedMcpId === "auto" ? undefined : selectedMcpId,
+      };
+      const result = await keywordMcpApi.sendMessage(
+        session.id,
+        text,
+        selectedModel,
+        webBuilderMode ? "web-builder" : undefined,
+        siteMeta,
+      );
       if (result.toolCalls && result.toolCalls.length > 0) {
         setActiveTools(result.toolCalls);
       }
@@ -332,7 +350,20 @@ function QuasarMcpContent() {
     setActiveTools([]);
     bumpSessionPreview(session.id, text);
     try {
-      const result = await keywordMcpApi.sendMessage(session.id, text, selectedModel, webBuilderMode ? "web-builder" : undefined);
+      const siteMeta = {
+        websiteName: siteName || undefined,
+        websiteUrl: siteUrl || undefined,
+        websiteLogoUrl: siteLogoUrl || undefined,
+        additionalInstructions: instructions || undefined,
+        mcpConnectionId: selectedMcpId === "auto" ? undefined : selectedMcpId,
+      };
+      const result = await keywordMcpApi.sendMessage(
+        session.id,
+        text,
+        selectedModel,
+        webBuilderMode ? "web-builder" : undefined,
+        siteMeta,
+      );
       if (result.toolCalls && result.toolCalls.length > 0) setActiveTools(result.toolCalls);
       const assistantMsg: McpChatMessage = {
         role: "assistant",
@@ -353,7 +384,7 @@ function QuasarMcpContent() {
       setIsThinking(false);
       setActiveTools([]);
     }
-  }, [session, isThinking, selectedModel, loadSessions]);
+  }, [session, isThinking, selectedModel, webBuilderMode, siteName, siteUrl, siteLogoUrl, instructions, selectedMcpId, loadSessions]);
 
   const handleSaveContext = async () => {
     if (!session) return;
@@ -409,11 +440,30 @@ function QuasarMcpContent() {
         : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}${b.logoUrl}`;
       setSiteLogoUrl(fullLogo);
     }
+    if (b.description || b.tagline) {
+      setInstructions((prev) => prev || (b.tagline ? `${b.tagline}. ${b.description || ""}` : b.description || ""));
+    }
+    const cleanHost = (b.website || "").replace(/^https?:\/\//, "").replace(/\/+$/, "").toLowerCase();
+    const cleanName = b.companyName.toLowerCase().trim();
+    const matchedMcp = mcpConnections.find((c) => {
+      const cName = c.name.toLowerCase();
+      const cUrl = c.url.toLowerCase();
+      return (
+        (cleanName && (cName.includes(cleanName) || cleanName.includes(cName))) ||
+        (cleanHost && (cUrl.includes(cleanHost) || cleanHost.includes(cUrl)))
+      );
+    });
+    if (matchedMcp) setSelectedMcpId(matchedMcp.id);
   };
 
   const handleSelectWpSitePreset = (w: WordPressSite) => {
     setSiteName(w.siteName || new URL(w.siteUrl).hostname);
     setSiteUrl(w.siteUrl);
+    const matchedMcp = mcpConnections.find((c) =>
+      c.url.toLowerCase().includes(new URL(w.siteUrl).hostname.toLowerCase()) ||
+      c.name.toLowerCase().includes(new URL(w.siteUrl).hostname.toLowerCase())
+    );
+    if (matchedMcp) setSelectedMcpId(matchedMcp.id);
   };
 
   // New Chat modal state
@@ -507,6 +557,11 @@ function QuasarMcpContent() {
         const { session: newSession } = await keywordMcpApi.createNewSession();
         setSession(newSession);
         setMessages([]);
+        setSiteName("");
+        setSiteUrl("");
+        setSiteLogoUrl("");
+        setInstructions("");
+        setSelectedMcpId("auto");
         setSessions((prev) => [
           {
             id: newSession.id,
@@ -690,12 +745,19 @@ function QuasarMcpContent() {
                         <MessageSquare className="size-3.5 shrink-0 text-slate-400" />
                       )}
                       <div className="min-w-0 flex-1">
-                        {s.websiteName && (
-                          <span className="block truncate text-[10px] font-bold text-fuchsia-600 dark:text-fuchsia-400">
-                            {s.websiteName}
-                          </span>
-                        )}
-                        <p className="truncate text-xs font-medium text-slate-700 dark:text-slate-300">
+                        {s.websiteName ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="truncate text-xs font-bold text-slate-800 dark:text-slate-200">
+                              {s.websiteName}
+                            </span>
+                            {s.websiteUrl && (
+                              <span className="truncate text-[10px] text-slate-400">
+                                · {s.websiteUrl.replace(/^https?:\/\//, "").replace(/\/+$/, "")}
+                              </span>
+                            )}
+                          </div>
+                        ) : null}
+                        <p className="truncate text-xs text-slate-600 dark:text-slate-400">
                           {s.preview}
                         </p>
                       </div>
@@ -935,6 +997,11 @@ function QuasarMcpContent() {
                 </div>
 
                 <div className="mt-3 flex items-center justify-end gap-2">
+                  {contextSaved && (
+                    <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                      <Check className="size-4" /> Saved successfully!
+                    </span>
+                  )}
                   <Button
                     size="sm"
                     onClick={handleSaveContext}
@@ -1161,27 +1228,57 @@ function QuasarMcpContent() {
                             : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}${b.logoUrl}`;
                           setNewSiteLogoUrl(fullLogo);
                         }
+                        if (b.description || b.tagline) {
+                          setNewInstructions(b.tagline ? `${b.tagline}. ${b.description || ""}` : b.description || "");
+                        }
+                        const cleanHost = (b.website || "").replace(/^https?:\/\//, "").replace(/\/+$/, "").toLowerCase();
+                        const cleanName = b.companyName.toLowerCase().trim();
+                        const matchedMcp = mcpConnections.find((c) => {
+                          const cName = c.name.toLowerCase();
+                          const cUrl = c.url.toLowerCase();
+                          return (
+                            (cleanName && (cName.includes(cleanName) || cleanName.includes(cName))) ||
+                            (cleanHost && (cUrl.includes(cleanHost) || cleanHost.includes(cUrl)))
+                          );
+                        });
+                        if (matchedMcp) setNewMcpId(matchedMcp.id);
                       }}
-                      className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 transition hover:border-fuchsia-400 hover:text-fuchsia-600 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200"
+                      className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
+                        newSiteName.toLowerCase() === b.companyName.toLowerCase()
+                          ? "border-fuchsia-500 bg-fuchsia-100 text-fuchsia-800 shadow-xs dark:bg-fuchsia-900/50 dark:text-fuchsia-200"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-fuchsia-400 hover:text-fuchsia-600 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200"
+                      }`}
                     >
                       <Building2 className="size-3 text-fuchsia-500" />
                       {b.companyName}
                     </button>
                   ))}
-                  {wpSites.map((w) => (
-                    <button
-                      key={w.id}
-                      type="button"
-                      onClick={() => {
-                        setNewSiteName(w.siteName || new URL(w.siteUrl).hostname);
-                        setNewSiteUrl(w.siteUrl);
-                      }}
-                      className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 transition hover:border-blue-400 hover:text-blue-600 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200"
-                    >
-                      <Globe className="size-3 text-blue-500" />
-                      {w.siteName || w.siteUrl.replace(/^https?:\/\//, "")}
-                    </button>
-                  ))}
+                  {wpSites.map((w) => {
+                    const sName = w.siteName || new URL(w.siteUrl).hostname;
+                    return (
+                      <button
+                        key={w.id}
+                        type="button"
+                        onClick={() => {
+                          setNewSiteName(sName);
+                          setNewSiteUrl(w.siteUrl);
+                          const matchedMcp = mcpConnections.find((c) =>
+                            c.url.toLowerCase().includes(new URL(w.siteUrl).hostname.toLowerCase()) ||
+                            c.name.toLowerCase().includes(new URL(w.siteUrl).hostname.toLowerCase())
+                          );
+                          if (matchedMcp) setNewMcpId(matchedMcp.id);
+                        }}
+                        className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
+                          newSiteName.toLowerCase() === sName.toLowerCase()
+                            ? "border-blue-500 bg-blue-100 text-blue-800 shadow-xs dark:bg-blue-900/50 dark:text-blue-200"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-blue-400 hover:text-blue-600 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200"
+                        }`}
+                      >
+                        <Globe className="size-3 text-blue-500" />
+                        {w.siteName || w.siteUrl.replace(/^https?:\/\//, "")}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
