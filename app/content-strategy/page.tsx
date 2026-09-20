@@ -9,13 +9,14 @@ import {
   Plus, MessageSquare, Paperclip, ArrowUp, X, BarChart3,
   ShieldCheck, Wand2, Code2, Image, FilePlus, Edit3, Layout,
   Info, Eye, Calendar, Layers, FolderTree, GitBranch, Settings,
-  Plug,
+  Plug, Building2, Upload, ChevronDown, Check,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import {
   keywordMcpApi,
   type McpChatMessage,
@@ -29,6 +30,8 @@ import {
   mcpConnectionsApi,
   type McpConnection,
 } from "@/lib/mcp-connections-api";
+import { brandingApi, type Branding } from "@/lib/branding-api";
+import { wordpressApi, type WordPressSite } from "@/lib/wordpress-api";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ModelSelector, usePersistentModel } from "@/components/ModelSelector";
@@ -148,6 +151,39 @@ function QuasarMcpContent() {
   const [webBuilderMode, setWebBuilderMode] = useState(false);
   const [mcpConnections, setMcpConnections] = useState<McpConnection[]>([]);
   const [mcpToggling, setMcpToggling] = useState(false);
+
+  // Brandings and WordPress sites for auto-filling and selecting
+  const [brandings, setBrandings] = useState<Branding[]>([]);
+  const [wpSites, setWpSites] = useState<WordPressSite[]>([]);
+
+  // Website context state for the active chat
+  const [siteName, setSiteName] = useState("");
+  const [siteUrl, setSiteUrl] = useState("");
+  const [siteLogoUrl, setSiteLogoUrl] = useState("");
+  const [instructions, setInstructions] = useState("");
+  const [selectedMcpId, setSelectedMcpId] = useState<string>("auto");
+  const [isSavingContext, setIsSavingContext] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [contextSaved, setContextSaved] = useState(false);
+  const [contextDrawerOpen, setContextDrawerOpen] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync state when active session changes
+  useEffect(() => {
+    if (session) {
+      setSiteName(session.websiteName || "");
+      setSiteUrl(session.websiteUrl || "");
+      setSiteLogoUrl(session.websiteLogoUrl || "");
+      setInstructions(session.additionalInstructions || "");
+      setSelectedMcpId(session.mcpConnectionId || "auto");
+    }
+  }, [session?.id]);
+
+  // Load brandings & WP sites on startup
+  useEffect(() => {
+    brandingApi.getAll().then(setBrandings).catch(() => {});
+    wordpressApi.getSites().then(setWpSites).catch(() => {});
+  }, []);
 
   // The backend uses the oldest enabled connection (createdAt asc) —
   // mirror that here so the badge shows the server that actually routes tools.
@@ -319,19 +355,116 @@ function QuasarMcpContent() {
     }
   }, [session, isThinking, selectedModel, loadSessions]);
 
-  const handleNewChat = async () => {
+  const handleSaveContext = async () => {
+    if (!session) return;
+    setIsSavingContext(true);
     try {
-      const { session: newSession } = await keywordMcpApi.createNewSession();
+      const meta = {
+        websiteName: siteName.trim() || undefined,
+        websiteUrl: siteUrl.trim() || undefined,
+        websiteLogoUrl: siteLogoUrl.trim() || undefined,
+        additionalInstructions: instructions.trim() || undefined,
+        mcpConnectionId: selectedMcpId === "auto" ? null : selectedMcpId,
+      };
+      const { session: updated } = await keywordMcpApi.updateSession(session.id, meta);
+      setSession(updated);
+      setSessions((prev) =>
+        prev.map((s) => (s.id === updated.id ? { ...s, ...meta } : s))
+      );
+      setContextSaved(true);
+      setTimeout(() => setContextSaved(false), 2500);
+    } catch (err) {
+      alert(`Failed to save settings: ${err instanceof Error ? err.message : "Unknown error"}`);
+    } finally {
+      setIsSavingContext(false);
+    }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingLogo(true);
+    try {
+      const logoUrl = await brandingApi.uploadLogo(file);
+      const fullLogoUrl = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}${logoUrl}`;
+      setSiteLogoUrl(fullLogoUrl);
+    } catch {
+      // Fallback: convert to base64 data url for preview/save
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setSiteLogoUrl(String(event.target?.result || ""));
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
+
+  const handleSelectBrandingPreset = (b: Branding) => {
+    setSiteName(b.companyName);
+    if (b.website) setSiteUrl(b.website);
+    if (b.logoUrl) {
+      const fullLogo = b.logoUrl.startsWith("http")
+        ? b.logoUrl
+        : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}${b.logoUrl}`;
+      setSiteLogoUrl(fullLogo);
+    }
+  };
+
+  const handleSelectWpSitePreset = (w: WordPressSite) => {
+    setSiteName(w.siteName || new URL(w.siteUrl).hostname);
+    setSiteUrl(w.siteUrl);
+  };
+
+  // New Chat modal state
+  const [newChatModalOpen, setNewChatModalOpen] = useState(false);
+  const [newSiteName, setNewSiteName] = useState("");
+  const [newSiteUrl, setNewSiteUrl] = useState("");
+  const [newSiteLogoUrl, setNewSiteLogoUrl] = useState("");
+  const [newInstructions, setNewInstructions] = useState("");
+  const [newMcpId, setNewMcpId] = useState<string>("auto");
+
+  const openNewChatModal = () => {
+    setNewSiteName("");
+    setNewSiteUrl("");
+    setNewSiteLogoUrl("");
+    setNewInstructions("");
+    setNewMcpId("auto");
+    setNewChatModalOpen(true);
+  };
+
+  const handleCreateChatWithSite = async () => {
+    try {
+      const meta = {
+        websiteName: newSiteName.trim() || undefined,
+        websiteUrl: newSiteUrl.trim() || undefined,
+        websiteLogoUrl: newSiteLogoUrl.trim() || undefined,
+        additionalInstructions: newInstructions.trim() || undefined,
+        mcpConnectionId: newMcpId === "auto" ? undefined : newMcpId,
+      };
+      const { session: newSession } = await keywordMcpApi.createNewSession(meta);
       setSession(newSession);
       setMessages([]);
       setInput("");
       setIsThinking(false);
       setActiveTools([]);
-      // Optimistic: show the new chat in the list right away
+      setSiteName(newSession.websiteName || "");
+      setSiteUrl(newSession.websiteUrl || "");
+      setSiteLogoUrl(newSession.websiteLogoUrl || "");
+      setInstructions(newSession.additionalInstructions || "");
+      setSelectedMcpId(newSession.mcpConnectionId || "auto");
+      setNewChatModalOpen(false);
+      setContextDrawerOpen(false);
+
       setSessions((prev) => [
         {
           id: newSession.id,
-          preview: "New chat",
+          preview: newSession.websiteName ? `Website: ${newSession.websiteName}` : "New chat",
+          websiteName: newSession.websiteName || null,
+          websiteUrl: newSession.websiteUrl || null,
+          websiteLogoUrl: newSession.websiteLogoUrl || null,
+          additionalInstructions: newSession.additionalInstructions || null,
+          mcpConnectionId: newSession.mcpConnectionId || null,
           messageCount: 0,
           updatedAt: newSession.updatedAt,
           createdAt: newSession.createdAt,
@@ -339,7 +472,13 @@ function QuasarMcpContent() {
         ...prev,
       ]);
       loadSessions();
-    } catch {}
+    } catch (err) {
+      alert(`Failed to create chat: ${err instanceof Error ? err.message : "Unknown error"}`);
+    }
+  };
+
+  const handleNewChat = async () => {
+    openNewChatModal();
   };
 
   const handleSelectSession = async (sessionId: string) => {
@@ -347,6 +486,11 @@ function QuasarMcpContent() {
       const { session: loaded } = await keywordMcpApi.getSessionById(sessionId);
       setSession(loaded);
       setMessages(loaded.messages || []);
+      setSiteName(loaded.websiteName || "");
+      setSiteUrl(loaded.websiteUrl || "");
+      setSiteLogoUrl(loaded.websiteLogoUrl || "");
+      setInstructions(loaded.additionalInstructions || "");
+      setSelectedMcpId(loaded.mcpConnectionId || "auto");
       setIsThinking(false);
       setActiveTools([]);
     } catch {}
@@ -396,17 +540,25 @@ function QuasarMcpContent() {
     <div className="-mx-4 -my-8 flex h-[calc(100vh-64px-5px)] flex-col overflow-hidden lg:-mx-9">
 
       {/* Header Bar */}
-      <div className="flex items-center justify-between border-b border-slate-200 bg-white/80 px-4 py-3 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/80">
+      <div className="flex items-center justify-between border-b border-slate-200/90 bg-white/80 px-4 py-3 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/80">
         <div className="flex items-center gap-3">
-          <div className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg">
+          <div className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-fuchsia-600 via-purple-600 to-indigo-600 text-white shadow-[0_4px_14px_rgba(217,70,239,0.35)]">
             <Server className="size-5" />
           </div>
           <div>
-            <h1 className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
-              Quasar MCP
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white">
+                Quasar MCP
+              </h1>
+              {siteName && (
+                <span className="hidden items-center gap-1 rounded-full border border-fuchsia-200/80 bg-fuchsia-50/80 px-2 py-0.5 text-[10px] font-bold text-fuchsia-700 dark:border-fuchsia-500/20 dark:bg-fuchsia-950/40 dark:text-fuchsia-300 sm:inline-flex">
+                  <Globe className="size-2.5" />
+                  {siteName}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              AI SEO Agent Server
+              AI SEO Agent Server & Workspace
             </p>
           </div>
         </div>
@@ -463,7 +615,7 @@ function QuasarMcpContent() {
               </span>
             </button>
           )}
-          <Button variant="outline" size="sm" onClick={handleNewChat} className="gap-1.5 text-xs">
+          <Button variant="outline" size="sm" onClick={handleNewChat} className="gap-1.5 text-xs font-semibold">
             <Plus className="size-3.5" />
             New Chat
           </Button>
@@ -477,15 +629,15 @@ function QuasarMcpContent() {
         <div className="hidden w-[340px] shrink-0 flex-col border-r border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50 md:flex min-h-0">
 
           {/* New Chat button at top of sidebar */}
-          <div className="border-b border-slate-200 p-3 dark:border-slate-800">
+          <div className="border-b border-slate-200/90 p-3 dark:border-white/10">
             <Button
               onClick={handleNewChat}
               variant="outline"
-              className="w-full gap-2"
+              className="w-full gap-2 border-fuchsia-300/60 bg-gradient-to-r from-fuchsia-50/50 to-purple-50/30 text-xs font-bold text-fuchsia-900 transition hover:border-fuchsia-400 hover:bg-fuchsia-100/60 dark:border-fuchsia-500/20 dark:bg-fuchsia-950/20 dark:text-fuchsia-300"
               size="sm"
             >
-              <Plus className="size-4" />
-              New Chat
+              <Plus className="size-4 text-fuchsia-600 dark:text-fuchsia-400" />
+              New Website Chat
             </Button>
           </div>
 
@@ -525,17 +677,28 @@ function QuasarMcpContent() {
                   <div
                     key={s.id}
                     onClick={() => handleSelectSession(s.id)}
-                    className={`group cursor-pointer rounded-lg border p-2.5 transition-all ${
+                    className={`group cursor-pointer rounded-xl border p-2.5 transition-all ${
                       session?.id === s.id
-                        ? "border-blue-300 bg-blue-50/50 dark:border-blue-700 dark:bg-blue-950/30"
-                        : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
+                        ? "border-fuchsia-300 bg-gradient-to-r from-fuchsia-50/70 to-purple-50/30 shadow-xs dark:border-fuchsia-500/30 dark:bg-fuchsia-950/20"
+                        : "border-slate-200/80 bg-white hover:border-slate-300 hover:shadow-2xs dark:border-white/10 dark:bg-slate-900 dark:hover:border-white/20"
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <MessageSquare className="size-3.5 shrink-0 text-slate-400" />
-                      <p className="flex-1 truncate text-xs font-medium text-slate-700 dark:text-slate-300">
-                        {s.preview}
-                      </p>
+                      {s.websiteLogoUrl ? (
+                        <img src={s.websiteLogoUrl} alt="" className="size-4 shrink-0 rounded object-contain" />
+                      ) : (
+                        <MessageSquare className="size-3.5 shrink-0 text-slate-400" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        {s.websiteName && (
+                          <span className="block truncate text-[10px] font-bold text-fuchsia-600 dark:text-fuchsia-400">
+                            {s.websiteName}
+                          </span>
+                        )}
+                        <p className="truncate text-xs font-medium text-slate-700 dark:text-slate-300">
+                          {s.preview}
+                        </p>
+                      </div>
                       <button
                         onClick={(e) => handleDeleteSession(s.id, e)}
                         className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
@@ -572,8 +735,222 @@ function QuasarMcpContent() {
         {/* ─── RIGHT: Chat ─── */}
         <div className="flex flex-1 flex-col overflow-hidden min-h-0">
 
+          {/* Website Target Banner & Config Bar on Top */}
+          <div className="border-b border-slate-200/90 bg-white/90 px-4 py-2.5 backdrop-blur-md dark:border-white/10 dark:bg-slate-900/90">
+            <div className="mx-auto flex max-w-4xl items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="relative size-8 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-slate-800">
+                  {siteLogoUrl ? (
+                    <img src={siteLogoUrl} alt={siteName || "Logo"} className="size-full object-contain" />
+                  ) : (
+                    <div className="grid size-full place-items-center text-xs font-bold text-slate-500">
+                      {siteName ? siteName.charAt(0).toUpperCase() : <Globe className="size-4 text-slate-400" />}
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="truncate text-xs font-bold text-slate-900 dark:text-white">
+                      {siteName || "No website specified"}
+                    </span>
+                    {siteUrl && (
+                      <span className="hidden sm:inline-block truncate text-[11px] text-slate-400">
+                        ({siteUrl.replace(/^https?:\/\//, "")})
+                      </span>
+                    )}
+                    {selectedMcpId && selectedMcpId !== "auto" && (
+                      <span className="hidden md:inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.2 text-[9px] font-bold text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-950/40 dark:text-emerald-300">
+                        <Plug className="size-2.5" />
+                        {mcpConnections.find((c) => c.id === selectedMcpId)?.name || "Custom MCP"}
+                      </span>
+                    )}
+                  </div>
+                  <p className="truncate text-[10px] text-slate-500 dark:text-slate-400">
+                    {instructions
+                      ? `Custom instructions: "${instructions.slice(0, 45)}${instructions.length > 45 ? "..." : ""}"`
+                      : "Targeted chat mode for this website"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                {contextSaved && (
+                  <span className="hidden items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 sm:inline-flex">
+                    <Check className="size-3.5" /> Saved!
+                  </span>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setContextDrawerOpen((prev) => !prev)}
+                  className={`gap-1.5 text-xs font-semibold ${
+                    contextDrawerOpen
+                      ? "border-fuchsia-500/40 bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-950/40 dark:text-fuchsia-300"
+                      : "border-slate-200 dark:border-white/10"
+                  }`}
+                >
+                  <Settings className="size-3.5" />
+                  <span>Configure Site</span>
+                  <ChevronDown className={`size-3 transition-transform ${contextDrawerOpen ? "rotate-180" : ""}`} />
+                </Button>
+              </div>
+            </div>
+
+            {/* Expandable Configuration Drawer */}
+            {contextDrawerOpen && (
+              <div className="mx-auto mt-3 max-w-4xl rounded-2xl border border-fuchsia-200/80 bg-gradient-to-b from-fuchsia-50/40 to-white/90 p-4 shadow-sm dark:border-fuchsia-500/20 dark:from-slate-900/90 dark:to-slate-900">
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="size-4 text-fuchsia-600 dark:text-fuchsia-400" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                      Target Website Settings for this Chat
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setContextDrawerOpen(false)}
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  >
+                    <X className="size-4" />
+                  </button>
+                </div>
+
+                {/* Auto-fill buttons from saved brandings / WP sites */}
+                {(brandings.length > 0 || wpSites.length > 0) && (
+                  <div className="mb-3 flex flex-wrap items-center gap-1.5 border-b border-slate-200/60 pb-3 dark:border-white/5">
+                    <span className="text-[11px] font-semibold text-slate-500">Auto-fill from:</span>
+                    {brandings.map((b) => (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => handleSelectBrandingPreset(b)}
+                        className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700 transition hover:border-fuchsia-400 hover:text-fuchsia-600 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300"
+                      >
+                        <Building2 className="size-3 text-fuchsia-500" />
+                        {b.companyName}
+                      </button>
+                    ))}
+                    {wpSites.map((w) => (
+                      <button
+                        key={w.id}
+                        type="button"
+                        onClick={() => handleSelectWpSitePreset(w)}
+                        className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700 transition hover:border-blue-400 hover:text-blue-600 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300"
+                      >
+                        <Globe className="size-3 text-blue-500" />
+                        {w.siteName || w.siteUrl.replace(/^https?:\/\//, "")}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                      Website Name
+                    </label>
+                    <Input
+                      placeholder="e.g. Acme Studio"
+                      value={siteName}
+                      onChange={(e) => setSiteName(e.target.value)}
+                      className="h-8 text-xs bg-white dark:bg-slate-800"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                      Website URL
+                    </label>
+                    <Input
+                      placeholder="https://example.com"
+                      value={siteUrl}
+                      onChange={(e) => setSiteUrl(e.target.value)}
+                      className="h-8 text-xs bg-white dark:bg-slate-800"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                      Website Logo (URL or Upload)
+                    </label>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="https://example.com/logo.png"
+                        value={siteLogoUrl}
+                        onChange={(e) => setSiteLogoUrl(e.target.value)}
+                        className="h-8 flex-1 text-xs bg-white dark:bg-slate-800"
+                      />
+                      <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleLogoUpload}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => logoInputRef.current?.click()}
+                        disabled={isUploadingLogo}
+                        className="h-8 px-2 text-xs"
+                      >
+                        {isUploadingLogo ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                      Assigned MCP Server
+                    </label>
+                    <select
+                      value={selectedMcpId}
+                      onChange={(e) => setSelectedMcpId(e.target.value)}
+                      className="flex h-8 w-full rounded-md border border-input bg-white px-2.5 text-xs text-slate-900 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:bg-slate-800 dark:text-white"
+                    >
+                      <option value="auto">Auto (Default / First Enabled MCP)</option>
+                      {mcpConnections.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} {c.enabled ? "(Enabled)" : "(Disabled)"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-3">
+                  <label className="mb-1 block text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                    Additional Instructions for this Website (Passed to AI on every message)
+                  </label>
+                  <Textarea
+                    placeholder="e.g. Always write in British English, tone should be friendly and authoritative, focus on local SEO in Manchester, avoid mentioning competitor BrandX..."
+                    value={instructions}
+                    onChange={(e) => setInstructions(e.target.value)}
+                    rows={2}
+                    className="min-h-[56px] text-xs bg-white dark:bg-slate-800"
+                  />
+                </div>
+
+                <div className="mt-3 flex items-center justify-end gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleSaveContext}
+                    disabled={isSavingContext}
+                    className="gap-1.5 h-8 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 text-xs font-bold text-white shadow-sm hover:opacity-95"
+                  >
+                    {isSavingContext ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+                    Save Website Settings
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-6 min-h-0">
+          <div className="flex-1 overflow-y-auto px-4 py-6 min-h-0 bg-slate-50/30 dark:bg-slate-950/30">
             <div className="mx-auto max-w-3xl space-y-4">
 
               {/* Loading skeleton when session is not loaded yet */}
@@ -597,32 +974,36 @@ function QuasarMcpContent() {
                 </div>
               ) : messages.length === 0 ? (
                 <div className="py-12 text-center">
-                  <div className="mx-auto mb-4 grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-xl">
-                    <Bot className="size-8" />
+                  <div className="mx-auto mb-4 grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-fuchsia-600 via-purple-600 to-indigo-600 text-white shadow-xl shadow-fuchsia-500/20">
+                    {siteLogoUrl ? (
+                      <img src={siteLogoUrl} alt={siteName || "Logo"} className="size-10 rounded-xl object-contain" />
+                    ) : (
+                      <Bot className="size-8" />
+                    )}
                   </div>
-                  <h2 className="mb-2 text-xl font-bold text-slate-900 dark:text-white">
-                    Quasar MCP Server
+                  <h2 className="mb-1 text-xl font-bold text-slate-900 dark:text-white">
+                    {siteName ? `${siteName} — AI Agent` : "Quasar MCP Server"}
                   </h2>
                   <p className="mx-auto mb-6 max-w-md text-sm text-slate-500 dark:text-slate-400">
-                    A real AI agent that can search the web, read your branding,
-                    research keywords, and generate PDF/CSV reports. Just tell it
-                    what you need.
+                    {siteUrl
+                      ? `Dedicated agent targeting ${siteUrl}. Search keywords, optimize meta tags, generate articles, and run SEO audits specifically for this website.`
+                      : "A real AI agent that can search the web, read your branding, research keywords, and generate PDF/CSV reports. Just tell it what you need."}
                   </p>
 
                   <div className="mx-auto max-w-lg space-y-2">
                     <p className="mb-2 text-xs font-semibold uppercase text-slate-400">Try these</p>
                     {[
-                      "Find keywords for my website",
-                      "Research keywords for AI web development",
-                      "Search keywords for dentist in Portland",
-                      "Find keywords for my company and download as PDF",
+                      siteName ? `Find top keywords for ${siteName}` : "Find keywords for my website",
+                      siteName ? `Analyze SEO structure for ${siteName}` : "Research keywords for AI web development",
+                      siteUrl ? `Check search console and audit ${siteUrl}` : "Search keywords for dentist in Portland",
+                      "Generate comprehensive keyword strategy report as PDF",
                     ].map((cmd) => (
                       <button
                         key={cmd}
                         onClick={() => setInput(cmd)}
-                        className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-left text-sm text-slate-600 transition-all hover:border-blue-300 hover:bg-blue-50/50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-blue-700 dark:hover:bg-blue-950/30"
+                        className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-left text-sm text-slate-600 transition-all hover:border-fuchsia-300 hover:bg-fuchsia-50/50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-fuchsia-700 dark:hover:bg-fuchsia-950/30"
                       >
-                        <Terminal className="size-4 text-blue-500" />
+                        <Terminal className="size-4 text-fuchsia-500" />
                         {cmd}
                         <ChevronRight className="ml-auto size-3.5 text-slate-300" />
                       </button>
@@ -638,13 +1019,13 @@ function QuasarMcpContent() {
 
               {/* Thinking indicator */}
               {isThinking && (
-                <div className="flex gap-3">
-                  <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                    <Bot className="size-4" />
+                <div className="flex gap-3.5">
+                  <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-fuchsia-600 via-purple-600 to-indigo-600 text-white shadow-[0_4px_12px_rgba(217,70,239,0.3)]">
+                    <Bot className="size-4.5" />
                   </div>
-                  <div className="flex items-center gap-2 rounded-2xl border border-slate-100 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
-                    <Loader2 className="size-4 animate-spin text-blue-500" />
-                    <span className="text-sm text-slate-500">
+                  <div className="flex items-center gap-2.5 rounded-2xl rounded-tl-xs border border-slate-200/90 bg-white px-5 py-3.5 shadow-sm dark:border-white/10 dark:bg-slate-900/90">
+                    <Loader2 className="size-4 animate-spin text-fuchsia-600 dark:text-fuchsia-400" />
+                    <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
                       {activeTools.length > 0
                         ? `Using ${activeTools[activeTools.length - 1].name}...`
                         : "Thinking..."}
@@ -657,11 +1038,11 @@ function QuasarMcpContent() {
             </div>
           </div>
 
-          {/* Input — Devin-style chat bar */}
-          <div className="border-t border-slate-200 bg-white/80 px-4 py-3 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/80">
+          {/* Input — modern refined chat bar */}
+          <div className="border-t border-slate-200/90 bg-white/90 px-4 py-3.5 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/90">
             <div className="mx-auto max-w-3xl">
               {/* Rounded input card */}
-              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm transition-colors focus-within:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:focus-within:border-slate-500">
+              <div className="rounded-2xl border border-slate-200/90 bg-white shadow-xs transition-all focus-within:border-fuchsia-400 focus-within:ring-2 focus-within:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900/90 dark:focus-within:border-fuchsia-500">
                 {/* Web Builder mode badge */}
                 {webBuilderMode && (
                   <div className="flex items-center justify-between px-4 pt-3">
@@ -684,7 +1065,13 @@ function QuasarMcpContent() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={webBuilderMode ? "Ask about your website... e.g. 'check my WordPress site' or 'rebuild my landing page'" : "Tell the agent what you need... e.g. 'find keywords for my website'"}
+                    placeholder={
+                      webBuilderMode
+                        ? "Ask about your website... e.g. 'check my WordPress site' or 'rebuild my landing page'"
+                        : siteName
+                        ? `Tell the agent what you need for ${siteName}... e.g. 'analyze top keywords' or 'audit our home page'`
+                        : "Tell the agent what you need... e.g. 'find keywords for my website'"
+                    }
                     disabled={isThinking}
                     className="min-h-[44px] max-h-[120px] resize-none border-0 bg-transparent px-2 py-2 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 dark:text-white"
                     rows={1}
@@ -692,66 +1079,14 @@ function QuasarMcpContent() {
                 </div>
                 {/* Bottom toolbar */}
                 <div className="flex items-center justify-between px-3 pb-2.5 pt-1">
-                  {/* Left: upload buttons */}
-                  <div className="flex items-center gap-1">
-                    {/* Attach file button hidden for now — will re-enable later
-                    <button
-                      type="button"
-                      title="Attach file"
-                      className="grid size-8 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
-                    >
-                      <Paperclip className="size-4" />
-                    </button>
-                    */}
-                    <div className="relative" ref={toolsMenuRef}>
-                      {/* "Add tool" plus button hidden for now — will re-enable later
-                      <button
-                        type="button"
-                        title="Add tool"
-                        onClick={() => setToolsOpen((v) => !v)}
-                        className={`grid size-8 place-items-center rounded-lg transition-colors ${
-                          toolsOpen
-                            ? "bg-blue-100 text-blue-600 dark:bg-blue-400/20 dark:text-blue-400"
-                            : "text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
-                        }`}
-                      >
-                        <Plus className={`size-4 transition-transform ${toolsOpen ? "rotate-45" : ""}`} />
-                      </button>
-                      */}
-                      {toolsOpen && (
-                        <div className="absolute bottom-full left-0 z-50 mb-2 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.14)] dark:border-white/10 dark:bg-slate-900 dark:shadow-[0_18px_50px_rgba(0,0,0,0.5)]">
-                          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-white/5">
-                            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Tools</span>
-                            <button
-                              type="button"
-                              onClick={() => setToolsOpen(false)}
-                              className="grid size-5 place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
-                            >
-                              <X className="size-3.5" />
-                            </button>
-                          </div>
-                          <div className="max-h-72 overflow-y-auto p-1.5">
-                            <button
-                              type="button"
-                              onClick={() => { setWebBuilderMode(true); setToolsOpen(false); }}
-                              className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-400/10 dark:hover:to-purple-400/10"
-                            >
-                              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-sm transition-transform group-hover:scale-105">
-                                <Globe className="size-4" />
-                              </span>
-                              <span className="min-w-0 flex-1">
-                                <span className="block text-sm font-semibold text-slate-800 dark:text-slate-100">Web Builder</span>
-                                <span className="block truncate text-[11px] text-slate-500 dark:text-slate-400">Build & deploy websites with AI</span>
-                              </span>
-                              <ChevronRight className="size-4 shrink-0 text-slate-300 transition-colors group-hover:text-blue-500 dark:text-slate-600" />
-                            </button>
-                          </div>
-                          <div className="border-t border-slate-100 px-4 py-2 text-center text-[10px] text-slate-400 dark:border-white/5 dark:text-slate-500">
-                            More tools coming soon
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                  {/* Left: Quick site badge hint */}
+                  <div className="flex items-center gap-1.5">
+                    {siteName && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:bg-white/5 dark:text-slate-300">
+                        <Globe className="size-3 text-fuchsia-500" />
+                        Target: {siteName}
+                      </span>
+                    )}
                   </div>
                   {/* Right: model selector + send button */}
                   <div className="flex items-center gap-2">
@@ -766,7 +1101,7 @@ function QuasarMcpContent() {
                       type="button"
                       onClick={handleSend}
                       disabled={!input.trim() || isThinking}
-                      className="grid size-8 place-items-center rounded-lg bg-slate-900 text-white transition-colors hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-30 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                      className="grid size-8 place-items-center rounded-lg bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white shadow-xs transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-30"
                     >
                       {isThinking ? <Loader2 className="size-4 animate-spin" /> : <ArrowUp className="size-4" />}
                     </button>
@@ -782,6 +1117,167 @@ function QuasarMcpContent() {
 
         </div>
       </div>
+
+      {/* New Chat with Specific Website Modal */}
+      {newChatModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
+              <div className="flex items-center gap-2">
+                <div className="grid size-8 place-items-center rounded-lg bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 text-white">
+                  <Globe className="size-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Start Chat for Specific Website</h3>
+                  <p className="text-[11px] text-slate-500">Configure which website and instructions this chat will target</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setNewChatModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {/* Quick Pick from Existing Brandings / WP Sites */}
+            {(brandings.length > 0 || wpSites.length > 0) && (
+              <div className="my-3.5 rounded-xl border border-fuchsia-100 bg-fuchsia-50/50 p-3 dark:border-fuchsia-500/10 dark:bg-fuchsia-950/20">
+                <span className="block text-[11px] font-bold text-fuchsia-900 dark:text-fuchsia-300 mb-2">
+                  Quick Select Existing Website:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {brandings.map((b) => (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => {
+                        setNewSiteName(b.companyName);
+                        if (b.website) setNewSiteUrl(b.website);
+                        if (b.logoUrl) {
+                          const fullLogo = b.logoUrl.startsWith("http")
+                            ? b.logoUrl
+                            : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}${b.logoUrl}`;
+                          setNewSiteLogoUrl(fullLogo);
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 transition hover:border-fuchsia-400 hover:text-fuchsia-600 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200"
+                    >
+                      <Building2 className="size-3 text-fuchsia-500" />
+                      {b.companyName}
+                    </button>
+                  ))}
+                  {wpSites.map((w) => (
+                    <button
+                      key={w.id}
+                      type="button"
+                      onClick={() => {
+                        setNewSiteName(w.siteName || new URL(w.siteUrl).hostname);
+                        setNewSiteUrl(w.siteUrl);
+                      }}
+                      className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 transition hover:border-blue-400 hover:text-blue-600 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200"
+                    >
+                      <Globe className="size-3 text-blue-500" />
+                      {w.siteName || w.siteUrl.replace(/^https?:\/\//, "")}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-3 mt-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Website Name
+                  </label>
+                  <Input
+                    placeholder="e.g. Acme Studio"
+                    value={newSiteName}
+                    onChange={(e) => setNewSiteName(e.target.value)}
+                    className="h-8.5 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Website URL
+                  </label>
+                  <Input
+                    placeholder="https://example.com"
+                    value={newSiteUrl}
+                    onChange={(e) => setNewSiteUrl(e.target.value)}
+                    className="h-8.5 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Website Logo URL
+                  </label>
+                  <Input
+                    placeholder="https://example.com/logo.png"
+                    value={newSiteLogoUrl}
+                    onChange={(e) => setNewSiteLogoUrl(e.target.value)}
+                    className="h-8.5 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Assigned MCP Server
+                  </label>
+                  <select
+                    value={newMcpId}
+                    onChange={(e) => setNewMcpId(e.target.value)}
+                    className="flex h-8.5 w-full rounded-md border border-input bg-white px-2.5 text-xs text-slate-900 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:bg-slate-800 dark:text-white"
+                  >
+                    <option value="auto">Auto (Default / First Enabled MCP)</option>
+                    {mcpConnections.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} {c.enabled ? "(Enabled)" : "(Disabled)"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Additional Instructions for AI (Website-Specific)
+                </label>
+                <Textarea
+                  placeholder="e.g. Always write in UK English, tone is playful and energetic, prioritize ecommerce conversion keywords, focus on our brand voice..."
+                  value={newInstructions}
+                  onChange={(e) => setNewInstructions(e.target.value)}
+                  rows={3}
+                  className="text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="mt-5 flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-white/5">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setNewChatModalOpen(false)}
+                className="text-xs"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleCreateChatWithSite}
+                className="gap-1.5 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 text-xs font-bold text-white shadow-sm hover:opacity-95"
+              >
+                <Plus className="size-3.5" />
+                Start Chat
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -793,17 +1289,17 @@ function ToolCallItem({ tool, compact }: { tool: McpToolCall; compact?: boolean 
   const label = getToolLabel(tool.name, tool.args);
 
   return (
-    <div className={`flex items-start gap-2.5 rounded-lg px-2.5 py-2 ${compact ? "bg-white dark:bg-slate-800" : "bg-blue-50/50 dark:bg-blue-950/30"}`}>
+    <div className={`flex items-start gap-2.5 rounded-xl px-3 py-2 ${compact ? "bg-white shadow-2xs dark:bg-slate-800" : "border border-blue-200/60 bg-blue-50/50 dark:border-blue-900/40 dark:bg-blue-950/30"}`}>
       <div className="mt-0.5 shrink-0">
         <Icon className="size-3.5 text-blue-500" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-medium text-slate-700 dark:text-slate-300">{label}</p>
+        <p className="truncate text-xs font-semibold text-slate-700 dark:text-slate-300">{label}</p>
         {tool.result && compact && (
-          <p className="mt-0.5 truncate text-[10px] text-slate-400">{tool.result}</p>
+          <p className="mt-0.5 truncate text-[10px] text-slate-400 font-mono">{tool.result}</p>
         )}
       </div>
-      <CheckCircle2 className="size-3 shrink-0 text-emerald-500" />
+      <CheckCircle2 className="size-3.5 shrink-0 text-emerald-500" />
     </div>
   );
 }
@@ -883,42 +1379,42 @@ function ChatMessageItem({ message, onQuickReply }: { message: McpChatMessage; o
   }
 
   return (
-    <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}>
-      <div className={`grid size-8 shrink-0 place-items-center rounded-lg ${
+    <div className={`flex gap-3.5 transition-all duration-200 ${isUser ? "flex-row-reverse" : ""}`}>
+      <div className={`grid size-9 shrink-0 place-items-center rounded-xl shadow-sm ${
         isUser
-          ? "bg-gradient-to-br from-slate-600 to-slate-800 text-white"
-          : "bg-gradient-to-br from-blue-500 to-purple-600 text-white"
+          ? "bg-gradient-to-br from-slate-700 to-slate-900 text-white dark:from-slate-600 dark:to-slate-800"
+          : "bg-gradient-to-br from-fuchsia-600 via-purple-600 to-indigo-600 text-white shadow-[0_4px_12px_rgba(217,70,239,0.3)]"
       }`}>
-        {isUser ? <User className="size-4" /> : <Bot className="size-4" />}
+        {isUser ? <User className="size-4" /> : <Bot className="size-4.5" />}
       </div>
 
-      <div className={`flex max-w-[80%] flex-col ${isUser ? "items-end" : "items-start"}`}>
+      <div className={`flex max-w-[85%] flex-col ${isUser ? "items-end" : "items-start"}`}>
         {/* Tool calls inline */}
         {!isUser && message.toolCalls && message.toolCalls.length > 0 && (
-          <div className="mb-2 w-full space-y-1">
+          <div className="mb-2.5 w-full space-y-1.5">
             {message.toolCalls.map((tc, i) => (
-              <div key={i} className="flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-1.5 dark:bg-slate-800">
+              <div key={i} className="flex items-center gap-2.5 rounded-xl border border-blue-200/70 bg-gradient-to-r from-blue-50/80 to-purple-50/40 px-3 py-1.5 shadow-xs dark:border-blue-500/20 dark:from-blue-950/40 dark:to-purple-950/20">
                 {(() => {
                   const Icon = TOOL_ICONS[tc.name] || Wrench;
-                  return <Icon className="size-3.5 text-blue-500" />;
+                  return <Icon className="size-3.5 text-blue-600 dark:text-blue-400" />;
                 })()}
-                <span className="text-xs text-slate-600 dark:text-slate-400">
+                <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   {getToolLabel(tc.name, tc.args)}
                 </span>
-                <CheckCircle2 className="ml-auto size-3 text-emerald-500" />
+                <CheckCircle2 className="ml-auto size-3.5 text-emerald-500" />
               </div>
             ))}
           </div>
         )}
 
-        {/* Message text */}
-        <div className={`rounded-2xl px-4 py-2.5 text-sm ${
+        {/* Message text bubble with clean modern stack styling */}
+        <div className={`rounded-2xl px-5 py-3.5 text-sm leading-relaxed shadow-sm transition-all ${
           isUser
-            ? "bg-slate-800 text-white dark:bg-slate-700"
-            : "bg-white text-slate-700 shadow-sm border border-slate-100 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-800"
+            ? "rounded-tr-xs bg-gradient-to-r from-slate-900 to-slate-800 text-white shadow-md dark:from-slate-800 dark:to-slate-700"
+            : "rounded-tl-xs border border-slate-200/90 bg-white text-slate-800 shadow-[0_2px_10px_rgba(15,23,42,0.04)] dark:border-white/10 dark:bg-slate-900/90 dark:text-slate-200"
         }`}>
           {isUser ? (
-            <p className="whitespace-pre-wrap">{message.content}</p>
+            <p className="whitespace-pre-wrap font-normal">{message.content}</p>
           ) : (
             <div className="prose-chat">
               <ReactMarkdown
@@ -934,14 +1430,14 @@ function ChatMessageItem({ message, onQuickReply }: { message: McpChatMessage; o
                   li: ({ children }) => <li className="leading-relaxed">{children}</li>,
                   strong: ({ children }) => <strong className="font-bold text-slate-900 dark:text-white">{children}</strong>,
                   em: ({ children }) => <em className="italic text-slate-600 dark:text-slate-400">{children}</em>,
-                  code: ({ children }) => <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-mono text-blue-600 dark:bg-slate-800 dark:text-blue-400">{children}</code>,
-                  pre: ({ children }) => <pre className="mb-2 overflow-x-auto rounded-lg bg-slate-100 p-3 text-xs dark:bg-slate-800">{children}</pre>,
-                  a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline hover:text-blue-700 dark:text-blue-400">{children}</a>,
-                  table: ({ children }) => <table className="mb-2 w-full border-collapse text-xs">{children}</table>,
-                  th: ({ children }) => <th className="border border-slate-200 bg-slate-50 px-2 py-1 text-left font-semibold dark:border-slate-700 dark:bg-slate-800">{children}</th>,
-                  td: ({ children }) => <td className="border border-slate-200 px-2 py-1 dark:border-slate-700">{children}</td>,
-                  blockquote: ({ children }) => <blockquote className="mb-2 border-l-2 border-blue-400 pl-3 italic text-slate-600 dark:text-slate-400">{children}</blockquote>,
-                  hr: () => <hr className="my-3 border-slate-200 dark:border-slate-700" />,
+                  code: ({ children }) => <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-mono text-fuchsia-600 dark:bg-slate-800 dark:text-fuchsia-400">{children}</code>,
+                  pre: ({ children }) => <pre className="mb-2 overflow-x-auto rounded-xl bg-slate-950 p-3.5 text-xs text-slate-100 shadow-xs dark:bg-black">{children}</pre>,
+                  a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-semibold hover:text-blue-700 dark:text-blue-400">{children}</a>,
+                  table: ({ children }) => <table className="mb-2 w-full border-collapse text-xs overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">{children}</table>,
+                  th: ({ children }) => <th className="border border-slate-200 bg-slate-50 px-3 py-1.5 text-left font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-800/80 dark:text-slate-300">{children}</th>,
+                  td: ({ children }) => <td className="border border-slate-200 px-3 py-1.5 text-slate-600 dark:border-slate-800 dark:text-slate-300">{children}</td>,
+                  blockquote: ({ children }) => <blockquote className="my-2 border-l-3 border-fuchsia-500 pl-3.5 italic text-slate-600 dark:text-slate-400">{children}</blockquote>,
+                  hr: () => <hr className="my-3 border-slate-200 dark:border-slate-800" />,
                 }}
               >
                 {message.content}
@@ -952,7 +1448,7 @@ function ChatMessageItem({ message, onQuickReply }: { message: McpChatMessage; o
 
         {/* Download files */}
         {!isUser && message.files && message.files.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-2.5 flex flex-wrap gap-2">
             {message.files.map((file) => (
               <FileDownloadButton key={file.fileId} file={file} />
             ))}
@@ -961,22 +1457,22 @@ function ChatMessageItem({ message, onQuickReply }: { message: McpChatMessage; o
 
         {/* Quick reply buttons */}
         {!isUser && quickReplies.length > 0 && onQuickReply && (
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-2.5 flex flex-wrap gap-2">
             {quickReplies.map((qr, i) => (
               <button
                 key={i}
                 onClick={() => onQuickReply(qr.text)}
-                className="group inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3.5 py-1.5 text-xs font-medium text-blue-700 transition-all hover:border-blue-400 hover:bg-blue-100 hover:shadow-sm dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300 dark:hover:bg-blue-900"
+                className="group inline-flex items-center gap-1.5 rounded-full border border-fuchsia-200/80 bg-fuchsia-50/80 px-3.5 py-1.5 text-xs font-semibold text-fuchsia-800 shadow-2xs transition-all hover:border-fuchsia-400 hover:bg-fuchsia-100 hover:shadow-sm dark:border-fuchsia-800 dark:bg-fuchsia-950/60 dark:text-fuchsia-300 dark:hover:bg-fuchsia-900"
               >
-                <Sparkles className="size-3 text-blue-500 transition-transform group-hover:scale-110" />
+                <Sparkles className="size-3 text-fuchsia-500 transition-transform group-hover:scale-110" />
                 {qr.label}
-                <ArrowUp className="size-3 text-blue-400 opacity-0 transition-opacity group-hover:opacity-100" />
+                <ArrowUp className="size-3 text-fuchsia-400 opacity-0 transition-opacity group-hover:opacity-100" />
               </button>
             ))}
           </div>
         )}
 
-        <span className="mt-1 px-1 text-[10px] text-slate-400">
+        <span className="mt-1 px-1 text-[10px] text-slate-400 dark:text-slate-500">
           {message.timestamp ? new Date(message.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
         </span>
       </div>
@@ -1006,14 +1502,14 @@ function FileDownloadButton({ file }: { file: McpFile }) {
     <button
       onClick={handleDownload}
       disabled={downloading}
-      className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-medium text-blue-700 transition-all hover:bg-blue-100 disabled:opacity-50 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-950/50"
+      className="flex items-center gap-2.5 rounded-xl border border-fuchsia-200/90 bg-gradient-to-r from-fuchsia-50/70 to-purple-50/40 px-4 py-2 text-sm font-medium text-fuchsia-900 shadow-2xs transition-all hover:bg-fuchsia-100 disabled:opacity-50 dark:border-fuchsia-500/20 dark:bg-fuchsia-950/30 dark:text-fuchsia-300 dark:hover:bg-fuchsia-950/60"
     >
-      <Icon className="size-4" />
-      <div>
-        <p className="text-xs font-bold">Download {file.fileType.toUpperCase()}</p>
-        <p className="text-[10px] text-blue-500">{file.fileName}</p>
+      <Icon className="size-4.5 text-fuchsia-600 dark:text-fuchsia-400" />
+      <div className="text-left">
+        <p className="text-xs font-bold leading-tight">Download {file.fileType.toUpperCase()}</p>
+        <p className="text-[10px] text-fuchsia-700/80 dark:text-fuchsia-400/80 max-w-48 truncate">{file.fileName}</p>
       </div>
-      {downloading ? <Loader2 className="ml-2 size-4 animate-spin" /> : <Download className="ml-2 size-4" />}
+      {downloading ? <Loader2 className="ml-2 size-4 animate-spin text-fuchsia-600" /> : <Download className="ml-2 size-4 text-fuchsia-600 dark:text-fuchsia-400" />}
     </button>
   );
 }

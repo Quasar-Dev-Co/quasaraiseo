@@ -49,6 +49,11 @@ export interface McpChatMessage {
 export interface McpSession {
   id: string;
   userId: string;
+  websiteName?: string | null;
+  websiteUrl?: string | null;
+  websiteLogoUrl?: string | null;
+  additionalInstructions?: string | null;
+  mcpConnectionId?: string | null;
   messages: McpChatMessage[];
   lastReport: Record<string, unknown> | null;
   createdAt: string;
@@ -58,9 +63,22 @@ export interface McpSession {
 export interface McpSessionPreview {
   id: string;
   preview: string;
+  websiteName?: string | null;
+  websiteUrl?: string | null;
+  websiteLogoUrl?: string | null;
+  additionalInstructions?: string | null;
+  mcpConnectionId?: string | null;
   messageCount: number;
   updatedAt: string;
   createdAt: string;
+}
+
+export interface SessionMetadataInput {
+  websiteName?: string;
+  websiteUrl?: string;
+  websiteLogoUrl?: string;
+  additionalInstructions?: string;
+  mcpConnectionId?: string | null;
 }
 
 export const keywordMcpApi = {
@@ -80,12 +98,23 @@ export const keywordMcpApi = {
     return resp.json();
   },
 
-  async createNewSession(): Promise<{ session: McpSession }> {
+  async createNewSession(meta?: SessionMetadataInput): Promise<{ session: McpSession }> {
     const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/session`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify(meta || {}),
     });
     if (!resp.ok) throw new Error(`Failed to create session: ${resp.status}`);
+    return resp.json();
+  },
+
+  async updateSession(sessionId: string, meta: SessionMetadataInput): Promise<{ session: McpSession }> {
+    const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/session/${sessionId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify(meta),
+    });
+    if (!resp.ok) throw new Error(`Failed to update session: ${resp.status}`);
     return resp.json();
   },
 
