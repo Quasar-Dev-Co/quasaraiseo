@@ -99,6 +99,23 @@ export function setStoredSessionSite(sessionId: string, meta: SessionMetadataInp
   } catch {}
 }
 
+export function getStoredSessionMessages(sessionId: string): McpChatMessage[] | null {
+  if (typeof window === "undefined" || !sessionId) return null;
+  try {
+    const raw = localStorage.getItem(`quasar_session_msgs_${sessionId}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredSessionMessages(sessionId: string, msgs: McpChatMessage[]) {
+  if (typeof window === "undefined" || !sessionId) return;
+  try {
+    localStorage.setItem(`quasar_session_msgs_${sessionId}`, JSON.stringify(msgs));
+  } catch {}
+}
+
 export const keywordMcpApi = {
   async getSession(): Promise<{ session: McpSession }> {
     const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/session`, {
@@ -107,15 +124,22 @@ export const keywordMcpApi = {
     if (!resp.ok) throw new Error(`Failed to get session: ${resp.status}`);
     const data = await resp.json();
     const stored = getStoredSessionSite(data.session?.id);
-    if (stored && data.session) {
+    const storedMsgs = getStoredSessionMessages(data.session?.id);
+    if (data.session) {
+      const serverMsgs = (data.session.messages as McpChatMessage[]) || [];
+      const effectiveMsgs = (serverMsgs.length > 0 || !storedMsgs) ? serverMsgs : storedMsgs;
       data.session = {
         ...data.session,
-        websiteName: data.session.websiteName || stored.websiteName || null,
-        websiteUrl: data.session.websiteUrl || stored.websiteUrl || null,
-        websiteLogoUrl: data.session.websiteLogoUrl || stored.websiteLogoUrl || null,
-        additionalInstructions: data.session.additionalInstructions || stored.additionalInstructions || null,
-        mcpConnectionId: data.session.mcpConnectionId || stored.mcpConnectionId || null,
+        websiteName: data.session.websiteName || stored?.websiteName || null,
+        websiteUrl: data.session.websiteUrl || stored?.websiteUrl || null,
+        websiteLogoUrl: data.session.websiteLogoUrl || stored?.websiteLogoUrl || null,
+        additionalInstructions: data.session.additionalInstructions || stored?.additionalInstructions || null,
+        mcpConnectionId: data.session.mcpConnectionId || stored?.mcpConnectionId || null,
+        messages: effectiveMsgs,
       };
+      if (effectiveMsgs.length > 0) {
+        setStoredSessionMessages(data.session.id, effectiveMsgs);
+      }
     }
     return data;
   },
@@ -238,15 +262,22 @@ export const keywordMcpApi = {
     if (!resp.ok) throw new Error(`Failed to get session: ${resp.status}`);
     const data = await resp.json();
     const stored = getStoredSessionSite(sessionId);
-    if (stored && data.session) {
+    const storedMsgs = getStoredSessionMessages(sessionId);
+    if (data.session) {
+      const serverMsgs = (data.session.messages as McpChatMessage[]) || [];
+      const effectiveMsgs = (serverMsgs.length > 0 || !storedMsgs) ? serverMsgs : storedMsgs;
       data.session = {
         ...data.session,
-        websiteName: data.session.websiteName || stored.websiteName || null,
-        websiteUrl: data.session.websiteUrl || stored.websiteUrl || null,
-        websiteLogoUrl: data.session.websiteLogoUrl || stored.websiteLogoUrl || null,
-        additionalInstructions: data.session.additionalInstructions || stored.additionalInstructions || null,
-        mcpConnectionId: data.session.mcpConnectionId || stored.mcpConnectionId || null,
+        websiteName: data.session.websiteName || stored?.websiteName || null,
+        websiteUrl: data.session.websiteUrl || stored?.websiteUrl || null,
+        websiteLogoUrl: data.session.websiteLogoUrl || stored?.websiteLogoUrl || null,
+        additionalInstructions: data.session.additionalInstructions || stored?.additionalInstructions || null,
+        mcpConnectionId: data.session.mcpConnectionId || stored?.mcpConnectionId || null,
+        messages: effectiveMsgs,
       };
+      if (effectiveMsgs.length > 0) {
+        setStoredSessionMessages(sessionId, effectiveMsgs);
+      }
     }
     return data;
   },

@@ -9,7 +9,7 @@ import {
   Plus, MessageSquare, Paperclip, ArrowUp, X, BarChart3,
   ShieldCheck, Wand2, Code2, Image, FilePlus, Edit3, Layout,
   Info, Eye, Calendar, Layers, FolderTree, GitBranch, Settings,
-  Plug, Building2, Upload, ChevronDown, Check,
+  Plug, Building2, Upload, ChevronDown, Check, ShieldAlert,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import {
   keywordMcpApi,
+  setStoredSessionMessages,
   type McpChatMessage,
   type McpSession,
   type McpToolCall,
@@ -168,6 +169,10 @@ function QuasarMcpContent() {
   const [contextDrawerOpen, setContextDrawerOpen] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
+  // Slash commands popup state
+  const [slashMenuOpen, setSlashMenuOpen] = useState(false);
+  const [selectedSlashIndex, setSelectedSlashIndex] = useState(0);
+
   // Sync state when active session changes
   useEffect(() => {
     if (session) {
@@ -244,17 +249,60 @@ function QuasarMcpContent() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isThinking, activeTools]);
 
-  // Close tools menu on outside click
-  useEffect(() => {
-    if (!toolsOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (toolsMenuRef.current && !toolsMenuRef.current.contains(e.target as Node)) {
-        setToolsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [toolsOpen]);
+  // Slash commands catalog
+  const slashCommands = [
+    {
+      cmd: "/compact",
+      label: "Compact Conversation",
+      desc: "Summarize chat history into a concise context block to reduce tokens",
+      icon: Sparkles,
+      color: "text-purple-500",
+      prompt: `Please compact and summarize our conversation so far. Retain all key decisions, identified target keywords, site details, and action items in a concise briefing summary so we can continue smoothly without losing context.`,
+    },
+    {
+      cmd: "/generate-post",
+      label: "Generate Blog Post",
+      desc: "Create full SEO-optimized publish-ready blog article",
+      icon: FilePlus,
+      color: "text-blue-500",
+      prompt: siteName
+        ? `Generate a comprehensive, SEO-optimized, publish-ready blog post for ${siteName} (${siteUrl || ""}). Include: Catchy title (max 60 chars), meta description (max 160 chars), URL slug, clean structured HTML body with <h2>, <h3>, <ul>, <ol>, <table>, FAQ block, call to action, and Article + FAQPage schema markup in JSON-LD. Output should be formatted and ready to push to WordPress.`
+        : `Generate a comprehensive, SEO-optimized, publish-ready blog post for this website. Include: Catchy title (max 60 chars), meta description (max 160 chars), URL slug, clean structured HTML body with <h2>, <h3>, <ul>, <ol>, <table>, FAQ block, call to action, and Article + FAQPage schema markup in JSON-LD. Output should be formatted and ready to push to WordPress.`,
+    },
+    {
+      cmd: "/generate-page",
+      label: "Generate Landing Page",
+      desc: "Build complete landing page with hero, features & FAQ",
+      icon: Layout,
+      color: "text-emerald-500",
+      prompt: siteName
+        ? `Generate a complete high-converting landing page structure and content for ${siteName} (${siteUrl || ""}). Include: Hero section with clear value proposition and CTA, Social proof/trust badges, Core services/features breakdown, Comparison or pricing table, Testimonials, Interactive FAQ section with schema markup, and Final conversion banner.`
+        : `Generate a complete high-converting landing page structure and content for this website. Include: Hero section with clear value proposition and CTA, Social proof/trust badges, Core services/features breakdown, Comparison or pricing table, Testimonials, Interactive FAQ section with schema markup, and Final conversion banner.`,
+    },
+    {
+      cmd: "/security-inspect",
+      label: "Security & SEO Inspection",
+      desc: "Audit headers, SSL, robots.txt, schema, and crawler safety",
+      icon: ShieldAlert,
+      color: "text-amber-500",
+      prompt: siteUrl
+        ? `Perform a comprehensive technical security and SEO audit on ${siteUrl}. Inspect: 1) HTTPS and SSL configuration, 2) Security response headers (CSP, HSTS, X-Frame-Options, Permissions-Policy), 3) Robots.txt rules and AI crawler access directives (GPTBot, ClaudeBot, PerplexityBot), 4) Canonical URL tag and indexability, 5) JSON-LD structured data schema validation, and 6) Provide actionable security & SEO hardening recommendations.`
+        : `Perform a comprehensive technical security and SEO audit on this website. Inspect: 1) HTTPS and SSL configuration, 2) Security response headers (CSP, HSTS, X-Frame-Options, Permissions-Policy), 3) Robots.txt rules and AI crawler access directives, 4) Canonical URL tag and indexability, 5) JSON-LD structured data schema validation, and 6) Provide actionable security & SEO hardening recommendations.`,
+    },
+  ];
+
+  const filteredSlashCommands = input.startsWith("/")
+    ? slashCommands.filter(
+        (c) =>
+          c.cmd.toLowerCase().includes(input.toLowerCase().trim()) ||
+          c.label.toLowerCase().includes(input.slice(1).toLowerCase().trim())
+      )
+    : [];
+
+  const handleSelectSlashCommand = (cmdObj: typeof slashCommands[0]) => {
+    setInput(cmdObj.prompt);
+    setSlashMenuOpen(false);
+  };
 
   // Optimistic sidebar update: bump the session to the top and set its
   // preview to the user's message instantly (no server round-trip wait).
@@ -288,7 +336,13 @@ function QuasarMcpContent() {
     if (!text || isThinking || !session) return;
 
     const userMsg: McpChatMessage = { role: "user", content: text, timestamp: Date.now() };
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev) => {
+      const next = [...prev, userMsg];
+      if (session?.id) {
+        setStoredSessionMessages(session.id, next);
+      }
+      return next;
+    });
     setInput("");
     setIsThinking(true);
     setActiveTools([]);
@@ -319,7 +373,13 @@ function QuasarMcpContent() {
         toolCalls: result.toolCalls,
         files: result.files,
       };
-      setMessages((prev) => [...prev, assistantMsg]);
+      setMessages((prev) => {
+        const next = [...prev, assistantMsg];
+        if (session?.id) {
+          setStoredSessionMessages(session.id, next);
+        }
+        return next;
+      });
       // Refresh session list
       loadSessions();
     } catch (err) {
@@ -335,6 +395,29 @@ function QuasarMcpContent() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (slashMenuOpen && filteredSlashCommands.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedSlashIndex((prev) => (prev + 1) % filteredSlashCommands.length);
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedSlashIndex((prev) => (prev - 1 + filteredSlashCommands.length) % filteredSlashCommands.length);
+        return;
+      }
+      if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault();
+        handleSelectSlashCommand(filteredSlashCommands[selectedSlashIndex] || filteredSlashCommands[0]);
+        return;
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setSlashMenuOpen(false);
+        return;
+      }
+    }
+
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -345,7 +428,13 @@ function QuasarMcpContent() {
   const handleQuickReply = useCallback(async (text: string) => {
     if (!text.trim() || isThinking || !session) return;
     const userMsg: McpChatMessage = { role: "user", content: text, timestamp: Date.now() };
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev) => {
+      const next = [...prev, userMsg];
+      if (session?.id) {
+        setStoredSessionMessages(session.id, next);
+      }
+      return next;
+    });
     setIsThinking(true);
     setActiveTools([]);
     bumpSessionPreview(session.id, text);
@@ -372,7 +461,13 @@ function QuasarMcpContent() {
         toolCalls: result.toolCalls,
         files: result.files,
       };
-      setMessages((prev) => [...prev, assistantMsg]);
+      setMessages((prev) => {
+        const next = [...prev, assistantMsg];
+        if (session?.id) {
+          setStoredSessionMessages(session.id, next);
+        }
+        return next;
+      });
       loadSessions();
     } catch (err) {
       setMessages((prev) => [...prev, {
@@ -543,6 +638,7 @@ function QuasarMcpContent() {
       setSelectedMcpId(loaded.mcpConnectionId || "auto");
       setIsThinking(false);
       setActiveTools([]);
+      setContextDrawerOpen(false);
     } catch {}
   };
 
@@ -670,9 +766,9 @@ function QuasarMcpContent() {
               </span>
             </button>
           )}
-          <Button variant="outline" size="sm" onClick={handleNewChat} className="gap-1.5 text-xs font-semibold">
+          <Button variant="outline" size="sm" onClick={handleNewChat} className="gap-1.5 text-xs font-semibold border-slate-200 dark:border-white/10 hover:border-slate-300">
             <Plus className="size-3.5" />
-            New Chat
+            New Website Chat
           </Button>
         </div>
       </div>
@@ -681,34 +777,33 @@ function QuasarMcpContent() {
       <div className="flex flex-1 overflow-hidden min-h-0">
 
         {/* ─── LEFT: Sessions + Activity ─── */}
-        <div className="hidden w-[340px] shrink-0 flex-col border-r border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50 md:flex min-h-0">
+        <div className="hidden w-[340px] shrink-0 flex-col border-r border-slate-200/90 bg-white/70 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/70 md:flex min-h-0">
 
           {/* New Chat button at top of sidebar */}
-          <div className="border-b border-slate-200/90 p-3 dark:border-white/10">
+          <div className="border-b border-slate-200/90 p-3.5 dark:border-white/10 bg-white/60 dark:bg-slate-900/60">
             <Button
               onClick={handleNewChat}
-              variant="outline"
-              className="w-full gap-2 border-fuchsia-300/60 bg-gradient-to-r from-fuchsia-50/50 to-purple-50/30 text-xs font-bold text-fuchsia-900 transition hover:border-fuchsia-400 hover:bg-fuchsia-100/60 dark:border-fuchsia-500/20 dark:bg-fuchsia-950/20 dark:text-fuchsia-300"
+              className="w-full gap-2 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 text-xs font-bold text-white shadow-sm transition hover:opacity-95"
               size="sm"
             >
-              <Plus className="size-4 text-fuchsia-600 dark:text-fuchsia-400" />
+              <Plus className="size-4" />
               New Website Chat
             </Button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3 min-h-0">
+          <div className="flex-1 overflow-y-auto p-3 min-h-0 space-y-4">
 
             {/* Active tools while thinking */}
             {isThinking && (
               <div className="mb-4">
-                <div className="mb-2 flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50/50 p-2.5 dark:border-blue-800 dark:bg-blue-950/30">
-                  <Loader2 className="size-4 animate-spin text-blue-500" />
-                  <span className="text-xs font-medium text-blue-700 dark:text-blue-400">
+                <div className="mb-2 flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2.5 shadow-2xs dark:border-white/10 dark:bg-slate-900">
+                  <Loader2 className="size-4 animate-spin text-fuchsia-600 dark:text-fuchsia-400" />
+                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                     Agent is working...
                   </span>
                 </div>
                 {activeTools.length > 0 && (
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     {activeTools.map((tc, i) => (
                       <ToolCallItem key={i} tool={tc} />
                     ))}
@@ -719,62 +814,88 @@ function QuasarMcpContent() {
 
             {/* Chat history list */}
             <div>
-              <h3 className="mb-2 px-1 text-xs font-semibold uppercase text-slate-400 dark:text-slate-500">
-                Chat History
-              </h3>
-              <div className="space-y-1.5">
+              <div className="mb-2.5 flex items-center justify-between px-1">
+                <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Chat Threads
+                </h3>
+                <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+                  {sessions.length} {sessions.length === 1 ? "thread" : "threads"}
+                </span>
+              </div>
+              <div className="space-y-2">
                 {sessions.length === 0 && !isThinking && (
-                  <p className="px-2 py-4 text-center text-xs text-slate-400">
-                    No chats yet. Click "New Chat" to start.
-                  </p>
-                )}
-                {sessions.map((s) => (
-                  <div
-                    key={s.id}
-                    onClick={() => handleSelectSession(s.id)}
-                    className={`group cursor-pointer rounded-xl border p-2.5 transition-all ${
-                      session?.id === s.id
-                        ? "border-fuchsia-300 bg-gradient-to-r from-fuchsia-50/70 to-purple-50/30 shadow-xs dark:border-fuchsia-500/30 dark:bg-fuchsia-950/20"
-                        : "border-slate-200/80 bg-white hover:border-slate-300 hover:shadow-2xs dark:border-white/10 dark:bg-slate-900 dark:hover:border-white/20"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      {s.websiteLogoUrl ? (
-                        <img src={s.websiteLogoUrl} alt="" className="size-4 shrink-0 rounded object-contain" />
-                      ) : (
-                        <MessageSquare className="size-3.5 shrink-0 text-slate-400" />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        {s.websiteName ? (
-                          <div className="flex items-center gap-1.5">
-                            <span className="truncate text-xs font-bold text-slate-800 dark:text-slate-200">
-                              {s.websiteName}
-                            </span>
-                            {s.websiteUrl && (
-                              <span className="truncate text-[10px] text-slate-400">
-                                · {s.websiteUrl.replace(/^https?:\/\//, "").replace(/\/+$/, "")}
-                              </span>
-                            )}
-                          </div>
-                        ) : null}
-                        <p className="truncate text-xs text-slate-600 dark:text-slate-400">
-                          {s.preview}
-                        </p>
-                      </div>
-                      <button
-                        onClick={(e) => handleDeleteSession(s.id, e)}
-                        className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
-                      >
-                        <Trash2 className="size-3 text-red-400 hover:text-red-600" />
-                      </button>
-                    </div>
-                    <div className="mt-1 flex items-center gap-2 text-[10px] text-slate-400">
-                      <span>{formatDate(s.updatedAt)}</span>
-                      <span>•</span>
-                      <span>{s.messageCount} msgs</span>
-                    </div>
+                  <div className="rounded-xl border border-dashed border-slate-200 p-5 text-center dark:border-white/10">
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                      No chat threads yet
+                    </p>
+                    <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
+                      Click &ldquo;New Website Chat&rdquo; above to start
+                    </p>
                   </div>
-                ))}
+                )}
+                {sessions.map((s) => {
+                  const isSelected = session?.id === s.id;
+                  return (
+                    <div
+                      key={s.id}
+                      onClick={() => handleSelectSession(s.id)}
+                      className={`group relative cursor-pointer rounded-xl border p-3 transition-all duration-150 ${
+                        isSelected
+                          ? "border-fuchsia-500 bg-white text-slate-900 shadow-sm ring-1 ring-fuchsia-500/30 dark:border-fuchsia-500/80 dark:bg-slate-900 dark:text-white dark:ring-fuchsia-500/30"
+                          : "border-slate-200/80 bg-white/70 text-slate-700 hover:border-slate-300 hover:bg-white dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200 dark:hover:border-white/20 dark:hover:bg-slate-900"
+                      }`}
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <div className="mt-0.5 relative size-6 shrink-0 overflow-hidden rounded-md border border-slate-200 bg-white p-0.5 dark:border-white/10 dark:bg-slate-800">
+                          {s.websiteLogoUrl ? (
+                            <img src={s.websiteLogoUrl} alt="" className="size-full object-contain" />
+                          ) : (
+                            <div className="grid size-full place-items-center text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                              {s.websiteName ? s.websiteName.charAt(0).toUpperCase() : <Globe className="size-3 text-slate-400" />}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1.5">
+                            <span className="truncate text-xs font-bold text-slate-900 dark:text-white">
+                              {s.websiteName || "General Chat"}
+                            </span>
+                            <span className="shrink-0 text-[10px] font-medium text-slate-400 dark:text-slate-500">
+                              {formatDate(s.updatedAt)}
+                            </span>
+                          </div>
+
+                          {s.websiteUrl && (
+                            <span className="block truncate text-[10px] font-medium text-slate-400 dark:text-slate-400">
+                              {s.websiteUrl.replace(/^https?:\/\//, "").replace(/\/+$/, "")}
+                            </span>
+                          )}
+
+                          <p className={`mt-1 line-clamp-2 text-[11px] leading-snug ${
+                            isSelected
+                              ? "text-slate-800 dark:text-slate-200 font-medium"
+                              : "text-slate-600 dark:text-slate-400"
+                          }`}>
+                            {s.preview}
+                          </p>
+
+                          <div className="mt-2 flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500">
+                            <span>{s.messageCount} {s.messageCount === 1 ? "message" : "messages"}</span>
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteSession(s.id, e)}
+                              title="Delete thread"
+                              className="rounded p-1 text-slate-400 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 dark:hover:bg-red-950/40"
+                            >
+                              <Trash2 className="size-3" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -798,10 +919,10 @@ function QuasarMcpContent() {
         <div className="flex flex-1 flex-col overflow-hidden min-h-0">
 
           {/* Website Target Banner & Config Bar on Top */}
-          <div className="border-b border-slate-200/90 bg-white/90 px-4 py-2.5 backdrop-blur-md dark:border-white/10 dark:bg-slate-900/90">
+          <div className="border-b border-slate-200/90 bg-white px-4 py-2.5 backdrop-blur-md dark:border-white/10 dark:bg-slate-900">
             <div className="mx-auto flex max-w-4xl items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="relative size-8 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-slate-800">
+                <div className="relative size-8 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 p-0.5 dark:border-white/10 dark:bg-slate-800">
                   {siteLogoUrl ? (
                     <img src={siteLogoUrl} alt={siteName || "Logo"} className="size-full object-contain" />
                   ) : (
@@ -813,24 +934,24 @@ function QuasarMcpContent() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="truncate text-xs font-bold text-slate-900 dark:text-white">
-                      {siteName || "No website specified"}
+                      {siteName || "General Chat"}
                     </span>
                     {siteUrl && (
                       <span className="hidden sm:inline-block truncate text-[11px] text-slate-400">
-                        ({siteUrl.replace(/^https?:\/\//, "")})
+                        ({siteUrl.replace(/^https?:\/\//, "").replace(/\/+$/, "")})
                       </span>
                     )}
                     {selectedMcpId && selectedMcpId !== "auto" && (
-                      <span className="hidden md:inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.2 text-[9px] font-bold text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-950/40 dark:text-emerald-300">
-                        <Plug className="size-2.5" />
+                      <span className="hidden md:inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.2 text-[9px] font-bold text-slate-700 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300">
+                        <Plug className="size-2.5 text-emerald-500" />
                         {mcpConnections.find((c) => c.id === selectedMcpId)?.name || "Custom MCP"}
                       </span>
                     )}
                   </div>
                   <p className="truncate text-[10px] text-slate-500 dark:text-slate-400">
                     {instructions
-                      ? `Custom instructions: "${instructions.slice(0, 45)}${instructions.length > 45 ? "..." : ""}"`
-                      : "Targeted chat mode for this website"}
+                      ? `Instructions: "${instructions.slice(0, 45)}${instructions.length > 45 ? "..." : ""}"`
+                      : "Targeted chat workspace for this website"}
                   </p>
                 </div>
               </div>
@@ -847,7 +968,7 @@ function QuasarMcpContent() {
                   onClick={() => setContextDrawerOpen((prev) => !prev)}
                   className={`gap-1.5 text-xs font-semibold ${
                     contextDrawerOpen
-                      ? "border-fuchsia-500/40 bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-950/40 dark:text-fuchsia-300"
+                      ? "border-slate-300 bg-slate-100 text-slate-900 dark:border-white/20 dark:bg-slate-800 dark:text-white"
                       : "border-slate-200 dark:border-white/10"
                   }`}
                 >
@@ -860,7 +981,7 @@ function QuasarMcpContent() {
 
             {/* Expandable Configuration Drawer */}
             {contextDrawerOpen && (
-              <div className="mx-auto mt-3 max-w-4xl rounded-2xl border border-fuchsia-200/80 bg-gradient-to-b from-fuchsia-50/40 to-white/90 p-4 shadow-sm dark:border-fuchsia-500/20 dark:from-slate-900/90 dark:to-slate-900">
+              <div className="mx-auto mt-3 max-w-4xl rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900">
                 <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Building2 className="size-4 text-fuchsia-600 dark:text-fuchsia-400" />
@@ -1107,7 +1228,57 @@ function QuasarMcpContent() {
 
           {/* Input — modern refined chat bar */}
           <div className="border-t border-slate-200/90 bg-white/90 px-4 py-3.5 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/90">
-            <div className="mx-auto max-w-3xl">
+            <div className="mx-auto max-w-3xl relative">
+              {/* Slash commands autocomplete dropdown */}
+              {slashMenuOpen && filteredSlashCommands.length > 0 && (
+                <div className="absolute bottom-full left-0 z-50 mb-2 w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-white/10 dark:bg-slate-900">
+                  <div className="flex items-center justify-between px-3 py-1.5 border-b border-slate-100 dark:border-white/5">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Quick Commands
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      Press Tab or Enter to select
+                    </span>
+                  </div>
+                  <div className="max-h-60 overflow-y-auto p-1 space-y-1">
+                    {filteredSlashCommands.map((sc, idx) => {
+                      const Icon = sc.icon;
+                      const isHighlighted = idx === selectedSlashIndex;
+                      return (
+                        <button
+                          key={sc.cmd}
+                          type="button"
+                          onClick={() => handleSelectSlashCommand(sc)}
+                          onMouseEnter={() => setSelectedSlashIndex(idx)}
+                          className={`flex w-full items-start gap-3 rounded-xl p-2.5 text-left transition ${
+                            isHighlighted
+                              ? "bg-slate-100 dark:bg-slate-800"
+                              : "hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                          }`}
+                        >
+                          <div className={`mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg bg-slate-100 dark:bg-slate-800 ${sc.color}`}>
+                            <Icon className="size-4" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-mono font-bold text-slate-900 dark:text-white">
+                                {sc.cmd}
+                              </span>
+                              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                                {sc.label}
+                              </span>
+                            </div>
+                            <p className="mt-0.5 text-[11px] text-slate-400 line-clamp-1">
+                              {sc.desc}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Rounded input card */}
               <div className="rounded-2xl border border-slate-200/90 bg-white shadow-xs transition-all focus-within:border-fuchsia-400 focus-within:ring-2 focus-within:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900/90 dark:focus-within:border-fuchsia-500">
                 {/* Web Builder mode badge */}
@@ -1130,14 +1301,23 @@ function QuasarMcpContent() {
                 <div className="px-4 pt-3 pb-1">
                   <Textarea
                     value={input}
-                    onChange={(e) => setInput(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setInput(val);
+                      if (val.startsWith("/")) {
+                        setSlashMenuOpen(true);
+                        setSelectedSlashIndex(0);
+                      } else {
+                        setSlashMenuOpen(false);
+                      }
+                    }}
                     onKeyDown={handleKeyDown}
                     placeholder={
                       webBuilderMode
                         ? "Ask about your website... e.g. 'check my WordPress site' or 'rebuild my landing page'"
                         : siteName
-                        ? `Tell the agent what you need for ${siteName}... e.g. 'analyze top keywords' or 'audit our home page'`
-                        : "Tell the agent what you need... e.g. 'find keywords for my website'"
+                        ? `Tell the agent what you need for ${siteName}... or type / for commands (/compact, /generate-post, /generate-page, /security-inspect)`
+                        : "Tell the agent what you need... or type / for commands (/compact, /generate-post, /generate-page, /security-inspect)"
                     }
                     disabled={isThinking}
                     className="min-h-[44px] max-h-[120px] resize-none border-0 bg-transparent px-2 py-2 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 dark:text-white"
@@ -1146,17 +1326,45 @@ function QuasarMcpContent() {
                 </div>
                 {/* Bottom toolbar */}
                 <div className="flex items-center justify-between px-3 pb-2.5 pt-1">
-                  {/* Left: Quick site badge hint */}
-                  <div className="flex items-center gap-1.5">
+                  {/* Left: Quick slash buttons */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto">
                     {siteName && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:bg-white/5 dark:text-slate-300">
+                      <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:bg-white/5 dark:text-slate-300 shrink-0">
                         <Globe className="size-3 text-fuchsia-500" />
-                        Target: {siteName}
+                        {siteName}
                       </span>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => handleSelectSlashCommand(slashCommands[0])}
+                      className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600 transition hover:bg-slate-100 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 shrink-0"
+                    >
+                      <Sparkles className="size-2.5 text-purple-500" /> /compact
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectSlashCommand(slashCommands[1])}
+                      className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600 transition hover:bg-slate-100 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 shrink-0"
+                    >
+                      <FilePlus className="size-2.5 text-blue-500" /> /generate-post
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectSlashCommand(slashCommands[2])}
+                      className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600 transition hover:bg-slate-100 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 shrink-0"
+                    >
+                      <Layout className="size-2.5 text-emerald-500" /> /generate-page
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectSlashCommand(slashCommands[3])}
+                      className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600 transition hover:bg-slate-100 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 shrink-0"
+                    >
+                      <ShieldAlert className="size-2.5 text-amber-500" /> /security-inspect
+                    </button>
                   </div>
                   {/* Right: model selector + send button */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <ModelSelector
                       models={models}
                       value={selectedModel}
@@ -1177,7 +1385,7 @@ function QuasarMcpContent() {
               </div>
               {/* Helper text */}
               <p className="mt-1.5 text-center text-[11px] text-slate-400 dark:text-slate-500">
-                Quasar MCP can search the web, read your branding, research keywords, and generate reports
+                Type <kbd className="rounded border border-slate-200 bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-slate-600 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300">/</kbd> for quick actions: /compact, /generate-post, /generate-page, /security-inspect
               </p>
             </div>
           </div>
