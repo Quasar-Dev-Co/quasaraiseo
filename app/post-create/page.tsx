@@ -57,6 +57,52 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
+type PublishStatus = "draft" | "publish" | "future";
+
+function publishActionLabel(status: PublishStatus, busy: boolean): string {
+  if (busy) {
+    if (status === "future") return "Scheduling...";
+    if (status === "draft") return "Saving draft...";
+    return "Publishing...";
+  }
+  if (status === "future") return "Schedule Post";
+  if (status === "draft") return "Save as Draft";
+  return "Publish Now";
+}
+
+function formatWallClock(value: string): string {
+  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+  if (!match) return value;
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const month = months[Number(match[2]) - 1] ?? match[2];
+  const hour = Number(match[4]);
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 || 12;
+  return `${month} ${Number(match[3])}, ${hour12}:${match[5]} ${suffix}`;
+}
+
+function localDateTimeValue(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function defaultScheduleValue(): string {
+  return localDateTimeValue(new Date(Date.now() + 60 * 60 * 1000));
+}
+
+function postStatusPresentation(status: string): { label: string; className: string } {
+  if (status === "publish") {
+    return { label: "Published", className: "bg-emerald-100 text-emerald-700 border-emerald-200" };
+  }
+  if (status === "future") {
+    return { label: "Scheduled", className: "bg-violet-100 text-violet-700 border-violet-200" };
+  }
+  return {
+    label: status === "draft" ? "Draft" : status,
+    className: "bg-amber-100 text-amber-700 border-amber-200",
+  };
+}
+
 function PostCreateContent() {
   const searchParams = useSearchParams();
 
@@ -97,7 +143,8 @@ function PostCreateContent() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Publishing
-  const [publishStatus, setPublishStatus] = useState<"draft" | "publish">("draft");
+  const [publishStatus, setPublishStatus] = useState<PublishStatus>("draft");
+  const [scheduledDate, setScheduledDate] = useState("");
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const [publishSuccess, setPublishSuccess] = useState<string | null>(null);
@@ -576,6 +623,18 @@ This post should support and link UP to the ${refTitle} reference page. It must 
   const handlePublish = async (contentToPublish?: GeneratedContent) => {
     const content = contentToPublish || generatedContent;
     if (!selectedSiteId || !content) return;
+    if (publishStatus === "future") {
+      if (!scheduledDate) {
+        setPublishError("Choose a date and time to schedule this post.");
+        setPublishSuccess(null);
+        return;
+      }
+      if (new Date(scheduledDate).getTime() <= Date.now()) {
+        setPublishError("Schedule time must be in the future.");
+        setPublishSuccess(null);
+        return;
+      }
+    }
     setPublishing(true);
     setPublishError(null);
     setPublishSuccess(null);
@@ -589,8 +648,16 @@ This post should support and link UP to the ${refTitle} reference page. It must 
         categories: postCategories ? postCategories.split(",").map((c) => c.trim()).filter(Boolean) : [],
         tags: postTags ? postTags.split(",").map((t) => t.trim()).filter(Boolean) : [],
         featuredImage: featuredImage ? wordpressApi.imageUrl(featuredImage.url) : undefined,
+        scheduledDate: publishStatus === "future" ? scheduledDate : undefined,
       });
-      setPublishSuccess(`Post published! View at: ${result.post.permalink}`);
+      const link = result.post.permalink ? ` View at: ${result.post.permalink}` : "";
+      if (publishStatus === "future") {
+        setPublishSuccess(`Post scheduled for ${formatWallClock(scheduledDate)}.${link}`);
+      } else if (publishStatus === "draft") {
+        setPublishSuccess(`Saved as draft.${link}`);
+      } else {
+        setPublishSuccess(`Post published!${link}`);
+      }
       wordpressApi.getPosts(selectedSiteId).then(setWpPosts).catch(() => {});
     } catch (e) {
       setPublishError(e instanceof Error ? e.message : "Failed to publish post");
@@ -1386,7 +1453,9 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                     </article>
                   ) : (
                     <AnimatePresence mode="popLayout">
-                    {wpPosts.map((post) => (
+                    {wpPosts.map((post) => {
+                      const statusView = postStatusPresentation(post.status);
+                      return (
                       <motion.div
                         key={post.id}
                         layout
@@ -1397,10 +1466,14 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                         <Newspaper className="size-4 shrink-0 text-slate-400" />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium text-slate-700 dark:text-slate-300">{post.title}</p>
-                          <p className="text-xs text-slate-400">{formatDate(post.createdAt)}</p>
+                          <p className="text-xs text-slate-400">
+                            {post.status === "future" && post.scheduledDate
+                              ? `Scheduled ${formatWallClock(post.scheduledDate)}`
+                              : formatDate(post.createdAt)}
+                          </p>
                         </div>
-                        <Badge className={`shrink-0 ${post.status === "publish" ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-amber-100 text-amber-700 border-amber-200"}`}>
-                          {post.status}
+                        <Badge className={`shrink-0 ${statusView.className}`}>
+                          {statusView.label}
                         </Badge>
                         {post.permalink && (
                           <a href={post.permalink} target="_blank" rel="noopener noreferrer" className="shrink-0 text-blue-600 hover:underline">
@@ -1415,7 +1488,8 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                           <Trash2 className="size-3.5" />
                         </button>
                       </motion.div>
-                    ))}
+                      );
+                    })}
                     </AnimatePresence>
                   )}
                 </div>
@@ -1933,6 +2007,9 @@ This post should support and link UP to the ${refTitle} reference page. It must 
         setSelectedSiteId={setSelectedSiteId}
         publishStatus={publishStatus}
         setPublishStatus={setPublishStatus}
+        scheduledDate={scheduledDate}
+        setScheduledDate={setScheduledDate}
+        siteTimezone={siteData?.timezone || ""}
         postCategories={postCategories}
         setPostCategories={setPostCategories}
         postTags={postTags}
@@ -1955,6 +2032,9 @@ function PublishModal({
   setSelectedSiteId,
   publishStatus,
   setPublishStatus,
+  scheduledDate,
+  setScheduledDate,
+  siteTimezone,
   postCategories,
   setPostCategories,
   postTags,
@@ -1970,8 +2050,11 @@ function PublishModal({
   wpSites: WordPressSite[];
   selectedSiteId: string;
   setSelectedSiteId: (id: string) => void;
-  publishStatus: "draft" | "publish";
-  setPublishStatus: (status: "draft" | "publish") => void;
+  publishStatus: PublishStatus;
+  setPublishStatus: (status: PublishStatus) => void;
+  scheduledDate: string;
+  setScheduledDate: (value: string) => void;
+  siteTimezone: string;
   postCategories: string;
   setPostCategories: (v: string) => void;
   postTags: string;
@@ -2034,11 +2117,16 @@ function PublishModal({
               <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Publish Status</label>
               <select
                 value={publishStatus}
-                onChange={(e) => setPublishStatus(e.target.value as "draft" | "publish")}
+                onChange={(e) => {
+                  const next = e.target.value as PublishStatus;
+                  setPublishStatus(next);
+                  if (next === "future" && !scheduledDate) setScheduledDate(defaultScheduleValue());
+                }}
                 className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/15 dark:bg-slate-800 dark:text-white"
               >
                 <option value="draft">Draft</option>
                 <option value="publish">Publish Immediately</option>
+                <option value="future">Schedule</option>
               </select>
             </div>
             <div>
@@ -2050,6 +2138,21 @@ function PublishModal({
             <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Tags</label>
             <Input className="mt-2" placeholder="e.g. ai, content, automation" value={postTags} onChange={(e) => setPostTags(e.target.value)} />
           </div>
+          {publishStatus === "future" && (
+            <div>
+              <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Schedule date</label>
+              <Input
+                className="mt-2"
+                type="datetime-local"
+                value={scheduledDate}
+                min={localDateTimeValue(new Date())}
+                onChange={(e) => setScheduledDate(e.target.value)}
+              />
+              <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                WordPress publishes at this time in the site timezone{siteTimezone ? ` (${siteTimezone})` : ""}.
+              </p>
+            </div>
+          )}
 
           <div className="flex gap-3 pt-2">
             <Button size="lg" variant="outline" className="flex-1" onClick={onClose} disabled={publishing}>Cancel</Button>
@@ -2058,10 +2161,10 @@ function PublishModal({
               size="lg"
               className="flex-1 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700"
               onClick={onPublish}
-              disabled={publishing || !selectedSiteId}
+              disabled={publishing || !selectedSiteId || (publishStatus === "future" && !scheduledDate)}
             >
               {publishing ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-              {publishing ? "Publishing..." : `Publish as ${publishStatus === "draft" ? "Draft" : "Published"}`}
+              {publishActionLabel(publishStatus, publishing)}
             </Button>
           </div>
         </div>
