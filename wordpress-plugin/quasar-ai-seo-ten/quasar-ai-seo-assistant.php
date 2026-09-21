@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Quasar AI SEO
  * Description: Connect your WordPress site with Quasar AI SEO to publish AI-generated content directly from your Quasar dashboard.
- * Version: 2.0.0
+ * Version: 2.0.1
  * Author: Quasar AI SEO
  * Author URI: https://seo.quasarasoft.com
  * License: GPL-2.0+
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('QUASAR_VERSION', '2.0.0');
+define('QUASAR_VERSION', '2.0.1');
 define('QUASAR_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('QUASAR_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('QUASAR_API_URL', 'https://seo.teamcmp.cloud');
@@ -21,6 +21,46 @@ define('QUASAR_FRONTEND_URL', 'https://seo.quasarasoft.com');
 
 // Force-enable Application Passwords (some hosts disable them by default)
 add_filter('wp_is_application_passwords_available', '__return_true');
+
+// Generated post images are WebP. Some hosts omit that type from the upload list.
+add_filter('upload_mimes', function ($mimes) {
+    $mimes['webp'] = 'image/webp';
+    return $mimes;
+});
+
+add_filter('wp_check_filetype_and_ext', function ($data, $file, $filename, $mimes) {
+    if (!empty($data['ext']) && !empty($data['type'])) {
+        return $data;
+    }
+    $filetype = wp_check_filetype($filename, $mimes);
+    if ($filetype['ext'] === 'webp') {
+        $data['ext'] = 'webp';
+        $data['type'] = 'image/webp';
+        $data['proper_filename'] = $data['proper_filename'] ?? $filename;
+    }
+    return $data;
+}, 10, 4);
+
+/**
+ * WordPress stores post_date as site-local Y-m-d H:i:s.
+ * Accept the dashboard's datetime-local value as well as that format.
+ */
+function quasar_normalize_scheduled_date($scheduled) {
+    $scheduled = trim((string) $scheduled);
+    if ($scheduled === '') {
+        return '';
+    }
+    $scheduled = str_replace('T', ' ', $scheduled);
+    if (preg_match('/^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})(?::(\d{2}))?/', $scheduled, $matches)) {
+        $seconds = isset($matches[3]) && $matches[3] !== '' ? $matches[3] : '00';
+        return $matches[1] . ' ' . $matches[2] . ':' . $seconds;
+    }
+    $timestamp = strtotime($scheduled);
+    if (!$timestamp) {
+        return '';
+    }
+    return date('Y-m-d H:i:s', $timestamp);
+}
 
 // Activation: generate token and store admin user ID
 register_activation_hook(__FILE__, function () {
@@ -196,10 +236,14 @@ add_action('rest_api_init', function () {
             $categories = isset($params['categories']) ? (array) $params['categories'] : [];
             $tags    = isset($params['tags']) ? (array) $params['tags'] : [];
             $featured_img = isset($params['featured_image']) ? esc_url_raw($params['featured_image']) : '';
-            $scheduled = isset($params['scheduled_date']) ? sanitize_text_field($params['scheduled_date']) : '';
+            $scheduled = isset($params['scheduled_date']) ? quasar_normalize_scheduled_date($params['scheduled_date']) : '';
 
             if (empty($title) || empty($content)) {
                 return new WP_Error('missing_fields', 'Title and content are required.', ['status' => 400]);
+            }
+
+            if ($status === 'future' && empty($scheduled)) {
+                return new WP_Error('missing_date', 'A schedule date is required.', ['status' => 400]);
             }
 
             $post_data = [
