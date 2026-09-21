@@ -9,7 +9,7 @@ import {
   Plus, MessageSquare, Paperclip, ArrowUp, X, BarChart3,
   ShieldCheck, Wand2, Code2, Image, FilePlus, Edit3, Layout,
   Info, Eye, Calendar, Layers, FolderTree, GitBranch, Settings,
-  Plug, Building2, Upload, ChevronDown, Check, ShieldAlert,
+  Plug, Building2, Upload, ChevronDown, Check, ShieldAlert, Images,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import {
   keywordMcpApi,
   setStoredSessionMessages,
+  type McpChatAttachment,
   type McpChatMessage,
   type McpSession,
   type McpToolCall,
@@ -37,6 +38,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ModelSelector, usePersistentModel } from "@/components/ModelSelector";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WebsiteMediaGallery } from "@/components/mcp/website-media-gallery";
 
 // ─── Tool icons ───
 
@@ -142,6 +144,13 @@ function QuasarMcpContent() {
   const [sessions, setSessions] = useState<McpSessionPreview[]>([]);
   const [messages, setMessages] = useState<McpChatMessage[]>([]);
   const [input, setInput] = useState("");
+  const [pendingAttachments, setPendingAttachments] = useState<McpChatAttachment[]>([]);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadNote, setUploadNote] = useState<string | null>(null);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const sessionIdRef = useRef<string | null>(null);
+  sessionIdRef.current = session?.id ?? null;
   const [isThinking, setIsThinking] = useState(false);
   const [activeTools, setActiveTools] = useState<McpToolCall[]>([]);
   const [models, setModels] = useState<ModelRecord[]>([]);
@@ -331,11 +340,46 @@ function QuasarMcpContent() {
     });
   };
 
+  const clearComposerAttachments = () => {
+    setPendingAttachments([]);
+    setUploadNote(null);
+    setGalleryOpen(false);
+  };
+
+  const handleAttachFiles = async (files: FileList | null) => {
+    if (!files?.length || !session || uploadingFile) return;
+    const sessionId = session.id;
+    setUploadingFile(true);
+    setUploadNote(null);
+    try {
+      const uploaded: McpChatAttachment[] = [];
+      for (const file of Array.from(files).slice(0, 8 - pendingAttachments.length)) {
+        const result = await keywordMcpApi.uploadAttachment(sessionId, file);
+        uploaded.push(result.attachment);
+      }
+      if (sessionIdRef.current !== sessionId) return;
+      setPendingAttachments((prev) => [...prev, ...uploaded].slice(0, 8));
+    } catch (err) {
+      if (sessionIdRef.current === sessionId) {
+        setUploadNote(err instanceof Error ? err.message : "Upload failed");
+      }
+    } finally {
+      setUploadingFile(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   const handleSend = async () => {
     const text = input.trim();
-    if (!text || isThinking || !session) return;
+    if ((!text && pendingAttachments.length === 0) || isThinking || !session || uploadingFile) return;
+    const outgoing = pendingAttachments;
 
-    const userMsg: McpChatMessage = { role: "user", content: text, timestamp: Date.now() };
+    const userMsg: McpChatMessage = {
+      role: "user",
+      content: text || "Use the attached files.",
+      timestamp: Date.now(),
+      attachments: outgoing,
+    };
     setMessages((prev) => {
       const next = [...prev, userMsg];
       if (session?.id) {
@@ -344,9 +388,10 @@ function QuasarMcpContent() {
       return next;
     });
     setInput("");
+    setPendingAttachments([]);
     setIsThinking(true);
     setActiveTools([]);
-    bumpSessionPreview(session.id, text);
+    bumpSessionPreview(session.id, text || "Attached files");
 
     try {
       const siteMeta = {
@@ -358,10 +403,11 @@ function QuasarMcpContent() {
       };
       const result = await keywordMcpApi.sendMessage(
         session.id,
-        text,
+        text || "Use the attached files.",
         selectedModel,
         webBuilderMode ? "web-builder" : undefined,
         siteMeta,
+        outgoing,
       );
       if (result.toolCalls && result.toolCalls.length > 0) {
         setActiveTools(result.toolCalls);
@@ -591,6 +637,7 @@ function QuasarMcpContent() {
       setSession(newSession);
       setMessages([]);
       setInput("");
+      clearComposerAttachments();
       setIsThinking(false);
       setActiveTools([]);
       setSiteName(newSession.websiteName || "");
@@ -631,6 +678,7 @@ function QuasarMcpContent() {
       const { session: loaded } = await keywordMcpApi.getSessionById(sessionId);
       setSession(loaded);
       setMessages(loaded.messages || []);
+      clearComposerAttachments();
       setSiteName(loaded.websiteName || "");
       setSiteUrl(loaded.websiteUrl || "");
       setSiteLogoUrl(loaded.websiteLogoUrl || "");
@@ -653,6 +701,7 @@ function QuasarMcpContent() {
         const { session: newSession } = await keywordMcpApi.createNewSession();
         setSession(newSession);
         setMessages([]);
+        clearComposerAttachments();
         setSiteName("");
         setSiteUrl("");
         setSiteLogoUrl("");
@@ -1297,6 +1346,22 @@ function QuasarMcpContent() {
                     </button>
                   </div>
                 )}
+                {(pendingAttachments.length > 0 || uploadNote) && (
+                  <div className="flex flex-wrap items-center gap-2 px-4 pt-3">
+                    {pendingAttachments.map((attachment) => (
+                      <span key={attachment.id} className="inline-flex max-w-[220px] items-center gap-1.5 rounded-lg bg-slate-100 px-2 py-1 text-[11px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        {attachment.kind === "image" ? (
+                          <img src={attachment.url} alt="" className="size-6 rounded object-cover" />
+                        ) : (
+                          <Paperclip className="size-3 shrink-0" />
+                        )}
+                        <span className="truncate">{attachment.fileName}</span>
+                        <button type="button" onClick={() => setPendingAttachments((prev) => prev.filter((item) => item.id !== attachment.id))} className="text-slate-400 hover:text-red-500"><X className="size-3" /></button>
+                      </span>
+                    ))}
+                    {uploadNote && <span className="text-[11px] text-red-600">{uploadNote}</span>}
+                  </div>
+                )}
                 {/* Text area */}
                 <div className="px-4 pt-3 pb-1">
                   <Textarea
@@ -1328,6 +1393,32 @@ function QuasarMcpContent() {
                 <div className="flex items-center justify-between px-3 pb-2.5 pt-1">
                   {/* Left: Quick slash buttons */}
                   <div className="flex items-center gap-1.5 overflow-x-auto">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".png,.jpg,.jpeg,.webp,.gif,.pdf,.csv,.xls,.xlsx,.doc,.docx,.txt,.md,image/*,application/pdf"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => handleAttachFiles(e.target.files)}
+                    />
+                    <button
+                      type="button"
+                      title="Upload a sheet, document, PDF, or image"
+                      disabled={!session || uploadingFile || isThinking}
+                      onClick={() => fileInputRef.current?.click()}
+                      className="grid size-7 place-items-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 dark:border-white/10 dark:text-slate-300 dark:hover:bg-slate-800"
+                    >
+                      {uploadingFile ? <Loader2 className="size-3.5 animate-spin" /> : <Paperclip className="size-3.5" />}
+                    </button>
+                    <button
+                      type="button"
+                      title="Choose images already on the website"
+                      disabled={!session || isThinking}
+                      onClick={() => setGalleryOpen(true)}
+                      className="grid size-7 place-items-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 dark:border-white/10 dark:text-slate-300 dark:hover:bg-slate-800"
+                    >
+                      <Images className="size-3.5" />
+                    </button>
                     {siteName && (
                       <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:bg-white/5 dark:text-slate-300 shrink-0">
                         <Globe className="size-3 text-fuchsia-500" />
@@ -1375,7 +1466,7 @@ function QuasarMcpContent() {
                     <button
                       type="button"
                       onClick={handleSend}
-                      disabled={!input.trim() || isThinking}
+                      disabled={(!input.trim() && pendingAttachments.length === 0) || isThinking || uploadingFile}
                       className="grid size-8 place-items-center rounded-lg bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white shadow-xs transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-30"
                     >
                       {isThinking ? <Loader2 className="size-4 animate-spin" /> : <ArrowUp className="size-4" />}
@@ -1583,6 +1674,33 @@ function QuasarMcpContent() {
           </div>
         </div>
       )}
+
+      <WebsiteMediaGallery
+        open={galleryOpen}
+        sessionId={session?.id || ""}
+        onClose={() => setGalleryOpen(false)}
+        onUse={(items) => {
+          setPendingAttachments((prev) => {
+            const next = [...prev];
+            for (const item of items) {
+              if (next.length >= 8) break;
+              if (next.some((existing) => existing.mediaId === item.id)) continue;
+              next.push({
+                id: `media-${item.id}`,
+                fileName: item.title || "Website image",
+                mimeType: "image/*",
+                kind: "image",
+                size: 0,
+                url: item.url,
+                mediaId: item.id,
+                alt: item.alt,
+                source: "website",
+              });
+            }
+            return next;
+          });
+        }}
+      />
     </div>
   );
 }
@@ -1719,7 +1837,20 @@ function ChatMessageItem({ message, onQuickReply }: { message: McpChatMessage; o
             : "rounded-tl-xs border border-slate-200/90 bg-white text-slate-800 shadow-[0_2px_10px_rgba(15,23,42,0.04)] dark:border-white/10 dark:bg-slate-900/90 dark:text-slate-200"
         }`}>
           {isUser ? (
-            <p className="whitespace-pre-wrap font-normal">{message.content}</p>
+            <div>
+              {message.attachments && message.attachments.length > 0 && (
+                <div className="mb-2 flex flex-wrap gap-1.5">
+                  {message.attachments.map((attachment) => (
+                    attachment.kind === "image" ? (
+                      <img key={attachment.id} src={attachment.url} alt={attachment.fileName} className="h-16 w-16 rounded-lg object-cover" />
+                    ) : (
+                      <span key={attachment.id} className="rounded-md bg-white/10 px-2 py-1 text-[11px]">{attachment.fileName}</span>
+                    )
+                  ))}
+                </div>
+              )}
+              <p className="whitespace-pre-wrap font-normal">{message.content}</p>
+            </div>
           ) : (
             <div className="prose-chat">
               <ReactMarkdown

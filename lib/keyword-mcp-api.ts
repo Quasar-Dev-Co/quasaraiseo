@@ -38,12 +38,25 @@ export interface McpChatResponse {
   report?: Record<string, unknown>;
 }
 
+export interface McpChatAttachment {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  kind: "image" | "sheet" | "document" | "pdf" | "file";
+  size: number;
+  url: string;
+  mediaId?: number;
+  alt?: string;
+  source?: "upload" | "website";
+}
+
 export interface McpChatMessage {
   role: "user" | "assistant" | "system";
   content: string;
   timestamp?: number;
   toolCalls?: McpToolCall[];
   files?: McpFile[];
+  attachments?: McpChatAttachment[];
 }
 
 export interface McpSession {
@@ -290,12 +303,47 @@ export const keywordMcpApi = {
     return resp.json();
   },
 
+  async uploadAttachment(sessionId: string, file: File): Promise<{ attachment: McpChatAttachment }> {
+    const data = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(",")[1] || result);
+      };
+      reader.onerror = () => reject(new Error("Could not read the file"));
+      reader.readAsDataURL(file);
+    });
+    const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/session/${sessionId}/attachments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ filename: file.name, mimeType: file.type, data }),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.message || "Upload failed");
+    }
+    const body = await resp.json() as { attachment: Omit<McpChatAttachment, "source"> };
+    return { attachment: { ...body.attachment, source: "upload" } };
+  },
+
+  async listWebsiteMedia(sessionId: string): Promise<{ siteName: string | null; media: Array<{ id: number; title: string; url: string; alt: string }> }> {
+    const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/session/${sessionId}/website-media`, {
+      headers: { ...authHeaders() },
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.message || "Could not load website images");
+    }
+    return resp.json();
+  },
+
   async sendMessage(
     sessionId: string,
     message: string,
     model?: string,
     mode?: string,
     siteMeta?: SessionMetadataInput,
+    attachments?: McpChatAttachment[],
   ): Promise<McpChatResponse> {
     const stored = getStoredSessionSite(sessionId);
     const effectiveMeta = { ...stored, ...siteMeta };
@@ -313,6 +361,11 @@ export const keywordMcpApi = {
         websiteLogoUrl: effectiveMeta.websiteLogoUrl,
         additionalInstructions: effectiveMeta.additionalInstructions,
         mcpConnectionId: effectiveMeta.mcpConnectionId,
+        attachments: (attachments || []).map((attachment) => (
+          attachment.source === "website" || attachment.mediaId
+            ? { source: "website" as const, mediaId: attachment.mediaId, url: attachment.url, title: attachment.fileName, alt: attachment.alt || attachment.fileName }
+            : { source: "upload" as const, id: attachment.id }
+        )),
       }),
     });
     if (!resp.ok) {
