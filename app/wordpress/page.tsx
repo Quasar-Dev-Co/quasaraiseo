@@ -204,7 +204,7 @@ function WordPressContent() {
                 No WordPress Sites Connected
               </h2>
               <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                Install the Quasar AI SEO Assistant plugin on your WordPress site and connect it here.
+                Install the Quasar AI SEO plugin on your WordPress site and connect it here.
               </p>
               <div className="mt-6 flex flex-col items-center gap-3">
                 <Button onClick={() => setShowConnectForm(true)}>
@@ -212,7 +212,7 @@ function WordPressContent() {
                   Connect Your First Site
                 </Button>
                 <a
-                  href="https://github.com/Quasar-Dev-Co/quasaraiseo/tree/main/wordpress-plugin/quasar-ai-seo-assistant"
+                  href="https://github.com/Quasar-Dev-Co/quasaraiseo/raw/main/wordpress-plugin/quasar-ai-seo-2.1.0.zip"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs font-semibold text-fuchsia-500 hover:underline"
@@ -404,7 +404,7 @@ function WordPressContent() {
               How to connect your WordPress site
             </h3>
             <ol className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-400">
-              <li><strong>1.</strong> Download the Quasar AI SEO Assistant plugin</li>
+              <li><strong>1.</strong> Download the Quasar AI SEO plugin</li>
               <li><strong>2.</strong> Install and activate it on your WordPress site (Plugins → Add New → Upload)</li>
               <li><strong>3.</strong> Go to Quasar AI SEO in your WordPress admin menu</li>
               <li><strong>4.</strong> Click "Connect to Quasar AI SEO" — it opens this page with the token pre-filled</li>
