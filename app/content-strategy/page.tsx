@@ -148,6 +148,15 @@ function QuasarMcpContent() {
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadNote, setUploadNote] = useState<string | null>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [aiImages, setAiImages] = useState(false);
+  useEffect(() => {
+    if (!session?.id) return;
+    setAiImages(window.sessionStorage.getItem(`quasar-ai-images:${session.id}`) === "1");
+  }, [session?.id]);
+  useEffect(() => {
+    if (!session?.id) return;
+    window.sessionStorage.setItem(`quasar-ai-images:${session.id}`, aiImages ? "1" : "0");
+  }, [session?.id, aiImages]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const sessionIdRef = useRef<string | null>(null);
   sessionIdRef.current = session?.id ?? null;
@@ -408,6 +417,7 @@ function QuasarMcpContent() {
         webBuilderMode ? "web-builder" : undefined,
         siteMeta,
         outgoing,
+        aiImages,
       );
       if (result.toolCalls && result.toolCalls.length > 0) {
         setActiveTools(result.toolCalls);
@@ -498,6 +508,8 @@ function QuasarMcpContent() {
         selectedModel,
         webBuilderMode ? "web-builder" : undefined,
         siteMeta,
+        undefined,
+        aiImages,
       );
       if (result.toolCalls && result.toolCalls.length > 0) setActiveTools(result.toolCalls);
       const assistantMsg: McpChatMessage = {
@@ -1415,10 +1427,21 @@ function QuasarMcpContent() {
                       title="Choose images already on the website"
                       disabled={!session || isThinking}
                       onClick={() => setGalleryOpen(true)}
-                      className="grid size-7 place-items-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 dark:border-white/10 dark:text-slate-300 dark:hover:bg-slate-800"
+                      className={`grid size-7 place-items-center rounded-lg border hover:bg-slate-100 disabled:opacity-40 dark:hover:bg-slate-800 ${aiImages ? "border-fuchsia-400 text-fuchsia-600 dark:border-fuchsia-400/40 dark:text-fuchsia-300" : "border-slate-200 text-slate-600 dark:border-white/10 dark:text-slate-300"}`}
                     >
                       <Images className="size-3.5" />
                     </button>
+                    {aiImages && (
+                      <button
+                        type="button"
+                        onClick={() => setAiImages(false)}
+                        className="inline-flex items-center gap-1 rounded-full bg-fuchsia-50 px-2.5 py-1 text-[11px] font-semibold text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-200"
+                        title="Turn off AI images"
+                      >
+                        AI images
+                        <X className="size-3" />
+                      </button>
+                    )}
                     {siteName && (
                       <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:bg-white/5 dark:text-slate-300 shrink-0">
                         <Globe className="size-3 text-fuchsia-500" />
@@ -1678,6 +1701,8 @@ function QuasarMcpContent() {
       <WebsiteMediaGallery
         open={galleryOpen}
         sessionId={session?.id || ""}
+        aiImages={aiImages}
+        onAiImagesChange={setAiImages}
         onClose={() => setGalleryOpen(false)}
         onUse={(items) => {
           setPendingAttachments((prev) => {

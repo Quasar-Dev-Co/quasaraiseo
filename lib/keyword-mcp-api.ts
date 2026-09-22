@@ -344,6 +344,7 @@ export const keywordMcpApi = {
     mode?: string,
     siteMeta?: SessionMetadataInput,
     attachments?: McpChatAttachment[],
+    generateAiImages?: boolean,
   ): Promise<McpChatResponse> {
     const stored = getStoredSessionSite(sessionId);
     const effectiveMeta = { ...stored, ...siteMeta };
@@ -361,6 +362,7 @@ export const keywordMcpApi = {
         websiteLogoUrl: effectiveMeta.websiteLogoUrl,
         additionalInstructions: effectiveMeta.additionalInstructions,
         mcpConnectionId: effectiveMeta.mcpConnectionId,
+        generateAiImages: Boolean(generateAiImages),
         attachments: (attachments || []).map((attachment) => (
           attachment.source === "website" || attachment.mediaId
             ? { source: "website" as const, mediaId: attachment.mediaId, url: attachment.url, title: attachment.fileName, alt: attachment.alt || attachment.fileName }

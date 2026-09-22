@@ -9,11 +9,15 @@ type MediaItem = { id: number; title: string; url: string; alt: string };
 export function WebsiteMediaGallery({
   open,
   sessionId,
+  aiImages,
+  onAiImagesChange,
   onClose,
   onUse,
 }: {
   open: boolean;
   sessionId: string;
+  aiImages: boolean;
+  onAiImagesChange: (enabled: boolean) => void;
   onClose: () => void;
   onUse: (items: MediaItem[]) => void;
 }) {
@@ -57,6 +61,20 @@ export function WebsiteMediaGallery({
           <button type="button" onClick={onClose} className="grid size-8 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><X className="size-4" /></button>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
+          <label className="mb-4 flex cursor-pointer items-start gap-3 rounded-2xl border border-fuchsia-200 bg-fuchsia-50/70 px-4 py-3 dark:border-fuchsia-400/20 dark:bg-fuchsia-400/10">
+            <input
+              type="checkbox"
+              checked={aiImages}
+              onChange={(e) => onAiImagesChange(e.target.checked)}
+              className="mt-1 size-4 accent-fuchsia-600"
+            />
+            <span>
+              <span className="block text-sm font-bold text-slate-900 dark:text-white">AI images</span>
+              <span className="mt-0.5 block text-xs leading-5 text-slate-600 dark:text-slate-300">
+                Generate a different image for every new page and post. Posts show the section heading. Pages show the logo and the scene only, with no text.
+              </span>
+            </span>
+          </label>
           {loading && <div className="flex items-center justify-center py-16 text-slate-500"><Loader2 className="size-5 animate-spin" /></div>}
           {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
           {!loading && !error && media.length === 0 && (
