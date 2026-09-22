@@ -255,60 +255,36 @@ function PostCreateContent() {
   const [error, setError] = useState<string | null>(null);
 
   const insertImagesIntoBody = (body: string, images: GeneratedImage[]): string => {
-    let updatedBody = body;
+    const tag = (img: GeneratedImage) =>
+      `<figure class="wp-block-image"><img src="${wordpressApi.imageUrl(img.url)}" alt="" class="wp-image-${img.mediaId || "generated"}" /></figure>`;
+    const intro = images.find((img) => img.placement === "featured") || images.find((img) => img.placement === "after-intro");
+    const sections = new Map<number, GeneratedImage>();
     for (const img of images) {
-      const fullUrl = wordpressApi.imageUrl(img.url);
-      const imgTag = `<figure class="wp-block-image"><img src="${fullUrl}" alt="" class="wp-image-${img.mediaId || "generated"}" /></figure>`;
-
-      if (img.placement === "featured") {
-        // Insert featured image right after the first heading/title (h1 or h2) or at the very start
-        const firstH1 = updatedBody.indexOf("</h1>");
-        const firstH2 = updatedBody.indexOf("</h2>");
-        let insertPos = -1;
-        if (firstH1 !== -1) insertPos = firstH1 + 5;
-        else if (firstH2 !== -1) insertPos = firstH2 + 5;
-        else {
-          const firstP = updatedBody.indexOf("</p>");
-          if (firstP !== -1) insertPos = firstP + 4;
-        }
-        if (insertPos !== -1) {
-          updatedBody = updatedBody.slice(0, insertPos) + "\n" + imgTag + updatedBody.slice(insertPos);
-        } else {
-          updatedBody = imgTag + "\n" + updatedBody;
-        }
-      } else if (img.placement === "after-intro") {
-        const firstP = updatedBody.indexOf("</p>");
-        if (firstP !== -1) {
-          updatedBody = updatedBody.slice(0, firstP + 4) + "\n" + imgTag + updatedBody.slice(firstP + 4);
-        }
-      } else {
-        const sectionMatch = img.placement.match(/after-section-(\d+)/);
-        if (sectionMatch) {
-          const sectionNum = parseInt(sectionMatch[1], 10);
-          let h2Count = 0;
-          let insertPos = -1;
-          let searchStart = 0;
-          while (true) {
-            const h2Start = updatedBody.indexOf("<h2", searchStart);
-            if (h2Start === -1) break;
-            const h2End = updatedBody.indexOf("</h2>", h2Start);
-            if (h2End === -1) break;
-            h2Count++;
-            if (h2Count === sectionNum) {
-              insertPos = h2End + 5;
-              break;
-            }
-            searchStart = h2End + 5;
-          }
-          // Fallback: if section not found, append at the end of the body
-          if (insertPos === -1) {
-            insertPos = updatedBody.length;
-          }
-          updatedBody = updatedBody.slice(0, insertPos) + "\n" + imgTag + updatedBody.slice(insertPos);
-        }
-      }
+      const match = img.placement.match(/after-section-(\d+)/);
+      if (match) sections.set(parseInt(match[1], 10), img);
     }
-    return updatedBody;
+    const introIndex = () => {
+      const h2 = body.search(/<h2\b/i);
+      const introHtml = h2 === -1 ? body : body.slice(0, h2);
+      const paragraph = introHtml.lastIndexOf("</p>");
+      return paragraph === -1 ? 0 : paragraph + 4;
+    };
+    const sectionIndex = (sectionNumber: number) => {
+      const headings = [...body.matchAll(/<h2\b/gi)];
+      const next = headings[sectionNumber];
+      if (next?.index !== undefined) return next.index;
+      const current = headings[sectionNumber - 1];
+      if (current?.index === undefined) return body.length;
+      const script = body.indexOf("<script", current.index);
+      return script === -1 ? body.length : script;
+    };
+    const spots: Array<{ index: number; html: string }> = [];
+    if (intro) spots.push({ index: introIndex(), html: tag(intro) });
+    for (const [sectionNumber, img] of sections) spots.push({ index: sectionIndex(sectionNumber), html: tag(img) });
+    spots.sort((a, b) => b.index - a.index);
+    let updated = body;
+    for (const spot of spots) updated = `${updated.slice(0, spot.index)}\n${spot.html}\n${updated.slice(spot.index)}`;
+    return updated;
   };
 
   const loadData = useCallback(async () => {
