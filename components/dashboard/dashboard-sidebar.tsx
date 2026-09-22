@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { setMobileSidebarOpen } from "@/lib/store/mcpSlice";
 import { useAuth } from "@/hooks/use-auth";
+import { useWorkspace } from "@/hooks/use-workspace";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -63,6 +64,13 @@ export function DashboardSidebar({ mobileOpen = false, onMobileClose }: { mobile
   const dispatch = useDispatch();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { preferences } = useWorkspace();
+  const googleNav = [
+    ...googleItems.map((item) => ({ ...item, beta: false })),
+    ...(preferences.betaFeatures
+      ? [{ label: "Sheets", href: "/google/sheets", icon: FileSpreadsheet, beta: true }]
+      : []),
+  ];
 
   const handleLogout = () => {
     logout();
@@ -129,7 +137,7 @@ export function DashboardSidebar({ mobileOpen = false, onMobileClose }: { mobile
           <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">Google</span>
         </div>
         <nav className="flex flex-col gap-1 px-3">
-          {googleItems.map((item) => {
+          {googleNav.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
             return (
@@ -149,6 +157,9 @@ export function DashboardSidebar({ mobileOpen = false, onMobileClose }: { mobile
                 )}
                 <Icon className={cn("size-[17px] shrink-0", active ? "text-fuchsia-600 dark:text-fuchsia-400" : "")} />
                 <span>{item.label}</span>
+                {item.beta && (
+                  <span className="rounded-md bg-fuchsia-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-300">Beta</span>
+                )}
                 {active && <ChevronRight className="ml-auto size-3.5 text-fuchsia-500" />}
               </Link>
             );

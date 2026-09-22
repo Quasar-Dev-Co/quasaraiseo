@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMinLoading } from "@/lib/use-min-loading";
 import { useAuth } from "@/hooks/use-auth";
+import { useWorkspace } from "@/hooks/use-workspace";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AccountSecurity } from "@/components/settings/account-security";
@@ -133,6 +134,8 @@ const hdr = "flex items-center justify-between gap-4 border-b border-slate-100 p
 function SettingsInner() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
+  const { preferences, updatePreferences } = useWorkspace();
+  const [workspaceError, setWorkspaceError] = useState<string | null>(null);
   const isSuper = user?.role === "super";
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -840,17 +843,46 @@ function SettingsInner() {
                   </div>
                 </header>
                 <div className="divide-y divide-slate-100 dark:divide-white/5">
-                  {[
-                    { t: "Auto-update Reports", d: "Automatically regenerate PDF reports when data changes", on: true },
-                    { t: "Default Export Format", d: "Choose PDF or JSON as default download format", on: true },
-                    { t: "Compact Mode", d: "Reduce padding and spacing for denser layouts", on: false },
-                    { t: "Beta Features", d: "Enable early-access features and experimental tools", on: false },
-                  ].map((item) => (
-                    <div key={item.t} className="flex items-center justify-between px-6 py-4">
-                      <div><h4 className="text-[14px] font-bold text-slate-900 dark:text-white">{item.t}</h4><p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">{item.d}</p></div>
-                      <Toggle checked={item.on} onChange={() => {}} />
+                  <div className="flex items-center justify-between gap-4 px-6 py-4">
+                    <div>
+                      <h4 className="text-[14px] font-bold text-slate-900 dark:text-white">Auto-update Reports</h4>
+                      <p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">Refresh Audit MCP while you are on that page so finished reports show up on their own.</p>
                     </div>
-                  ))}
+                    <Toggle checked={preferences.autoUpdateReports} onChange={() => { setWorkspaceError(null); updatePreferences({ autoUpdateReports: !preferences.autoUpdateReports }).catch((e) => setWorkspaceError(e instanceof Error ? e.message : "Could not save workspace settings")); }} />
+                  </div>
+                  <div className="flex items-center justify-between gap-4 px-6 py-4">
+                    <div>
+                      <h4 className="text-[14px] font-bold text-slate-900 dark:text-white">Default Export Format</h4>
+                      <p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">Audit reports download as PDF or JSON.</p>
+                    </div>
+                    <div className="flex rounded-[10px] bg-slate-100 p-1 dark:bg-slate-800">
+                      {(["pdf", "json"] as const).map((format) => (
+                        <button
+                          key={format}
+                          type="button"
+                          onClick={() => { setWorkspaceError(null); updatePreferences({ exportFormat: format }).catch((e) => setWorkspaceError(e instanceof Error ? e.message : "Could not save workspace settings")); }}
+                          className={`rounded-[8px] px-3 py-1.5 text-[12px] font-bold uppercase ${preferences.exportFormat === format ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white" : "text-slate-500"}`}
+                        >
+                          {format}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-4 px-6 py-4">
+                    <div>
+                      <h4 className="text-[14px] font-bold text-slate-900 dark:text-white">Compact Mode</h4>
+                      <p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">Reduce padding and spacing for denser layouts.</p>
+                    </div>
+                    <Toggle checked={preferences.compactMode} onChange={() => { setWorkspaceError(null); updatePreferences({ compactMode: !preferences.compactMode }).catch((e) => setWorkspaceError(e instanceof Error ? e.message : "Could not save workspace settings")); }} />
+                  </div>
+                  <div className="flex items-center justify-between gap-4 px-6 py-4">
+                    <div>
+                      <h4 className="text-[14px] font-bold text-slate-900 dark:text-white">Beta Features</h4>
+                      <p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">Show Google Sheets in the sidebar.</p>
+                    </div>
+                    <Toggle checked={preferences.betaFeatures} onChange={() => { setWorkspaceError(null); updatePreferences({ betaFeatures: !preferences.betaFeatures }).catch((e) => setWorkspaceError(e instanceof Error ? e.message : "Could not save workspace settings")); }} />
+                  </div>
+                  {workspaceError && <p className="px-6 py-3 text-[12px] font-semibold text-red-600 dark:text-red-400">{workspaceError}</p>}
                 </div>
               </article>
 

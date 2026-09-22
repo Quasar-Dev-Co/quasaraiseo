@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 
 import { AuthProvider } from "@/hooks/use-auth";
+import { WorkspaceProvider } from "@/hooks/use-workspace";
 import { Providers } from "@/components/Providers";
 
 const inter = Inter({
@@ -47,7 +48,9 @@ export default function RootLayout({
     <html lang="en" className={`${inter.className} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <AuthProvider>
-          <Providers>{children}</Providers>
+          <WorkspaceProvider>
+            <Providers>{children}</Providers>
+          </WorkspaceProvider>
         </AuthProvider>
       </body>
     </html>

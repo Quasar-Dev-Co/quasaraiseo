@@ -7,6 +7,7 @@ import { RootState } from "@/lib/store";
 import { toggleTheme } from "@/lib/store/auditSlice";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
+import { useWorkspace } from "@/hooks/use-workspace";
 
 import { DashboardSidebar } from "./dashboard-sidebar";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const dispatch = useDispatch();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { preferences } = useWorkspace();
   const theme = useSelector((state: RootState) => state.audit.theme);
 
   useEffect(() => {
@@ -118,7 +120,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
         </header>
 
         {/* Page content */}
-        <main className="mx-auto w-full max-w-[1240px] px-4 py-8 lg:px-9">
+        <main className={preferences.compactMode ? "compact-workspace mx-auto w-full max-w-[1240px] px-3 py-4 lg:px-5" : "mx-auto w-full max-w-[1240px] px-4 py-8 lg:px-9"}>
           {children}
         </main>
       </div>

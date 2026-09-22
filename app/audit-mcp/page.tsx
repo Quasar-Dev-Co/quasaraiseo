@@ -17,6 +17,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMinLoading } from "@/lib/use-min-loading";
 import { useAuth } from "@/hooks/use-auth";
+import { useWorkspace } from "@/hooks/use-workspace";
 import {
   agentApi,
   type AgentJobRecord,
@@ -81,6 +82,7 @@ function formatDate(dateStr: string): string {
 
 export default function AuditMcpPage() {
   const { user } = useAuth();
+  const { preferences } = useWorkspace();
   const isSuper = user?.role === "super";
   const [skills, setSkills] = useState<SkillRecord[]>([]);
   const [jobs, setJobs] = useState<AgentJobRecord[]>([]);
@@ -142,6 +144,12 @@ export default function AuditMcpPage() {
     return () => { if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; } };
   }, [hasRunningJobs, loadData]);
 
+  useEffect(() => {
+    if (!preferences.autoUpdateReports || hasRunningJobs) return;
+    const id = setInterval(loadData, 15000);
+    return () => clearInterval(id);
+  }, [preferences.autoUpdateReports, hasRunningJobs, loadData]);
+
   const handleUploadSkill = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -176,6 +184,19 @@ export default function AuditMcpPage() {
     try { await agentApi.createJob(prompt, selectedSkillId || undefined, selectedModel); setPrompt(""); await loadData(); }
     catch (err) { setError(err instanceof Error ? err.message : "Failed to submit task"); }
     finally { setSubmitting(false); }
+  };
+
+  const handleDownloadJson = (result: string, jobPrompt: string) => {
+    const filename = `${jobPrompt.slice(0, 40).replace(/[^a-zA-Z0-9]/g, "_") || "report"}.json`;
+    const blob = new Blob([JSON.stringify({ title: jobPrompt, result }, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const handleDownloadPdf = async (html: string, jobPrompt: string) => {
@@ -510,15 +531,15 @@ export default function AuditMcpPage() {
                                   <div className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600 dark:bg-slate-800/50 dark:text-slate-300">
                                     <p className="line-clamp-4 whitespace-pre-wrap">{job.result}</p>
                                   </div>
-                                  {html && (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => handleDownloadPdf(html, job.prompt)}
-                                    >
+                                  {preferences.exportFormat === "json" ? (
+                                    <Button size="sm" variant="outline" onClick={() => handleDownloadJson(job.result || "", job.prompt)}>
+                                      <FileText className="size-3.5" /> Download JSON
+                                    </Button>
+                                  ) : html ? (
+                                    <Button size="sm" variant="outline" onClick={() => handleDownloadPdf(html, job.prompt)}>
                                       <FileText className="size-3.5" /> Download PDF
                                     </Button>
-                                  )}
+                                  ) : null}
                                 </div>
                               );
                             })()}
