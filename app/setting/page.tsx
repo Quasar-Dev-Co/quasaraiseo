@@ -17,6 +17,7 @@ import { useMinLoading } from "@/lib/use-min-loading";
 import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { AccountSecurity } from "@/components/settings/account-security";
 import { googleApi, type GoogleStatus, type DeviceInfo } from "@/lib/google-api";
 import { brandingApi, type Branding, type BrandingInput } from "@/lib/branding-api";
 import { aiProviderApi, type AiProvider as ProviderType, type DiscoveredModel } from "@/lib/ai-provider-api";
@@ -732,6 +733,8 @@ function SettingsInner() {
           {/* SECURITY TAB */}
           <TabsContent value="security">
             <div className="space-y-5">
+              <AccountSecurity />
+
               {/* 2FA Card */}
               <article className={card}>
                 <header className={hdr}>
@@ -793,6 +796,11 @@ function SettingsInner() {
                   <Button size="sm" variant="destructive" className="gap-1.5" onClick={handleRevokeAllDevices}><LogOut className="size-3.5" /> Revoke All Others</Button>
                 </header>
                 <div className="divide-y divide-slate-100 dark:divide-white/5">
+                  {devices.length === 0 && (
+                    <p className="px-6 py-5 text-[13px] text-slate-500 dark:text-slate-400">
+                      No saved sessions yet. Sign in again and this browser will show up here.
+                    </p>
+                  )}
                   {devices.map((d) => {
                     const DIcon = d.type === "mobile" ? Smartphone : d.type === "tablet" ? Tablet : Monitor;
                     return (

@@ -121,6 +121,32 @@ export const authApi = {
     });
   },
 
+  async updateProfile(payload: { name: string; email: string; company?: string }): Promise<AuthResponse> {
+    const token = this.getToken();
+    if (!token) throw new AuthApiError("No token found.", 401);
+
+    const result = await authRequest<AuthResponse>("/api/auth/profile", {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload),
+    });
+    if (typeof window !== "undefined") {
+      localStorage.setItem(TOKEN_KEY, result.token);
+    }
+    return result;
+  },
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<{ message: string; success: boolean }> {
+    const token = this.getToken();
+    if (!token) throw new AuthApiError("No token found.", 401);
+
+    return authRequest<{ message: string; success: boolean }>("/api/auth/change-password", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  },
+
   getToken(): string | null {
     if (typeof window === "undefined") return null;
     return localStorage.getItem(TOKEN_KEY);
