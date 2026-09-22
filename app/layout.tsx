@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 
 import { AuthProvider } from "@/hooks/use-auth";
-import { ProfileAvatarProvider } from "@/hooks/use-profile-avatar";
 import { WorkspaceProvider } from "@/hooks/use-workspace";
 import { Providers } from "@/components/Providers";
 
@@ -50,9 +49,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <AuthProvider>
           <WorkspaceProvider>
-            <ProfileAvatarProvider>
-              <Providers>{children}</Providers>
-            </ProfileAvatarProvider>
+            <Providers>{children}</Providers>
           </WorkspaceProvider>
         </AuthProvider>
       </body>

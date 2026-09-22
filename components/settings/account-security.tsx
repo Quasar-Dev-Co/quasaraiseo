@@ -5,9 +5,7 @@ import { Building2, CheckCircle2, KeyRound, Loader2, Mail, Shield, UserRound } f
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { useProfileAvatar } from "@/hooks/use-profile-avatar";
 import { authApi } from "@/lib/auth-api";
-import { profileAvatarApi } from "@/lib/profile-avatar-api";
 
 const card = "overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50";
 const hdr = "flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5.5 dark:border-white/5";
@@ -24,9 +22,6 @@ function Notice({ tone, text }: { tone: "ok" | "err"; text: string }) {
 
 export function AccountSecurity() {
   const { user, updateUser } = useAuth();
-  const { url: avatarUrl, setUrl: setAvatarUrl } = useProfileAvatar();
-  const [avatarSaving, setAvatarSaving] = useState(false);
-  const [avatarNotice, setAvatarNotice] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
   const [name, setName] = useState(user?.name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [company, setCompany] = useState(user?.company ?? "");
@@ -49,52 +44,6 @@ export function AccountSecurity() {
     ? new Date(user.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
     : "—";
   const roleLabel = user?.role === "super" ? "Super user" : "User";
-  const initials = user?.name
-    ? user.name.split(" ").map((part) => part[0]).join("").toUpperCase().slice(0, 2)
-    : "U";
-
-  async function uploadAvatar(file: File | undefined) {
-    if (!file) return;
-    setAvatarNotice(null);
-    if (!file.type.startsWith("image/")) {
-      setAvatarNotice({ tone: "err", text: "Use a JPG, PNG, WEBP, or GIF image." });
-      return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      setAvatarNotice({ tone: "err", text: "Image must be under 2 MB." });
-      return;
-    }
-    setAvatarSaving(true);
-    try {
-      const result = await profileAvatarApi.upload(file);
-      setAvatarUrl(result.url);
-      setAvatarNotice({ tone: "ok", text: "Profile photo saved." });
-    } catch (error) {
-      setAvatarNotice({
-        tone: "err",
-        text: error instanceof Error ? error.message : "Could not save profile photo.",
-      });
-    } finally {
-      setAvatarSaving(false);
-    }
-  }
-
-  async function removeAvatar() {
-    setAvatarNotice(null);
-    setAvatarSaving(true);
-    try {
-      await profileAvatarApi.remove();
-      setAvatarUrl(null);
-      setAvatarNotice({ tone: "ok", text: "Profile photo removed." });
-    } catch (error) {
-      setAvatarNotice({
-        tone: "err",
-        text: error instanceof Error ? error.message : "Could not remove profile photo.",
-      });
-    } finally {
-      setAvatarSaving(false);
-    }
-  }
 
   async function saveProfile() {
     setProfileNotice(null);
@@ -175,34 +124,6 @@ export function AccountSecurity() {
           </div>
         </header>
         <div className="space-y-4 p-6">
-          <div className="flex items-center gap-4">
-            <span className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-fuchsia-500 to-purple-600 text-lg font-extrabold text-white">
-              {avatarUrl ? <img src={avatarUrl} alt="" className="size-full object-cover" /> : initials}
-            </span>
-            <div className="flex flex-wrap items-center gap-2">
-              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[12px] font-bold text-slate-700 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200">
-                {avatarSaving ? <Loader2 className="size-3.5 animate-spin" /> : <UserRound className="size-3.5" />}
-                {avatarUrl ? "Change photo" : "Upload photo"}
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  className="hidden"
-                  disabled={avatarSaving}
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    event.target.value = "";
-                    void uploadAvatar(file);
-                  }}
-                />
-              </label>
-              {avatarUrl && (
-                <Button size="sm" variant="outline" onClick={removeAvatar} disabled={avatarSaving}>
-                  Remove
-                </Button>
-              )}
-            </div>
-          </div>
-          {avatarNotice && <Notice tone={avatarNotice.tone} text={avatarNotice.text} />}
           <label className="block">
             <span className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Name</span>
             <input className={field} value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />

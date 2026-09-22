@@ -7,7 +7,6 @@ import { RootState } from "@/lib/store";
 import { toggleTheme } from "@/lib/store/auditSlice";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
-import { useProfileAvatar } from "@/hooks/use-profile-avatar";
 import { useWorkspace } from "@/hooks/use-workspace";
 
 import { DashboardSidebar } from "./dashboard-sidebar";
@@ -21,7 +20,6 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { user, logout } = useAuth();
   const { preferences } = useWorkspace();
-  const { url: avatarUrl } = useProfileAvatar();
   const theme = useSelector((state: RootState) => state.audit.theme);
 
   useEffect(() => {
@@ -85,8 +83,8 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className="flex items-center gap-2 rounded-full border border-slate-200/90 bg-white/68 px-2.5 py-1.5 transition-colors hover:border-fuchsia-300 dark:border-white/10 dark:bg-slate-900/50 dark:hover:border-fuchsia-400/30"
               >
-                <span className="grid size-7 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-fuchsia-500 to-purple-600 text-xs font-extrabold text-white">
-                  {avatarUrl ? <img src={avatarUrl} alt="" className="size-full object-cover" /> : initials}
+                <span className="grid size-7 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-purple-600 text-xs font-extrabold text-white">
+                  {initials}
                 </span>
                 <ChevronDown className={`size-3.5 text-slate-400 transition-transform ${userMenuOpen ? "rotate-180" : ""}`} />
               </button>
