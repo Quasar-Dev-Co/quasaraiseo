@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback, Suspense, useRef, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import {
-  Settings, CheckCircle2, Circle, Loader2, ChevronRight,
+  Settings, CheckCircle2, Circle, Loader2,
   Globe2, BarChart3, FileSpreadsheet, Smartphone, Bell,
-  Shield, Mail, Download, RefreshCw, ExternalLink, Plug, Zap,
+  Shield, Mail, Download, RefreshCw, Plug, Zap,
   Monitor, Tablet, KeyRound, Clock, MapPin, Trash2, LogOut, AlertCircle,
   Building2, Plus, Pencil, Star, X, Link2, Phone, MapPin as MapPinIcon, Upload, ChevronDown, Search, Sparkles,
 } from "lucide-react";
@@ -136,7 +136,6 @@ function SettingsInner() {
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<GoogleStatus | null>(null);
-  const [pwaOn, setPwaOn] = useState(true);
   const [notifOn, setNotifOn] = useState(true);
   const [twoFAOn, setTwoFAOn] = useState(false);
   const [devices, setDevices] = useState<DeviceInfo[]>([]);
@@ -647,7 +646,7 @@ function SettingsInner() {
           </div>
           <h1 className="mt-5 text-[clamp(34px,5vw,52px)] font-black leading-[1.02] tracking-[-0.052em] text-slate-900 dark:text-white">Settings</h1>
           <p className="mt-4 max-w-[700px] text-[15px] leading-relaxed text-slate-600 dark:text-slate-400">
-            Manage Google integrations, PWA configuration, notification preferences, and workspace settings.
+            Manage Google integrations, notification preferences, and workspace settings.
           </p>
         </section>
 
@@ -657,10 +656,9 @@ function SettingsInner() {
           </div>
         )}
 
-        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { i: Plug, l: "Integrations", v: `${cnt}/${svcList.length}` },
-            { i: Smartphone, l: "PWA", v: pwaOn ? "On" : "Off" },
             { i: Bell, l: "Alerts", v: notifOn ? "On" : "Off" },
             { i: Monitor, l: "Devices", v: `${devices.length}` },
             { i: Shield, l: "2FA", v: twoFAOn ? "On" : "Off", green: twoFAOn },
@@ -675,7 +673,6 @@ function SettingsInner() {
         <Tabs defaultValue="google">
           <TabsList className="mb-6 h-auto gap-1 rounded-[14px] bg-slate-100/80 p-1.5 dark:bg-slate-900/60">
             <TabsTrigger value="google" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><GIcon c="size-4" /> Google Connect</TabsTrigger>
-            <TabsTrigger value="pwa" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Smartphone className="size-4" /> PWA</TabsTrigger>
             <TabsTrigger value="notifications" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Bell className="size-4" /> Notifications</TabsTrigger>
             <TabsTrigger value="security" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Shield className="size-4" /> Security</TabsTrigger>
             <TabsTrigger value="workspace" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Settings className="size-4" /> Workspace</TabsTrigger>
@@ -731,58 +728,6 @@ function SettingsInner() {
                   <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"><Shield className="size-4" /></span>
                   <div><h4 className="text-[13px] font-bold text-slate-700 dark:text-slate-300">Data Privacy &amp; Security</h4><p className="mt-1 text-[12px] leading-relaxed text-slate-500 dark:text-slate-400">Read-only access for Search Console and Analytics. Sheets requires read/write for task sync. Tokens encrypted, never stored in plaintext. Revoke anytime.</p></div>
                 </div>
-              </article>
-            </div>
-          </TabsContent>
-
-          {/* PWA TAB */}
-          <TabsContent value="pwa">
-            <div className="space-y-5">
-              <article className={card}>
-                <header className={hdr}>
-                  <div className="flex gap-2.75">
-                    <span className="grid size-9 place-items-center rounded-[12px] bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400"><Smartphone className="size-[18px]" /></span>
-                    <div><h3 className="m-0 text-base text-slate-900 dark:text-white">Progressive Web App</h3><p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Install on any device — works offline</p></div>
-                  </div>
-                  <Toggle checked={pwaOn} onChange={() => setPwaOn(!pwaOn)} />
-                </header>
-                {pwaOn && (
-                  <div className="space-y-4 p-6">
-                    <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-white/10 dark:bg-slate-800/30">
-                      <div className="flex items-center gap-3">
-                        <span className="grid size-10 place-items-center rounded-xl bg-white shadow-sm dark:bg-slate-800"><Download className="size-5 text-blue-600 dark:text-blue-400" /></span>
-                        <div><h4 className="text-[14px] font-bold text-slate-900 dark:text-white">Install as Desktop App</h4><p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">Native app experience with offline support</p></div>
-                      </div>
-                      <Button size="sm" className="gap-1.5"><Download className="size-3.5" /> Install</Button>
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {[
-                        { t: "Offline Mode", d: "Access cached audits without internet", i: RefreshCw, on: true },
-                        { t: "Push Notifications", d: "Audit completion alerts on device", i: Bell, on: true },
-                        { t: "Background Sync", d: "Queue actions, sync when online", i: Zap, on: true },
-                        { t: "App Shortcuts", d: "Quick actions for audit, reports, tasks", i: ChevronRight, on: false },
-                      ].map((f) => (
-                        <div key={f.t} className="rounded-2xl border border-slate-200 bg-white/65 p-4 dark:border-white/10 dark:bg-slate-900/40">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2.5">
-                              <span className="grid size-8 place-items-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400"><f.i className="size-4" /></span>
-                              <div><h4 className="text-[13px] font-bold text-slate-900 dark:text-white">{f.t}</h4><p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{f.d}</p></div>
-                            </div>
-                            <Toggle checked={f.on} onChange={() => {}} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="rounded-2xl border border-slate-200/70 bg-slate-50/80 p-4 dark:border-white/5 dark:bg-slate-900/30">
-                      <div className="flex items-center gap-2 text-[11px] font-bold uppercase text-slate-400 dark:text-slate-500"><ExternalLink className="size-3" /> PWA Manifest</div>
-                      <div className="mt-2 grid grid-cols-2 gap-3 text-[12px] sm:grid-cols-4">
-                        {[["Name","QuasarAISEO"],["Display","Standalone"],["Theme","#d946ef"],["Icons","mainlogo.png"]].map(([k, v]) => (
-                          <div key={k}><span className="block text-[10px] font-bold uppercase text-slate-400">{k}</span><span className="font-semibold text-slate-700 dark:text-slate-300">{v}</span></div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
               </article>
             </div>
           </TabsContent>
