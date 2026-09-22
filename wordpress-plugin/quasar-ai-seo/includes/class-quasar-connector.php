@@ -1,0 +1,2276 @@
+<?php
+/**
+ * Quasar dashboard connector.
+ *
+ * Loaded by quasar-ai-seo.php. REST stays on quasar-ai-seo/v1 with the
+ * X-Quasar-Token connection. This file is not a separate plugin.
+ */
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+if (!defined('QUASAR_PLUGIN_DIR')) {
+    define('QUASAR_PLUGIN_DIR', plugin_dir_path(__FILE__));
+}
+if (!defined('QUASAR_PLUGIN_URL')) {
+    define('QUASAR_PLUGIN_URL', plugin_dir_url(__FILE__));
+}
+if (!defined('QUASAR_API_URL')) {
+    define('QUASAR_API_URL', 'https://seo.teamcmp.cloud');
+}
+if (!defined('QUASAR_FRONTEND_URL')) {
+    define('QUASAR_FRONTEND_URL', 'https://seo.quasarasoft.com');
+}
+
+// Force-enable Application Passwords (some hosts disable them by default)
+add_filter('wp_is_application_passwords_available', '__return_true');
+
+// Generated post images are WebP. Some hosts omit that type from the upload list.
+add_filter('upload_mimes', function ($mimes) {
+    $mimes['webp'] = 'image/webp';
+    return $mimes;
+});
+
+add_filter('wp_check_filetype_and_ext', function ($data, $file, $filename, $mimes) {
+    if (!empty($data['ext']) && !empty($data['type'])) {
+        return $data;
+    }
+    $filetype = wp_check_filetype($filename, $mimes);
+    if ($filetype['ext'] === 'webp') {
+        $data['ext'] = 'webp';
+        $data['type'] = 'image/webp';
+        $data['proper_filename'] = $data['proper_filename'] ?? $filename;
+    }
+    return $data;
+}, 10, 4);
+
+/**
+ * WordPress stores post_date as site-local Y-m-d H:i:s.
+ * Accept the dashboard's datetime-local value as well as that format.
+ */
+function quasar_normalize_scheduled_date($scheduled) {
+    $scheduled = trim((string) $scheduled);
+    if ($scheduled === '') {
+        return '';
+    }
+    $scheduled = str_replace('T', ' ', $scheduled);
+    if (preg_match('/^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})(?::(\d{2}))?/', $scheduled, $matches)) {
+        $seconds = isset($matches[3]) && $matches[3] !== '' ? $matches[3] : '00';
+        return $matches[1] . ' ' . $matches[2] . ':' . $seconds;
+    }
+    $timestamp = strtotime($scheduled);
+    if (!$timestamp) {
+        return '';
+    }
+    return date('Y-m-d H:i:s', $timestamp);
+}
+
+/**
+ * Create the dashboard connection token once. Reactivation keeps the token
+ * and the current connection status.
+ */
+function quasar_connector_activate() {
+    $token = get_option('quasar_connection_token', '');
+    if ($token === '') {
+        update_option('quasar_connection_token', wp_generate_password(64, false, false));
+    }
+    if (get_option('quasar_connection_status', '') === '') {
+        update_option('quasar_connection_status', 'disconnected');
+    }
+    if (!(int) get_option('quasar_user_id', 0) && get_current_user_id()) {
+        update_option('quasar_user_id', get_current_user_id());
+    }
+}
+
+/**
+ * Dashboard admin screens only. Schema and Custom Web Render use other slugs.
+ */
+function quasar_connector_is_admin_screen($id) {
+    return $id === 'toplevel_page_quasar-dashboard'
+        || $id === 'quasar-dashboard_page_quasar-settings';
+}
+
+// REST API endpoints
+add_action('rest_api_init', function () {
+    $namespace = 'quasar-ai-seo/v1';
+
+    register_rest_route($namespace, '/verify', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            return rest_ensure_response([
+                'success'   => true,
+                'site_info' => quasar_get_site_info(),
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    register_rest_route($namespace, '/site-info', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            return rest_ensure_response(quasar_get_site_info());
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    register_rest_route($namespace, '/posts', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            $per_page = (int) $request->get_param('per_page') ?: 10;
+            $page = (int) $request->get_param('page') ?: 1;
+            $status = $request->get_param('status') ?: 'any';
+            $search = $request->get_param('search');
+
+            $args = [
+                'post_type'      => 'post',
+                'post_status'    => $status === 'any' ? ['publish', 'draft', 'pending', 'future'] : $status,
+                'posts_per_page' => min($per_page, 100),
+                'paged'          => $page,
+                'orderby'        => 'date',
+                'order'          => 'DESC',
+            ];
+
+            if (!empty($search)) {
+                $args['s'] = $search;
+            }
+
+            $query = new WP_Query($args);
+            $posts = [];
+
+            foreach ($query->posts as $post) {
+                $posts[] = [
+                    'id'           => $post->ID,
+                    'title'        => $post->post_title,
+                    'status'       => $post->post_status,
+                    'date'         => $post->post_date,
+                    'modified'     => $post->post_modified,
+                    'excerpt'      => get_the_excerpt($post),
+                    'permalink'    => get_permalink($post->ID),
+                    'author'       => get_the_author_meta('display_name', $post->post_author),
+                    'featured_img' => get_the_post_thumbnail_url($post->ID, 'medium') ?: null,
+                    'categories'   => wp_get_post_categories($post->ID, ['fields' => 'names']),
+                    'quasar_post'  => (bool) get_post_meta($post->ID, '_quasar_ai_seo_post', true),
+                ];
+            }
+
+            return rest_ensure_response([
+                'posts'       => $posts,
+                'total'       => (int) $query->found_posts,
+                'total_pages' => (int) $query->max_num_pages,
+                'page'        => $page,
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    register_rest_route($namespace, '/posts', [
+        'methods'  => 'POST',
+        'callback' => function ($request) {
+            $params = json_decode($request->get_body(), true);
+
+            $title   = isset($params['title']) ? sanitize_text_field($params['title']) : '';
+            $raw_content = isset($params['content']) ? $params['content'] : '';
+
+            // Extract JSON-LD schema blocks BEFORE wp_kses_post (which strips <script> tags)
+            $schema_blocks = [];
+            $raw_content = preg_replace_callback(
+                '/<script\s+type=["\']application\/ld\+json["\'][^>]*>(.*?)<\/script>/is',
+                function ($matches) use (&$schema_blocks) {
+                    $json = trim($matches[1]);
+                    // Validate it's actual JSON-LD, not malicious code
+                    $decoded = json_decode($json, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        $schema_blocks[] = $json;
+                    }
+                    return '';
+                },
+                $raw_content
+            );
+
+            // Also catch raw JSON blocks that weren't wrapped in script tags
+            // (in case the AI returned schema as plain JSON text)
+            $raw_content = preg_replace_callback(
+                '/\{[\s]*"@context"\s*:\s*"https?:\/\/schema\.org"[\s\S]*\}(?:\s*\{[\s\S]*?\})*/s',
+                function ($matches) use (&$schema_blocks) {
+                    $json = trim($matches[0]);
+                    $decoded = json_decode($json, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        $schema_blocks[] = $json;
+                    }
+                    return '';
+                },
+                $raw_content
+            );
+
+            // Sanitize the content (without script tags)
+            $content = wp_kses_post($raw_content);
+
+            // Re-attach the schema blocks as proper <script type="application/ld+json"> tags
+            // NO — don't append to content. WordPress strips <script> from post_content.
+            // Instead, save as post meta and output via wp_head hook.
+            $all_schema_blocks = [];
+            if (!empty($schema_blocks)) {
+                foreach ($schema_blocks as $schema_json) {
+                    $all_schema_blocks[] = $schema_json;
+                }
+            }
+
+            // Also accept schema_json sent as a separate field from the backend
+            $schema_json_field = isset($params['schema_json']) ? $params['schema_json'] : '';
+            if (!empty($schema_json_field)) {
+                $decoded_schema = json_decode($schema_json_field, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded_schema)) {
+                    $all_schema_blocks[] = $schema_json_field;
+                }
+            }
+
+            $excerpt = isset($params['excerpt']) ? sanitize_text_field($params['excerpt']) : '';
+            $status  = isset($params['status']) ? sanitize_text_field($params['status']) : 'draft';
+            $post_type = isset($params['post_type']) ? sanitize_text_field($params['post_type']) : 'post';
+            // Validate post_type — only allow post or page
+            if (!in_array($post_type, ['post', 'page'], true)) {
+                $post_type = 'post';
+            }
+            $categories = isset($params['categories']) ? (array) $params['categories'] : [];
+            $tags    = isset($params['tags']) ? (array) $params['tags'] : [];
+            $featured_img = isset($params['featured_image']) ? esc_url_raw($params['featured_image']) : '';
+            $scheduled = isset($params['scheduled_date']) ? quasar_normalize_scheduled_date($params['scheduled_date']) : '';
+
+            if (empty($title) || empty($content)) {
+                return new WP_Error('missing_fields', 'Title and content are required.', ['status' => 400]);
+            }
+
+            if ($status === 'future' && empty($scheduled)) {
+                return new WP_Error('missing_date', 'A schedule date is required.', ['status' => 400]);
+            }
+
+            $post_data = [
+                'post_title'   => $title,
+                'post_content' => $content,
+                'post_excerpt' => $excerpt,
+                'post_status'  => $status,
+                'post_type'    => $post_type,
+            ];
+
+            if (!empty($scheduled) && $status === 'future') {
+                $post_data['post_date'] = $scheduled;
+                $post_data['post_date_gmt'] = get_gmt_from_date($scheduled);
+            }
+
+            $post_id = wp_insert_post($post_data, true);
+
+            if (is_wp_error($post_id)) {
+                return new WP_Error('insert_failed', $post_id->get_error_message(), ['status' => 500]);
+            }
+
+            update_post_meta($post_id, '_quasar_ai_seo_post', true);
+            update_post_meta($post_id, '_quasar_created_at', current_time('mysql'));
+
+            // Save schema JSON-LD as post meta (NOT in post_content — WordPress strips <script> tags)
+            // Output via wp_head hook (see quasar_ai_seo_output_schema below)
+            if (!empty($all_schema_blocks)) {
+                update_post_meta($post_id, '_quasar_schema_json', $all_schema_blocks);
+            }
+
+            if (!empty($categories)) {
+                $cat_ids = [];
+                foreach ($categories as $cat_name) {
+                    $cat = get_term_by('name', $cat_name, 'category');
+                    if (!$cat) {
+                        $cat = wp_insert_term($cat_name, 'category');
+                        if (!is_wp_error($cat)) {
+                            $cat_ids[] = (int) $cat['term_id'];
+                        }
+                    } else {
+                        $cat_ids[] = (int) $cat->term_id;
+                    }
+                }
+                if (!empty($cat_ids)) {
+                    wp_set_post_categories($post_id, $cat_ids);
+                }
+            }
+
+            if (!empty($tags)) {
+                wp_set_post_tags($post_id, $tags, true);
+            }
+
+            $featured_media_id = isset($params['featured_media_id']) ? (int) $params['featured_media_id'] : 0;
+            if ($featured_media_id > 0 && get_post($featured_media_id)) {
+                set_post_thumbnail($post_id, $featured_media_id);
+            } elseif (!empty($featured_img)) {
+                if (!function_exists('media_sideload_image')) {
+                    require_once ABSPATH . 'wp-admin/includes/media.php';
+                    require_once ABSPATH . 'wp-admin/includes/file.php';
+                    require_once ABSPATH . 'wp-admin/includes/image.php';
+                }
+                $attachment_id = media_sideload_image($featured_img, $post_id, null, 'id');
+                if (!is_wp_error($attachment_id)) {
+                    set_post_thumbnail($post_id, $attachment_id);
+                }
+            }
+
+            $post = get_post($post_id);
+
+            return rest_ensure_response([
+                'success' => true,
+                'post_id' => $post_id,
+                'post'    => [
+                    'id'        => $post->ID,
+                    'title'     => $post->post_title,
+                    'status'    => $post->post_status,
+                    'date'      => $post->post_date,
+                    'permalink' => get_permalink($post_id),
+                ],
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    register_rest_route($namespace, '/posts/(?P<id>\\d+)', [
+        'methods'  => 'PATCH',
+        'callback' => function ($request) {
+            $post_id = (int) $request['id'];
+            $params = json_decode($request->get_body(), true);
+
+            $post = get_post($post_id);
+            if (!$post) {
+                return new WP_Error('not_found', 'Post not found.', ['status' => 404]);
+            }
+
+            $post_data = ['ID' => $post_id];
+
+            if (isset($params['title'])) {
+                $post_data['post_title'] = sanitize_text_field($params['title']);
+            }
+            if (isset($params['content'])) {
+                $raw_content = $params['content'];
+
+                // Extract JSON-LD schema blocks BEFORE wp_kses_post
+                $update_schema_blocks = [];
+                $raw_content = preg_replace_callback(
+                    '/<script\s+type=["\']application\/ld\+json["\'][^>]*>(.*?)<\/script>/is',
+                    function ($matches) use (&$update_schema_blocks) {
+                        $json = trim($matches[1]);
+                        $decoded = json_decode($json, true);
+                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                            $update_schema_blocks[] = $json;
+                        }
+                        return '';
+                    },
+                    $raw_content
+                );
+
+                // Also catch raw JSON blocks (schema as plain text)
+                $raw_content = preg_replace_callback(
+                    '/\{[\s]*"@context"\s*:\s*"https?:\/\/schema\.org"[\s\S]*\}(?:\s*\{[\s\S]*?\})*/s',
+                    function ($matches) use (&$update_schema_blocks) {
+                        $json = trim($matches[0]);
+                        $decoded = json_decode($json, true);
+                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                            $update_schema_blocks[] = $json;
+                        }
+                        return '';
+                    },
+                    $raw_content
+                );
+
+                $content = wp_kses_post($raw_content);
+
+                // Also accept schema_json field from backend
+                $schema_json_field = isset($params['schema_json']) ? $params['schema_json'] : '';
+                if (!empty($schema_json_field)) {
+                    $decoded_schema = json_decode($schema_json_field, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded_schema)) {
+                        $update_schema_blocks[] = $schema_json_field;
+                    }
+                }
+
+                $post_data['post_content'] = $content;
+            }
+            if (isset($params['status'])) {
+                $post_data['post_status'] = sanitize_text_field($params['status']);
+            }
+            if (isset($params['excerpt'])) {
+                $post_data['post_excerpt'] = sanitize_text_field($params['excerpt']);
+            }
+
+            $result = wp_update_post($post_data, true);
+
+            if (is_wp_error($result)) {
+                return new WP_Error('update_failed', $result->get_error_message(), ['status' => 500]);
+            }
+
+            // Save schema JSON-LD as post meta on update too
+            if (isset($update_schema_blocks) && !empty($update_schema_blocks)) {
+                update_post_meta($post_id, '_quasar_schema_json', $update_schema_blocks);
+            }
+
+            $post = get_post($post_id);
+            return rest_ensure_response([
+                'success' => true,
+                'post'    => [
+                    'id'        => $post->ID,
+                    'title'     => $post->post_title,
+                    'status'    => $post->post_status,
+                    'date'      => $post->post_date,
+                    'permalink' => get_permalink($post_id),
+                ],
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    register_rest_route($namespace, '/posts/(?P<id>\\d+)', [
+        'methods'  => 'DELETE',
+        'callback' => function ($request) {
+            $post_id = (int) $request['id'];
+            $force = $request->get_param('force') === 'true';
+
+            $result = wp_delete_post($post_id, $force);
+
+            if (!$result) {
+                return new WP_Error('delete_failed', 'Failed to delete post.', ['status' => 500]);
+            }
+
+            return rest_ensure_response(['success' => true]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    // ─── Per-Post SEO Metadata ───
+
+    register_rest_route($namespace, '/posts/(?P<id>\\d+)/meta', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            $post_id = (int) $request['id'];
+            $post = get_post($post_id);
+            if (!$post) {
+                return new WP_Error('not_found', 'Post not found.', ['status' => 404]);
+            }
+
+            $meta = [
+                'post_id'    => $post_id,
+                'title'      => $post->post_title,
+                'content'    => $post->post_content,
+                'excerpt'    => $post->post_excerpt,
+                'status'     => $post->post_status,
+                'permalink'  => get_permalink($post_id),
+                'slug'       => $post->post_name,
+                'post_type'  => $post->post_type,
+                'date'       => $post->post_date,
+            ];
+
+            // Yoast SEO per-post meta
+            $meta['yoast_title']       = get_post_meta($post_id, '_yoast_wpseo_title', true);
+            $meta['yoast_description'] = get_post_meta($post_id, '_yoast_wpseo_metadesc', true);
+            $meta['yoast_focus_keyword'] = get_post_meta($post_id, '_yoast_wpseo_focuskw', true);
+
+            // RankMath per-post meta
+            $meta['rankmath_title']       = get_post_meta($post_id, 'rank_math_title', true);
+            $meta['rankmath_description'] = get_post_meta($post_id, 'rank_math_description', true);
+            $meta['rankmath_focus_keyword'] = get_post_meta($post_id, 'rank_math_focus_keyword', true);
+
+            // Detect SEO plugin
+            $meta['seo_plugin'] = 'none';
+            if (is_plugin_active('wordpress-seo/wp-seo.php') || is_plugin_active('yoast-seo/yoast-seo.php')) {
+                $meta['seo_plugin'] = 'yoast';
+            } elseif (is_plugin_active('seo-by-rank-math/rank-math.php')) {
+                $meta['seo_plugin'] = 'rankmath';
+            }
+
+            // Categories and tags
+            $meta['categories'] = wp_get_post_categories($post_id, ['fields' => 'names']);
+            $meta['tags']       = wp_get_post_tags($post_id, ['fields' => 'names']);
+
+            return rest_ensure_response([
+                'success' => true,
+                'meta'    => $meta,
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    register_rest_route($namespace, '/posts/(?P<id>\\d+)/meta', [
+        'methods'  => 'PATCH',
+        'callback' => function ($request) {
+            $post_id = (int) $request['id'];
+            $post = get_post($post_id);
+            if (!$post) {
+                return new WP_Error('not_found', 'Post not found.', ['status' => 404]);
+            }
+
+            $params = json_decode($request->get_body(), true);
+            $updated = [];
+
+            // Update post title
+            if (isset($params['title']) && !empty($params['title'])) {
+                $old_title = $post->post_title;
+                wp_update_post(['ID' => $post_id, 'post_title' => sanitize_text_field($params['title'])]);
+                $updated['title'] = ['old' => $old_title, 'new' => $params['title']];
+            }
+
+            // Update post excerpt
+            if (isset($params['excerpt'])) {
+                $old_excerpt = $post->post_excerpt;
+                wp_update_post(['ID' => $post_id, 'post_excerpt' => sanitize_text_field($params['excerpt'])]);
+                $updated['excerpt'] = ['old' => $old_excerpt, 'new' => $params['excerpt']];
+            }
+
+            // Update slug
+            if (isset($params['slug']) && !empty($params['slug'])) {
+                $old_slug = $post->post_name;
+                wp_update_post(['ID' => $post_id, 'post_name' => sanitize_title($params['slug'])]);
+                $updated['slug'] = ['old' => $old_slug, 'new' => sanitize_title($params['slug'])];
+            }
+
+            // Update Yoast title
+            if (isset($params['yoast_title'])) {
+                $old = get_post_meta($post_id, '_yoast_wpseo_title', true);
+                update_post_meta($post_id, '_yoast_wpseo_title', sanitize_text_field($params['yoast_title']));
+                $updated['yoast_title'] = ['old' => $old, 'new' => $params['yoast_title']];
+            }
+
+            // Update Yoast description
+            if (isset($params['yoast_description'])) {
+                $old = get_post_meta($post_id, '_yoast_wpseo_metadesc', true);
+                update_post_meta($post_id, '_yoast_wpseo_metadesc', sanitize_textarea_field($params['yoast_description']));
+                $updated['yoast_description'] = ['old' => $old, 'new' => $params['yoast_description']];
+            }
+
+            // Update Yoast focus keyword
+            if (isset($params['yoast_focus_keyword'])) {
+                $old = get_post_meta($post_id, '_yoast_wpseo_focuskw', true);
+                update_post_meta($post_id, '_yoast_wpseo_focuskw', sanitize_text_field($params['yoast_focus_keyword']));
+                $updated['yoast_focus_keyword'] = ['old' => $old, 'new' => $params['yoast_focus_keyword']];
+            }
+
+            // Update RankMath title
+            if (isset($params['rankmath_title'])) {
+                $old = get_post_meta($post_id, 'rank_math_title', true);
+                update_post_meta($post_id, 'rank_math_title', sanitize_text_field($params['rankmath_title']));
+                $updated['rankmath_title'] = ['old' => $old, 'new' => $params['rankmath_title']];
+            }
+
+            // Update RankMath description
+            if (isset($params['rankmath_description'])) {
+                $old = get_post_meta($post_id, 'rank_math_description', true);
+                update_post_meta($post_id, 'rank_math_description', sanitize_textarea_field($params['rankmath_description']));
+                $updated['rankmath_description'] = ['old' => $old, 'new' => $params['rankmath_description']];
+            }
+
+            // Update RankMath focus keyword
+            if (isset($params['rankmath_focus_keyword'])) {
+                $old = get_post_meta($post_id, 'rank_math_focus_keyword', true);
+                update_post_meta($post_id, 'rank_math_focus_keyword', sanitize_text_field($params['rankmath_focus_keyword']));
+                $updated['rankmath_focus_keyword'] = ['old' => $old, 'new' => $params['rankmath_focus_keyword']];
+            }
+
+            if (empty($updated)) {
+                return new WP_Error('no_changes', 'No metadata fields were provided to update.', ['status' => 400]);
+            }
+
+            return rest_ensure_response([
+                'success' => true,
+                'updated' => $updated,
+                'permalink' => get_permalink($post_id),
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    // ─── Web Builder: Pages endpoints (post_type = 'page') ───
+
+    register_rest_route($namespace, '/pages', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            $args = [
+                'post_type'      => 'page',
+                'post_status'    => ['publish', 'draft', 'private'],
+                'posts_per_page' => 50,
+                'orderby'        => 'date',
+                'order'          => 'DESC',
+            ];
+
+            $query = new WP_Query($args);
+            $pages = [];
+
+            foreach ($query->posts as $page) {
+                $pages[] = [
+                    'id'        => $page->ID,
+                    'title'     => $page->post_title,
+                    'status'    => $page->post_status,
+                    'permalink' => get_permalink($page->ID),
+                    'date'      => $page->post_date,
+                ];
+            }
+
+            return rest_ensure_response(['pages' => $pages]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    register_rest_route($namespace, '/pages', [
+        'methods'  => 'POST',
+        'callback' => function ($request) {
+            $params = json_decode($request->get_body(), true);
+
+            $title   = isset($params['title']) ? sanitize_text_field($params['title']) : '';
+            $raw_content = isset($params['content']) ? $params['content'] : '';
+            $status  = isset($params['status']) ? sanitize_text_field($params['status']) : 'draft';
+
+            if (empty($title) || empty($raw_content)) {
+                return new WP_Error('missing_fields', 'Title and content are required.', ['status' => 400]);
+            }
+
+            // Extract JSON-LD schema blocks BEFORE wp_kses_post
+            $schema_blocks = [];
+            $raw_content = preg_replace_callback(
+                '/<script\s+type=["\']application\/ld\+json["\'][^>]*>(.*?)<\/script>/is',
+                function ($matches) use (&$schema_blocks) {
+                    $json = trim($matches[1]);
+                    $decoded = json_decode($json, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        $schema_blocks[] = $json;
+                    }
+                    return '';
+                },
+                $raw_content
+            );
+
+            // Also accept schema_json sent as a separate field
+            $schema_json_field = isset($params['schema_json']) ? $params['schema_json'] : '';
+            if (!empty($schema_json_field)) {
+                $decoded_schema = json_decode($schema_json_field, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded_schema)) {
+                    $schema_blocks[] = $schema_json_field;
+                }
+            }
+
+            // For landing pages: extract <style> and <script> blocks BEFORE sanitization
+            // so wp_kses_post doesn't strip them and leave raw CSS/JS as visible text
+            $style_blocks = [];
+            $script_blocks = [];
+
+            // Extract <style> blocks
+            $raw_content = preg_replace_callback(
+                '/<style[^>]*>(.*?)<\/style>/is',
+                function ($matches) use (&$style_blocks) {
+                    $style_blocks[] = $matches[0];
+                    return '<!--STYLE_PLACEHOLDER_' . (count($style_blocks) - 1) . '-->';
+                },
+                $raw_content
+            );
+
+            // Extract <script> blocks (except JSON-LD which is already handled)
+            $raw_content = preg_replace_callback(
+                '/<script(?![^>]*type=["\']application\/ld\+json)[^>]*>(.*?)<\/script>/is',
+                function ($matches) use (&$script_blocks) {
+                    $script_blocks[] = $matches[0];
+                    return '<!--SCRIPT_PLACEHOLDER_' . (count($script_blocks) - 1) . '-->';
+                },
+                $raw_content
+            );
+
+            // Sanitize the HTML content (without style/script tags)
+            $content = wp_kses_post($raw_content);
+
+            // Restore <style> blocks
+            for ($i = 0; $i < count($style_blocks); $i++) {
+                $content = str_replace('<!--STYLE_PLACEHOLDER_' . $i . '-->', $style_blocks[$i], $content);
+            }
+            // Restore <script> blocks
+            for ($i = 0; $i < count($script_blocks); $i++) {
+                $content = str_replace('<!--SCRIPT_PLACEHOLDER_' . $i . '-->', $script_blocks[$i], $content);
+            }
+
+            $page_data = [
+                'post_title'   => $title,
+                'post_content' => $content,
+                'post_status'  => $status,
+                'post_type'    => 'page',
+            ];
+
+            $page_id = wp_insert_post($page_data, true);
+
+            if (is_wp_error($page_id)) {
+                return new WP_Error('insert_failed', $page_id->get_error_message(), ['status' => 500]);
+            }
+
+            update_post_meta($page_id, '_quasar_ai_seo_page', true);
+            update_post_meta($page_id, '_quasar_created_at', current_time('mysql'));
+
+            if (!empty($schema_blocks)) {
+                update_post_meta($page_id, '_quasar_schema_json', $schema_blocks);
+            }
+
+            $page = get_post($page_id);
+            return rest_ensure_response([
+                'success'  => true,
+                'post_id'  => $page_id,
+                'permalink' => get_permalink($page_id),
+                'post'     => [
+                    'id'        => $page->ID,
+                    'title'     => $page->post_title,
+                    'status'    => $page->post_status,
+                    'permalink' => get_permalink($page_id),
+                ],
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    register_rest_route($namespace, '/pages/(?P<id>\\d+)', [
+        'methods'  => 'PATCH',
+        'callback' => function ($request) {
+            $page_id = (int) $request['id'];
+            $params = json_decode($request->get_body(), true);
+
+            $page = get_post($page_id);
+            if (!$page) {
+                return new WP_Error('not_found', 'Page not found.', ['status' => 404]);
+            }
+
+            $page_data = ['ID' => $page_id];
+
+            if (isset($params['title'])) {
+                $page_data['post_title'] = sanitize_text_field($params['title']);
+            }
+            if (isset($params['content'])) {
+                $raw_content = $params['content'];
+
+                // Extract JSON-LD schema blocks
+                $update_schema_blocks = [];
+                $raw_content = preg_replace_callback(
+                    '/<script\s+type=["\']application\/ld\+json["\'][^>]*>(.*?)<\/script>/is',
+                    function ($matches) use (&$update_schema_blocks) {
+                        $json = trim($matches[1]);
+                        $decoded = json_decode($json, true);
+                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                            $update_schema_blocks[] = $json;
+                        }
+                        return '';
+                    },
+                    $raw_content
+                );
+
+                // Extract <style> and <script> blocks before sanitization
+                $update_style_blocks = [];
+                $update_script_blocks = [];
+
+                $raw_content = preg_replace_callback(
+                    '/<style[^>]*>(.*?)<\/style>/is',
+                    function ($matches) use (&$update_style_blocks) {
+                        $update_style_blocks[] = $matches[0];
+                        return '<!--STYLE_PLACEHOLDER_' . (count($update_style_blocks) - 1) . '-->';
+                    },
+                    $raw_content
+                );
+
+                $raw_content = preg_replace_callback(
+                    '/<script(?![^>]*type=["\']application\/ld\+json)[^>]*>(.*?)<\/script>/is',
+                    function ($matches) use (&$update_script_blocks) {
+                        $update_script_blocks[] = $matches[0];
+                        return '<!--SCRIPT_PLACEHOLDER_' . (count($update_script_blocks) - 1) . '-->';
+                    },
+                    $raw_content
+                );
+
+                $content = wp_kses_post($raw_content);
+
+                // Restore style and script blocks
+                for ($i = 0; $i < count($update_style_blocks); $i++) {
+                    $content = str_replace('<!--STYLE_PLACEHOLDER_' . $i . '-->', $update_style_blocks[$i], $content);
+                }
+                for ($i = 0; $i < count($update_script_blocks); $i++) {
+                    $content = str_replace('<!--SCRIPT_PLACEHOLDER_' . $i . '-->', $update_script_blocks[$i], $content);
+                }
+
+                $schema_json_field = isset($params['schema_json']) ? $params['schema_json'] : '';
+                if (!empty($schema_json_field)) {
+                    $decoded_schema = json_decode($schema_json_field, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded_schema)) {
+                        $update_schema_blocks[] = $schema_json_field;
+                    }
+                }
+
+                $page_data['post_content'] = $content;
+            }
+            if (isset($params['status'])) {
+                $page_data['post_status'] = sanitize_text_field($params['status']);
+            }
+
+            $result = wp_update_post($page_data, true);
+
+            if (is_wp_error($result)) {
+                return new WP_Error('update_failed', $result->get_error_message(), ['status' => 500]);
+            }
+
+            if (!empty($update_schema_blocks)) {
+                update_post_meta($page_id, '_quasar_schema_json', $update_schema_blocks);
+            }
+
+            $page = get_post($page_id);
+            return rest_ensure_response([
+                'success' => true,
+                'post'    => [
+                    'id'        => $page->ID,
+                    'title'     => $page->post_title,
+                    'status'    => $page->post_status,
+                    'permalink' => get_permalink($page_id),
+                ],
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    register_rest_route($namespace, '/categories', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            $categories = get_categories([
+                'taxonomy'   => 'category',
+                'hide_empty' => false,
+                'number'     => 100,
+            ]);
+
+            $result = [];
+            foreach ($categories as $cat) {
+                $result[] = [
+                    'id'    => (int) $cat->term_id,
+                    'name'  => $cat->name,
+                    'slug'  => $cat->slug,
+                    'count' => (int) $cat->count,
+                ];
+            }
+
+            return rest_ensure_response(['categories' => $result]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    register_rest_route($namespace, '/connect', [
+        'methods'  => 'POST',
+        'callback' => function ($request) {
+            // Mark as connected - no Application Passwords needed
+            // Post operations go through our custom REST endpoints with token auth
+            update_option('quasar_connection_status', 'connected');
+
+            $user_id = (int) get_option('quasar_user_id', 0);
+            $user = $user_id ? get_userdata($user_id) : null;
+
+            return rest_ensure_response([
+                'success'      => true,
+                'site_url'     => home_url(),
+                'site_name'    => get_bloginfo('name'),
+                'username'     => $user ? $user->user_login : '',
+                'app_password' => '', // No longer needed - using token auth
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    // Diagnostic endpoint - no token required
+    register_rest_route($namespace, '/diagnostics', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            global $wp_version;
+            $user_id = (int) get_option('quasar_user_id', 0);
+            $user = $user_id ? get_userdata($user_id) : null;
+
+            return rest_ensure_response([
+                'wp_version'             => $wp_version,
+                'php_version'            => PHP_VERSION,
+                'app_passwords_class'    => class_exists('WP_Application_Passwords') ? 'yes' : 'no',
+                'app_passwords_function' => function_exists('wp_create_application_password') ? 'yes' : 'no',
+                'stored_user_id'         => $user_id,
+                'user_exists'            => $user ? 'yes' : 'no',
+                'user_login'             => $user ? $user->user_login : '',
+                'is_https'               => is_ssl() ? 'yes' : 'no',
+                'home_url'               => home_url(),
+                'rest_url'               => rest_url('quasar-ai-seo/v1'),
+                'token_stored'           => !empty(get_option('quasar_connection_token', '')) ? 'yes' : 'no',
+                'connection_status'      => get_option('quasar_connection_status', 'disconnected'),
+            ]);
+        },
+        'permission_callback' => '__return_true',
+    ]);
+
+    register_rest_route($namespace, '/disconnect', [
+        'methods'  => 'POST',
+        'callback' => function ($request) {
+            update_option('quasar_connection_status', 'disconnected');
+
+            $user_id = (int) get_option('quasar_user_id', 0);
+
+            if ($user_id && function_exists('wp_delete_application_password') && class_exists('WP_Application_Passwords')) {
+                $passwords = WP_Application_Passwords::get_user_application_passwords($user_id);
+                foreach ($passwords as $pass) {
+                    if (strpos($pass['name'], 'Quasar AI SEO') !== false) {
+                        wp_delete_application_password($user_id, $pass['uuid']);
+                    }
+                }
+            }
+
+            delete_option('quasar_app_password');
+
+            return rest_ensure_response(['success' => true]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    // ─── Site Settings (meta title, description, SEO) ───
+
+    register_rest_route($namespace, '/site-settings', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            // Force fresh data — bypass LiteSpeed/object cache
+            wp_cache_delete('alloptions', 'options');
+
+            $settings = [
+                'blog_name'        => get_option('blogname', ''),
+                'blog_description' => get_option('blogdescription', ''),
+                'site_url'         => home_url(),
+                'site_language'    => get_bloginfo('language'),
+                'timezone'         => get_option('timezone_string', ''),
+                'permalink_structure' => get_option('permalink_structure', ''),
+            ];
+
+            // Yoast SEO
+            $wpseo_titles = get_option('wpseo_titles', []);
+            if (is_array($wpseo_titles)) {
+                $settings['yoast_homepage_title'] = isset($wpseo_titles['title-home-wpseo']) ? $wpseo_titles['title-home-wpseo'] : '';
+                $settings['yoast_homepage_description'] = isset($wpseo_titles['metadesc-home-wpseo']) ? $wpseo_titles['metadesc-home-wpseo'] : '';
+            }
+
+            // Rank Math
+            $rankmath_titles = get_option('rank-math-options-titles', []);
+            if (is_array($rankmath_titles)) {
+                $settings['rankmath_homepage_title'] = isset($rankmath_titles['homepage_title']) ? $rankmath_titles['homepage_title'] : '';
+                $settings['rankmath_homepage_description'] = isset($rankmath_titles['homepage_description']) ? $rankmath_titles['homepage_description'] : '';
+            }
+
+            // Detect which SEO plugin is active
+            $settings['seo_plugin'] = 'none';
+            if (is_plugin_active('wordpress-seo/wp-seo.php') || is_plugin_active('yoast-seo/yoast-seo.php')) {
+                $settings['seo_plugin'] = 'yoast';
+            } elseif (is_plugin_active('seo-by-rank-math/rank-math.php')) {
+                $settings['seo_plugin'] = 'rankmath';
+            }
+
+            $response = rest_ensure_response([
+                'success'  => true,
+                'settings' => $settings,
+            ]);
+            // Prevent LiteSpeed/CDN from caching this response
+            $response->header('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+            $response->header('Pragma', 'no-cache');
+            $response->header('Expires', '0');
+            return $response;
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    register_rest_route($namespace, '/site-settings', [
+        'methods'  => 'POST',
+        'callback' => function ($request) {
+            $params = json_decode($request->get_body(), true);
+
+            $updated = [];
+
+            // Update core blog name
+            if (isset($params['blog_name']) && !empty($params['blog_name'])) {
+                $old = get_option('blogname', '');
+                update_option('blogname', sanitize_text_field($params['blog_name']));
+                $updated['blog_name'] = ['old' => $old, 'new' => $params['blog_name']];
+            }
+
+            // Update core blog description
+            if (isset($params['blog_description'])) {
+                $old = get_option('blogdescription', '');
+                update_option('blogdescription', sanitize_text_field($params['blog_description']));
+                $updated['blog_description'] = ['old' => $old, 'new' => $params['blog_description']];
+            }
+
+            // Update Yoast homepage title
+            if (isset($params['yoast_homepage_title']) && !empty($params['yoast_homepage_title'])) {
+                $wpseo_titles = get_option('wpseo_titles', []);
+                if (!is_array($wpseo_titles)) {
+                    $wpseo_titles = [];
+                }
+                $old = isset($wpseo_titles['title-home-wpseo']) ? $wpseo_titles['title-home-wpseo'] : '';
+                $wpseo_titles['title-home-wpseo'] = sanitize_text_field($params['yoast_homepage_title']);
+                update_option('wpseo_titles', $wpseo_titles);
+                $updated['yoast_homepage_title'] = ['old' => $old, 'new' => $params['yoast_homepage_title']];
+            }
+
+            // Update Yoast homepage description
+            if (isset($params['yoast_homepage_description']) && !empty($params['yoast_homepage_description'])) {
+                $wpseo_titles = get_option('wpseo_titles', []);
+                if (!is_array($wpseo_titles)) {
+                    $wpseo_titles = [];
+                }
+                $old = isset($wpseo_titles['metadesc-home-wpseo']) ? $wpseo_titles['metadesc-home-wpseo'] : '';
+                $wpseo_titles['metadesc-home-wpseo'] = sanitize_textarea_field($params['yoast_homepage_description']);
+                update_option('wpseo_titles', $wpseo_titles);
+                $updated['yoast_homepage_description'] = ['old' => $old, 'new' => $params['yoast_homepage_description']];
+            }
+
+            // Update Rank Math homepage title
+            if (isset($params['rankmath_homepage_title']) && !empty($params['rankmath_homepage_title'])) {
+                $rankmath_titles = get_option('rank-math-options-titles', []);
+                if (!is_array($rankmath_titles)) {
+                    $rankmath_titles = [];
+                }
+                $old = isset($rankmath_titles['homepage_title']) ? $rankmath_titles['homepage_title'] : '';
+                $rankmath_titles['homepage_title'] = sanitize_text_field($params['rankmath_homepage_title']);
+                update_option('rank-math-options-titles', $rankmath_titles);
+                $updated['rankmath_homepage_title'] = ['old' => $old, 'new' => $params['rankmath_homepage_title']];
+            }
+
+            // Update Rank Math homepage description
+            if (isset($params['rankmath_homepage_description']) && !empty($params['rankmath_homepage_description'])) {
+                $rankmath_titles = get_option('rank-math-options-titles', []);
+                if (!is_array($rankmath_titles)) {
+                    $rankmath_titles = [];
+                }
+                $old = isset($rankmath_titles['homepage_description']) ? $rankmath_titles['homepage_description'] : '';
+                $rankmath_titles['homepage_description'] = sanitize_textarea_field($params['rankmath_homepage_description']);
+                update_option('rank-math-options-titles', $rankmath_titles);
+                $updated['rankmath_homepage_description'] = ['old' => $old, 'new' => $params['rankmath_homepage_description']];
+            }
+
+            if (empty($updated)) {
+                return new WP_Error('no_changes', 'No settings were provided to update.', ['status' => 400]);
+            }
+
+            // Flush WordPress caches so changes are visible immediately
+            wp_cache_flush();
+            if (function_exists('wp_cache_delete')) {
+                wp_cache_delete('alloptions', 'options');
+            }
+            // Flush LiteSpeed Cache (common on Hostinger)
+            if (class_exists('LiteSpeed\Purge')) {
+                \LiteSpeed\Purge::purge_all();
+            }
+            if (class_exists('LiteSpeed_Cache_Purge')) {
+                LiteSpeed_Cache_Purge::purge_all();
+            }
+            if (class_exists('LiteSpeed_Cache_API')) {
+                LiteSpeed_Cache_API::action_purge_all();
+            }
+            // Try do_action hooks that LiteSpeed listens to
+            do_action('litespeed_purge_all');
+            do_action('litespeed_cache_purge_all');
+            // Flush other popular caching plugins
+            if (function_exists('wp_cache_clean_cache')) {
+                wp_cache_clean_cache();
+            }
+            if (function_exists('w3tc_flush_all')) {
+                w3tc_flush_all();
+            }
+            if (function_exists('wp_rocket_clean_domain')) {
+                wp_rocket_clean_domain();
+            }
+            // Trigger WordPress core actions
+            clean_post_cache(get_option('page_on_front'));
+            do_action('after_switch_theme');
+
+            // Read back the actual values to confirm
+            $confirm = [
+                'blog_name'        => get_option('blogname', ''),
+                'blog_description' => get_option('blogdescription', ''),
+            ];
+
+            return rest_ensure_response([
+                'success' => true,
+                'updated' => $updated,
+                'confirmed' => $confirm,
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    // ─── Tags ───
+    register_rest_route($namespace, '/tags', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            $tags = get_tags([
+                'taxonomy'   => 'post_tag',
+                'hide_empty' => false,
+                'number'     => 100,
+            ]);
+
+            $result = [];
+            foreach ($tags as $tag) {
+                $result[] = [
+                    'id'    => (int) $tag->term_id,
+                    'name'  => $tag->name,
+                    'slug'  => $tag->slug,
+                    'count' => (int) $tag->count,
+                ];
+            }
+
+            return rest_ensure_response(['tags' => $result]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    // ─── Save a generated image into the site media library ───
+    register_rest_route($namespace, '/media', [
+        'methods'  => 'POST',
+        'callback' => function ($request) {
+            $params = json_decode($request->get_body(), true);
+            $filename = isset($params['filename']) ? sanitize_file_name($params['filename']) : '';
+            $data = isset($params['data']) ? $params['data'] : '';
+            $mime = isset($params['mime_type']) ? sanitize_text_field($params['mime_type']) : 'image/webp';
+
+            if ($filename === '' || $data === '') {
+                return new WP_Error('missing_fields', 'filename and data are required.', ['status' => 400]);
+            }
+
+            $allowed = ['image/webp', 'image/png', 'image/jpeg', 'image/gif'];
+            if (!in_array($mime, $allowed, true)) {
+                return new WP_Error('bad_type', 'Only image uploads are allowed.', ['status' => 400]);
+            }
+
+            $binary = base64_decode($data, true);
+            if ($binary === false || strlen($binary) === 0) {
+                return new WP_Error('bad_data', 'Image data is invalid.', ['status' => 400]);
+            }
+            if (strlen($binary) > 8 * 1024 * 1024) {
+                return new WP_Error('too_large', 'Image must be 8 MB or smaller.', ['status' => 400]);
+            }
+
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+            require_once ABSPATH . 'wp-admin/includes/media.php';
+            require_once ABSPATH . 'wp-admin/includes/image.php';
+
+            $upload = wp_upload_bits($filename, null, $binary);
+            if (!empty($upload['error'])) {
+                return new WP_Error('upload_failed', $upload['error'], ['status' => 500]);
+            }
+
+            $attachment = [
+                'post_mime_type' => $mime,
+                'post_title'     => preg_replace('/\.[^.]+$/', '', $filename),
+                'post_content'   => '',
+                'post_status'    => 'inherit',
+            ];
+            $attach_id = wp_insert_attachment($attachment, $upload['file']);
+            if (is_wp_error($attach_id)) {
+                return new WP_Error('upload_failed', $attach_id->get_error_message(), ['status' => 500]);
+            }
+
+            $meta = wp_generate_attachment_metadata($attach_id, $upload['file']);
+            wp_update_attachment_metadata($attach_id, $meta);
+
+            return rest_ensure_response([
+                'id'    => (int) $attach_id,
+                'url'   => wp_get_attachment_url($attach_id),
+                'title' => get_the_title($attach_id),
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    // ─── Media search ───
+    register_rest_route($namespace, '/media', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            $search = sanitize_text_field($request->get_param('search'));
+            $per_page = (int) $request->get_param('per_page') ?: 20;
+            if ($per_page > 100) $per_page = 100;
+
+            $query_args = [
+                'post_type'      => 'attachment',
+                'post_status'    => 'inherit',
+                'posts_per_page' => $per_page,
+            ];
+            if ($search) {
+                $query_args['s'] = $search;
+            }
+
+            $query = new WP_Query($query_args);
+            $result = [];
+
+            foreach ($query->posts as $post) {
+                $result[] = [
+                    'id'         => (int) $post->ID,
+                    'title'      => $post->post_title,
+                    'url'        => wp_get_attachment_url($post->ID),
+                    'alt'        => get_post_meta($post->ID, '_wp_attachment_image_alt', true),
+                    'mime_type'  => $post->post_mime_type,
+                    'sizes'      => wp_get_attachment_metadata($post->ID)['sizes'] ?? [],
+                ];
+            }
+
+            return rest_ensure_response(['media' => $result, 'total' => (int) $query->found_posts]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    // ─── Single media item ───
+    register_rest_route($namespace, '/media/(?P<id>\d+)', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            $id = (int) $request->get_param('id');
+            $post = get_post($id);
+            if (!$post || $post->post_type !== 'attachment') {
+                return new WP_Error('not_found', 'Media item not found', ['status' => 404]);
+            }
+
+            $meta = wp_get_attachment_metadata($id);
+            return rest_ensure_response([
+                'id'           => (int) $post->ID,
+                'title'        => $post->post_title,
+                'url'          => wp_get_attachment_url($id),
+                'alt'          => get_post_meta($id, '_wp_attachment_image_alt', true),
+                'caption'      => $post->post_excerpt,
+                'description'  => $post->post_content,
+                'mime_type'    => $post->post_mime_type,
+                'sizes'        => $meta['sizes'] ?? [],
+                'width'        => $meta['width'] ?? 0,
+                'height'       => $meta['height'] ?? 0,
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    // ─── Post revisions ───
+    register_rest_route($namespace, '/posts/(?P<id>\d+)/revisions', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            $id = (int) $request->get_param('id');
+            $revisions = wp_get_post_revisions($id, ['posts_per_page' => 20]);
+            $result = [];
+
+            foreach ($revisions as $rev) {
+                $result[] = [
+                    'id'        => (int) $rev->ID,
+                    'date'      => $rev->post_date,
+                    'author'    => get_the_author_meta('display_name', $rev->post_author),
+                    'title'     => $rev->post_title,
+                    'preview'   => wp_strip_all_tags($rev->post_content),
+                ];
+            }
+
+            return rest_ensure_response(['revisions' => $result]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    // ─── Publish post ───
+    register_rest_route($namespace, '/posts/(?P<id>\d+)/publish', [
+        'methods'  => 'POST',
+        'callback' => function ($request) {
+            $id = (int) $request->get_param('id');
+            $post = get_post($id);
+            if (!$post) {
+                return new WP_Error('not_found', 'Post not found', ['status' => 404]);
+            }
+
+            wp_update_post([
+                'ID'          => $id,
+                'post_status' => 'publish',
+                'post_date'   => current_time('mysql'),
+                'post_date_gmt' => current_time('mysql', 1),
+            ]);
+
+            return rest_ensure_response([
+                'success' => true,
+                'id'      => $id,
+                'status'  => 'publish',
+                'url'     => get_permalink($id),
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    // ─── Schedule post ───
+    register_rest_route($namespace, '/posts/(?P<id>\d+)/schedule', [
+        'methods'  => 'POST',
+        'callback' => function ($request) {
+            $id = (int) $request->get_param('id');
+            $scheduled_at = sanitize_text_field($request->get_param('scheduled_at'));
+            if (!$scheduled_at) {
+                return new WP_Error('missing_date', 'scheduled_at is required', ['status' => 400]);
+            }
+
+            $post = get_post($id);
+            if (!$post) {
+                return new WP_Error('not_found', 'Post not found', ['status' => 404]);
+            }
+
+            $timestamp = strtotime($scheduled_at);
+            if (!$timestamp) {
+                return new WP_Error('invalid_date', 'Invalid date format', ['status' => 400]);
+            }
+
+            wp_update_post([
+                'ID'            => $id,
+                'post_status'   => 'future',
+                'post_date'     => date('Y-m-d H:i:s', $timestamp),
+                'post_date_gmt' => gmdate('Y-m-d H:i:s', $timestamp),
+            ]);
+
+            return rest_ensure_response([
+                'success'      => true,
+                'id'           => $id,
+                'status'       => 'future',
+                'scheduled_at' => date('Y-m-d H:i:s', $timestamp),
+                'url'          => get_permalink($id),
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    // ─── Custom render ───
+    register_rest_route($namespace, '/posts/(?P<id>\d+)/custom-render', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            $id = (int) $request->get_param('id');
+            return rest_ensure_response([
+                'html'    => get_post_meta($id, '_quasar_custom_html', true),
+                'css'     => get_post_meta($id, '_quasar_custom_css', true),
+                'js'      => get_post_meta($id, '_quasar_custom_js', true),
+                'enabled' => get_post_meta($id, '_quasar_custom_render_enabled', true) === '1',
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    register_rest_route($namespace, '/posts/(?P<id>\d+)/custom-render', [
+        'methods'  => 'POST',
+        'callback' => function ($request) {
+            $id = (int) $request->get_param('id');
+            $params = json_decode($request->get_body(), true);
+
+            $post = get_post($id);
+            if (!$post) {
+                return new WP_Error('not_found', 'Post not found', ['status' => 404]);
+            }
+
+            if (isset($params['html'])) {
+                update_post_meta($id, '_quasar_custom_html', wp_kses_post($params['html']));
+            }
+            if (isset($params['css'])) {
+                update_post_meta($id, '_quasar_custom_css', $params['css']);
+            }
+            if (isset($params['js'])) {
+                update_post_meta($id, '_quasar_custom_js', $params['js']);
+            }
+            if (isset($params['enabled'])) {
+                update_post_meta($id, '_quasar_custom_render_enabled', $params['enabled'] ? '1' : '0');
+            }
+
+            return rest_ensure_response([
+                'success' => true,
+                'message'  => 'Custom render updated',
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    // ─── Global render ───
+    register_rest_route($namespace, '/global-render', [
+        'methods'  => 'GET',
+        'callback' => function ($request) {
+            return rest_ensure_response([
+                'header' => get_option('quasar_global_header', ''),
+                'footer' => get_option('quasar_global_footer', ''),
+                'head'   => get_option('quasar_global_head', ''),
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    register_rest_route($namespace, '/global-render', [
+        'methods'  => 'POST',
+        'callback' => function ($request) {
+            $params = json_decode($request->get_body(), true);
+
+            if (isset($params['header'])) {
+                update_option('quasar_global_header', wp_kses_post($params['header']));
+            }
+            if (isset($params['footer'])) {
+                update_option('quasar_global_footer', wp_kses_post($params['footer']));
+            }
+            if (isset($params['head'])) {
+                update_option('quasar_global_head', $params['head']);
+            }
+
+            return rest_ensure_response([
+                'success' => true,
+                'message' => 'Global render updated',
+            ]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+});
+add_action('admin_menu', function () {
+    add_menu_page(
+        'Quasar AI SEO',
+        'Quasar AI SEO',
+        'manage_options',
+        'quasar-dashboard',
+        'quasar_render_dashboard',
+        'dashicons-chart-area',
+        30
+    );
+
+    add_submenu_page(
+        'quasar-dashboard',
+        'Connection Settings',
+        'Settings',
+        'manage_options',
+        'quasar-settings',
+        'quasar_render_settings'
+    );
+});
+
+// Enqueue assets — inline CSS and JS for maximum reliability
+add_action('admin_enqueue_scripts', function ($hook) {
+    if (!quasar_connector_is_admin_screen($hook)) {
+        return;
+    }
+    // jQuery is needed for admin.js functionality
+    wp_enqueue_script('jquery');
+});
+
+// Inline CSS on admin head
+add_action('admin_head', function () {
+    $screen = get_current_screen();
+    if (!$screen || !quasar_connector_is_admin_screen($screen->id)) {
+        return;
+    }
+    ?>
+    <style>
+    .quasar-wrap { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+
+    .quasar-hero { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid #e5e7eb; }
+    .quasar-hero-left { display: flex; align-items: center; gap: 16px; }
+    .quasar-logo { flex-shrink: 0; }
+    .quasar-hero-title { font-size: 28px; font-weight: 800; color: #111827; margin: 0; letter-spacing: -0.5px; }
+    .quasar-hero-sub { font-size: 14px; color: #6b7280; margin: 4px 0 0; }
+    .quasar-hero-status { flex-shrink: 0; }
+    .quasar-status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; }
+    .quasar-status-connected { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+    .quasar-status-disconnected { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+    .quasar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+
+    .quasar-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; overflow: hidden; transition: all 0.2s ease; }
+    .quasar-card-animated:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.06); transform: translateY(-1px); }
+    .quasar-card-header { display: flex; align-items: center; gap: 12px; padding: 20px 24px; border-bottom: 1px solid #f3f4f6; }
+    .quasar-card-header h2 { margin: 0; font-size: 16px; font-weight: 700; color: #111827; }
+    .quasar-card-body { padding: 20px 24px; }
+    .quasar-card-desc { font-size: 13px; color: #6b7280; margin: 0 0 16px; line-height: 1.5; }
+    .quasar-card-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .quasar-icon-blue { background: #eff6ff; color: #3b82f6; }
+    .quasar-icon-purple { background: #f3e8ff; color: #8b5cf6; }
+    .quasar-icon-green { background: #ecfdf5; color: #10b981; }
+    .quasar-icon-red { background: #fef2f2; color: #ef4444; }
+    .quasar-icon-orange { background: #fff7ed; color: #f59e0b; }
+
+    .quasar-field { margin-bottom: 16px; }
+    .quasar-field:last-child { margin-bottom: 0; }
+    .quasar-label { display: block; font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .quasar-field-value { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #374151; }
+    .quasar-field-value code { background: #f9fafb; padding: 6px 10px; border-radius: 6px; font-size: 13px; font-family: 'SF Mono', Monaco, 'Courier New', monospace; border: 1px solid #e5e7eb; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .quasar-copy-btn { background: none; border: none; cursor: pointer; color: #9ca3af; padding: 4px; border-radius: 4px; transition: all 0.2s; flex-shrink: 0; }
+    .quasar-copy-btn:hover { color: #d946ef; background: #fdf4ff; }
+
+    .quasar-token-display { display: flex; align-items: center; gap: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px 16px; }
+    .quasar-token-display code { flex: 1; font-family: 'SF Mono', Monaco, 'Courier New', monospace; font-size: 12px; color: #374151; word-break: break-all; line-height: 1.5; }
+
+    .quasar-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; transition: all 0.2s; }
+    .quasar-btn-primary { background: linear-gradient(135deg, #d946ef, #8b5cf6); color: #fff; }
+    .quasar-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(217,70,239,0.3); color: #fff; }
+    .quasar-btn-outline { background: transparent; border: 2px solid #e5e7eb; color: #6b7280; }
+    .quasar-btn-outline:hover { border-color: #d946ef; color: #d946ef; }
+    .quasar-btn-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .quasar-btn-danger:hover { background: #fee2e2; }
+    .quasar-btn-large { padding: 14px 28px; font-size: 14px; }
+    .quasar-btn-copied { background: #ecfdf5 !important; color: #059669 !important; border-color: #a7f3d0 !important; }
+
+    .quasar-connect-hero { text-align: center; padding: 48px 40px; }
+    .quasar-connect-illustration { margin-bottom: 24px; }
+    .quasar-connect-hero h2 { font-size: 22px; font-weight: 800; color: #111827; margin: 0 0 8px; }
+    .quasar-connect-hero p { font-size: 14px; color: #6b7280; max-width: 400px; margin: 0 auto 24px; line-height: 1.6; }
+    .quasar-connect-hero .quasar-token-display { max-width: 500px; margin: 0 auto 20px; }
+
+    .quasar-step { display: flex; align-items: flex-start; gap: 16px; padding: 16px 0; border-bottom: 1px solid #f3f4f6; }
+    .quasar-step:last-child { border-bottom: none; padding-bottom: 0; }
+    .quasar-step-num { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #d946ef, #8b5cf6); color: #fff; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .quasar-step-title { font-size: 14px; font-weight: 700; color: #111827; }
+    .quasar-step-desc { font-size: 13px; color: #6b7280; margin-top: 2px; }
+
+    .quasar-action-btn { display: flex; align-items: center; gap: 14px; padding: 16px; border: 1px solid #e5e7eb; border-radius: 12px; text-decoration: none; margin-bottom: 10px; transition: all 0.2s; }
+    .quasar-action-btn:last-child { margin-bottom: 0; }
+    .quasar-action-btn:hover { border-color: #d946ef; background: #fdf4ff; }
+    .quasar-action-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .quasar-action-title { font-size: 14px; font-weight: 700; color: #111827; }
+    .quasar-action-desc { font-size: 12px; color: #6b7280; }
+
+    .quasar-danger-card { border-color: #fecaca; margin-top: 24px; }
+    .quasar-danger-card .quasar-card-header { border-bottom-color: #fecaca; }
+
+    .quasar-table { width: 100%; border-collapse: collapse; }
+    .quasar-table th { text-align: left; padding: 14px 24px; font-size: 12px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #f3f4f6; }
+    .quasar-table td { padding: 14px 24px; border-bottom: 1px solid #f5f5f5; font-size: 14px; }
+    .quasar-table tr:last-child td { border-bottom: none; }
+    .quasar-post-title a { font-weight: 600; color: #111827; text-decoration: none; }
+    .quasar-post-title a:hover { color: #d946ef; }
+
+    .quasar-status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+    .quasar-status-published { background: #ecfdf5; color: #059669; }
+    .quasar-status-draft { background: #fff7ed; color: #d97706; }
+    .quasar-status-scheduled { background: #f3e8ff; color: #7c3aed; }
+
+    .quasar-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px; }
+    .quasar-stat-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 24px; display: flex; align-items: center; gap: 16px; }
+    .quasar-stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .quasar-stat-icon .dashicons { font-size: 24px; width: 24px; height: 24px; color: #fff; }
+    .quasar-stat-icon-blue { background: #3b82f6; }
+    .quasar-stat-icon-orange { background: #f59e0b; }
+    .quasar-stat-icon-purple { background: #8b5cf6; }
+    .quasar-stat-icon-green { background: #10b981; }
+    .quasar-stat-value { font-size: 28px; font-weight: 800; color: #111827; line-height: 1; }
+    .quasar-stat-label { font-size: 12px; color: #9ca3af; font-weight: 600; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .quasar-overview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 24px; }
+    .quasar-overview-item { text-align: center; padding: 20px; background: #f9fafb; border-radius: 12px; }
+    .quasar-overview-item .dashicons { font-size: 28px; width: 28px; height: 28px; color: #d946ef; margin-bottom: 8px; }
+    .quasar-overview-value { display: block; font-size: 24px; font-weight: 800; color: #111827; }
+    .quasar-overview-label { display: block; font-size: 12px; color: #9ca3af; font-weight: 600; margin-top: 4px; }
+
+    .quasar-token { font-size: 12px; word-break: break-all; background: #f9fafb; padding: 8px 12px; border-radius: 6px; display: inline-block; border: 1px solid #e5e7eb; }
+
+    .quasar-empty-state { text-align: center; padding: 60px 40px; }
+    .quasar-empty-state .dashicons { font-size: 48px; width: 48px; height: 48px; color: #d1d5db; margin-bottom: 16px; }
+    .quasar-empty-state h3 { font-size: 18px; font-weight: 700; color: #111827; margin: 0 0 8px; }
+    .quasar-empty-state p { color: #9ca3af; margin: 0 0 20px; }
+
+    .quasar-loading { display: inline-block; border: 2px solid #f3f3f3; border-top: 2px solid #d946ef; border-radius: 50%; width: 16px; height: 16px; animation: quasar-spin 1s linear infinite; }
+    @keyframes quasar-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    .quasar-toast { position: fixed; top: 32px; right: 32px; padding: 14px 24px; border-radius: 10px; font-size: 14px; font-weight: 600; z-index: 9999; animation: quasar-slide-in 0.3s ease; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    .quasar-toast-success { background: #10b981; color: #fff; }
+    .quasar-toast-error { background: #ef4444; color: #fff; }
+    @keyframes quasar-slide-in { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    @media (max-width: 768px) {
+        .quasar-grid { grid-template-columns: 1fr; }
+        .quasar-stats-grid { grid-template-columns: repeat(2, 1fr); }
+        .quasar-overview-grid { grid-template-columns: 1fr; }
+        .quasar-hero { flex-direction: column; gap: 16px; align-items: flex-start; }
+        .quasar-token-display { flex-direction: column; }
+    }
+    </style>
+    <?php
+});
+
+// Inline JS on admin footer
+add_action('admin_footer', function () {
+    $screen = get_current_screen();
+    if (!$screen || !quasar_connector_is_admin_screen($screen->id)) {
+        return;
+    }
+    $token = get_option('quasar_connection_token', '');
+    $site_url = home_url();
+    ?>
+    <script>
+    (function($) {
+        'use strict';
+        var quasarData = {
+            siteUrl: '<?php echo esc_js($site_url); ?>',
+            token: '<?php echo esc_js($token); ?>'
+        };
+        function showToast(message, type) {
+            var toast = $('<div class="quasar-toast quasar-toast-' + (type || 'success') + '">' + message + '</div>');
+            $('body').append(toast);
+            setTimeout(function() { toast.fadeOut(300, function() { $(this).remove(); }); }, 4000);
+        }
+        $(document).on('click', '#quasar-copy-token', function(e) {
+            e.preventDefault();
+            var token = $(this).data('token');
+            if (navigator.clipboard && token) {
+                navigator.clipboard.writeText(token).then(function() {
+                    showToast('Token copied to clipboard!', 'success');
+                }, function() { showToast('Failed to copy token.', 'error'); });
+            } else {
+                var $temp = $('<textarea>'); $('body').append($temp); $temp.val(token).select();
+                try { document.execCommand('copy'); showToast('Token copied!', 'success'); }
+                catch(err) { showToast('Failed to copy.', 'error'); }
+                $temp.remove();
+            }
+        });
+        $(document).on('click', '#quasar-disconnect-btn', function(e) {
+            e.preventDefault();
+            if (!confirm('Are you sure you want to disconnect from Quasar AI SEO?')) return;
+            var btn = $(this);
+            btn.prop('disabled', true).html('<span class="quasar-loading"></span> Disconnecting...');
+            $.ajax({
+                url: quasarData.siteUrl + '/wp-json/quasar-ai-seo/v1/disconnect',
+                method: 'POST',
+                beforeSend: function(xhr) { xhr.setRequestHeader('X-Quasar-Token', quasarData.token); },
+                success: function() { showToast('Disconnected successfully.', 'success'); setTimeout(function() { window.location.reload(); }, 1500); },
+                error: function() { btn.prop('disabled', false).html('Disconnect from Quasar AI SEO'); showToast('Failed to disconnect.', 'error'); }
+            });
+        });
+    })(jQuery);
+    </script>
+    <?php
+});
+
+// Helper functions
+function quasar_check_token($request) {
+    $token = $request->get_header('x_quasar_token');
+    if (empty($token)) {
+        $token = $request->get_param('token');
+    }
+    $stored = get_option('quasar_connection_token', '');
+    return !empty($stored) && !empty($token) && hash_equals($stored, $token);
+}
+
+function quasar_get_site_info() {
+    return [
+        'site_url'    => home_url(),
+        'site_name'   => get_bloginfo('name'),
+        'site_desc'   => get_bloginfo('description'),
+        'wp_version'  => get_bloginfo('version'),
+        'language'    => get_bloginfo('language'),
+        'timezone'    => wp_timezone_string(),
+        'admin_email' => get_option('admin_email'),
+        'connected'   => get_option('quasar_connection_status', 'disconnected') === 'connected',
+        'token'       => get_option('quasar_connection_token', ''),
+    ];
+}
+
+function quasar_get_or_create_app_password() {
+    $existing = get_option('quasar_app_password', '');
+    $existing_id = get_option('quasar_app_password_id', 0);
+
+    if (!empty($existing) && $existing_id) {
+        $user_id = (int) get_option('quasar_user_id', 0);
+        if ($user_id && class_exists('WP_Application_Passwords')) {
+            $app_passwords = WP_Application_Passwords::get_user_application_passwords($user_id);
+            foreach ($app_passwords as $ap) {
+                if ((int) $ap['uuid'] === (int) $existing_id) {
+                    return $existing;
+                }
+            }
+        }
+    }
+
+    // Use stored admin user ID (REST API has no logged-in user)
+    $user_id = (int) get_option('quasar_user_id', 0);
+    if (!$user_id) {
+        $user_id = get_current_user_id();
+        if (!$user_id) {
+            $admin = get_users(['role' => 'administrator', 'number' => 1]);
+            if (!empty($admin)) {
+                $user_id = $admin[0]->ID;
+            }
+        }
+    }
+    if (!$user_id) {
+        return new WP_Error('no_user', 'No admin user found to create application password.');
+    }
+
+    if (!class_exists('WP_Application_Passwords')) {
+        return new WP_Error('no_class', 'WP_Application_Passwords class not found. WordPress 5.6+ required.');
+    }
+
+    // Check if Application Passwords are available
+    if (function_exists('wp_is_application_passwords_available') && !wp_is_application_passwords_available()) {
+        // Try to force-enable by adding the filter
+        add_filter('wp_is_application_passwords_available', '__return_true');
+        // Check again
+        if (!wp_is_application_passwords_available()) {
+            return new WP_Error('app_passwords_disabled', 'Application Passwords are disabled on this site. Add this to wp-config.php: add_filter(\'wp_is_application_passwords_available\', \'__return_true\');');
+        }
+    }
+
+    $result = WP_Application_Passwords::create_new_application_password($user_id, [
+        'name' => 'Quasar AI SEO Assistant',
+    ]);
+
+    if (is_wp_error($result)) {
+        return $result; // Return the actual error
+    }
+
+    $password = $result[1];
+    $uuid = $result[0]['uuid'];
+
+    update_option('quasar_app_password', $password);
+    update_option('quasar_app_password_id', $uuid);
+    update_option('quasar_user_id', $user_id);
+
+    return $password;
+}
+
+function quasar_render_dashboard() {
+    $connected = get_option('quasar_connection_status', 'disconnected') === 'connected';
+    $token = get_option('quasar_connection_token', '');
+
+    $quasar_posts = [];
+    $total_published = 0;
+    $total_drafts = 0;
+    $total_scheduled = 0;
+
+    if ($connected) {
+        $args = [
+            'post_type'      => 'post',
+            'post_status'    => ['publish', 'draft', 'future'],
+            'posts_per_page' => 50,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+            'meta_key'       => '_quasar_ai_seo_post',
+            'meta_value'     => '1',
+        ];
+        $query = new WP_Query($args);
+
+        foreach ($query->posts as $post) {
+            $quasar_posts[] = [
+                'id'        => $post->ID,
+                'title'     => $post->post_title,
+                'status'    => $post->post_status,
+                'date'      => $post->post_date,
+                'permalink' => get_permalink($post->ID),
+                'excerpt'   => get_the_excerpt($post),
+            ];
+
+            if ($post->post_status === 'publish') $total_published++;
+            if ($post->post_status === 'draft') $total_drafts++;
+            if ($post->post_status === 'future') $total_scheduled++;
+        }
+    }
+
+    $all_posts_count = wp_count_posts('post');
+    $total_all_published = (int) $all_posts_count->publish;
+    $total_all_drafts = (int) $all_posts_count->draft;
+    $total_all_scheduled = (int) $all_posts_count->future;
+
+    ?>
+    <div class="wrap quasar-wrap">
+        <div class="quasar-hero">
+            <div class="quasar-hero-left">
+                <div class="quasar-logo">
+                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="40" height="40" rx="10" fill="url(#grad1)"/>
+                        <path d="M20 8L25 15L20 22L15 15L20 8Z" fill="white"/>
+                        <path d="M20 18L27 27L20 36L13 27L20 18Z" fill="white" opacity="0.7"/>
+                        <defs>
+                            <linearGradient id="grad1" x1="0" y1="0" x2="40" y2="40">
+                                <stop offset="0%" stop-color="#d946ef"/>
+                                <stop offset="100%" stop-color="#8b5cf6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="quasar-hero-title">Quasar AI SEO Dashboard</h1>
+                    <p class="quasar-hero-sub">Manage your AI-generated content and WordPress connection</p>
+                </div>
+            </div>
+            <div class="quasar-hero-status">
+                <?php if ($connected): ?>
+                    <span class="quasar-status-badge quasar-status-connected">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Connected
+                    </span>
+                <?php else: ?>
+                    <span class="quasar-status-badge quasar-status-disconnected">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                        Not Connected
+                    </span>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <?php if (!$connected): ?>
+            <div class="quasar-card quasar-card-animated quasar-connect-hero">
+                <div class="quasar-connect-illustration">
+                    <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="10" y="20" width="100" height="80" rx="8" fill="#f0f0f0"/>
+                        <rect x="20" y="30" width="40" height="8" rx="4" fill="#d946ef" opacity="0.3"/>
+                        <rect x="20" y="42" width="60" height="6" rx="3" fill="#e0e0e0"/>
+                        <rect x="20" y="52" width="50" height="6" rx="3" fill="#e0e0e0"/>
+                        <rect x="20" y="62" width="55" height="6" rx="3" fill="#e0e0e0"/>
+                        <rect x="70" y="30" width="30" height="30" rx="4" fill="#d946ef" opacity="0.1"/>
+                        <circle cx="85" cy="45" r="8" fill="#d946ef" opacity="0.2"/>
+                        <path d="M85 40v10M80 45h10" stroke="#d946ef" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h2>Connect to Quasar AI SEO</h2>
+                <p>Click the button below to open Quasar AI SEO and complete the connection. This will enable one-click publishing of AI-generated content directly to your site.</p>
+                <div class="quasar-token-display">
+                    <code id="quasar-token-text"><?php echo esc_html($token); ?></code>
+                    <button class="quasar-btn quasar-btn-primary quasar-btn-copy" data-copy="<?php echo esc_attr($token); ?>">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/></svg>
+                        Copy Token
+                    </button>
+                </div>
+                <?php
+                $connect_url = add_query_arg([
+                    'siteUrl' => rawurlencode(home_url()),
+                    'token'   => rawurlencode($token),
+                ], QUASAR_FRONTEND_URL . '/wordpress');
+                ?>
+                <a id="quasar-connect-btn" href="<?php echo esc_url($connect_url); ?>" target="_blank" class="quasar-btn quasar-btn-primary quasar-btn-large">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Connect to Quasar AI SEO
+                </a>
+                <p class="quasar-connect-help">
+                    Don't have a Quasar AI SEO account? <a href="<?php echo esc_url(QUASAR_FRONTEND_URL . '/signup'); ?>" target="_blank">Sign up free</a>
+                </p>
+            </div>
+        <?php else: ?>
+            <div class="quasar-stats-grid">
+                <div class="quasar-stat-card">
+                    <div class="quasar-stat-icon quasar-stat-icon-blue">
+                        <span class="dashicons dashicons-megaphone"></span>
+                    </div>
+                    <div class="quasar-stat-content">
+                        <div class="quasar-stat-value"><?php echo esc_html($total_published); ?></div>
+                        <div class="quasar-stat-label">Published Posts</div>
+                    </div>
+                </div>
+                <div class="quasar-stat-card">
+                    <div class="quasar-stat-icon quasar-stat-icon-orange">
+                        <span class="dashicons dashicons-edit-page"></span>
+                    </div>
+                    <div class="quasar-stat-content">
+                        <div class="quasar-stat-value"><?php echo esc_html($total_drafts); ?></div>
+                        <div class="quasar-stat-label">Draft Posts</div>
+                    </div>
+                </div>
+                <div class="quasar-stat-card">
+                    <div class="quasar-stat-icon quasar-stat-icon-purple">
+                        <span class="dashicons dashicons-clock"></span>
+                    </div>
+                    <div class="quasar-stat-content">
+                        <div class="quasar-stat-value"><?php echo esc_html($total_scheduled); ?></div>
+                        <div class="quasar-stat-label">Scheduled Posts</div>
+                    </div>
+                </div>
+                <div class="quasar-stat-card">
+                    <div class="quasar-stat-icon quasar-stat-icon-green">
+                        <span class="dashicons dashicons-analytics"></span>
+                    </div>
+                    <div class="quasar-stat-content">
+                        <div class="quasar-stat-value"><?php echo esc_html(count($quasar_posts)); ?></div>
+                        <div class="quasar-stat-label">Total Quasar Posts</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quasar-card quasar-card-animated">
+                <div class="quasar-card-header">
+                    <div class="quasar-card-icon quasar-icon-blue">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <h2>Posts Published via Quasar AI SEO</h2>
+                    <a href="<?php echo esc_url(QUASAR_FRONTEND_URL . '/post-create'); ?>" target="_blank" class="quasar-btn quasar-btn-primary quasar-btn-sm">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                        Create New Post
+                    </a>
+                </div>
+                <?php if (empty($quasar_posts)): ?>
+                    <div class="quasar-empty-state">
+                        <span class="dashicons dashicons-welcome-write-blog"></span>
+                        <h3>No posts yet</h3>
+                        <p>Posts created from Quasar AI SEO will appear here.</p>
+                        <a href="<?php echo esc_url(QUASAR_FRONTEND_URL . '/post-create'); ?>" target="_blank" class="quasar-btn quasar-btn-primary">
+                            Create Your First Post
+                        </a>
+                    </div>
+                <?php else: ?>
+                    <table class="quasar-table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($quasar_posts as $p): ?>
+                                <tr>
+                                    <td class="quasar-post-title">
+                                        <a href="<?php echo esc_url($p['permalink']); ?>" target="_blank"><?php echo esc_html($p['title']); ?></a>
+                                    </td>
+                                    <td>
+                                        <?php
+                                        $status_class = $p['status'] === 'publish' ? 'quasar-status-published' : ($p['status'] === 'future' ? 'quasar-status-scheduled' : 'quasar-status-draft');
+                                        $status_label = $p['status'] === 'publish' ? 'Published' : ($p['status'] === 'future' ? 'Scheduled' : 'Draft');
+                                        ?>
+                                        <span class="quasar-status-badge <?php echo esc_attr($status_class); ?>"><?php echo esc_html($status_label); ?></span>
+                                    </td>
+                                    <td><?php echo esc_html(date('M j, Y', strtotime($p['date']))); ?></td>
+                                    <td>
+                                        <a href="<?php echo esc_url(get_edit_post_link($p['id'])); ?>" class="quasar-btn quasar-btn-sm quasar-btn-outline">Edit</a>
+                                        <a href="<?php echo esc_url($p['permalink']); ?>" target="_blank" class="quasar-btn quasar-btn-sm quasar-btn-outline">View</a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
+            </div>
+
+            <div class="quasar-card quasar-card-animated">
+                <div class="quasar-card-header">
+                    <div class="quasar-card-icon quasar-icon-green">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 3v18h18M7 12l4-4 4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <h2>Site Overview</h2>
+                </div>
+                <div class="quasar-overview-grid">
+                    <div class="quasar-overview-item">
+                        <span class="dashicons dashicons-megaphone"></span>
+                        <span class="quasar-overview-value"><?php echo esc_html($total_all_published); ?></span>
+                        <span class="quasar-overview-label">Total Published</span>
+                    </div>
+                    <div class="quasar-overview-item">
+                        <span class="dashicons dashicons-edit-page"></span>
+                        <span class="quasar-overview-value"><?php echo esc_html($total_all_drafts); ?></span>
+                        <span class="quasar-overview-label">Total Drafts</span>
+                    </div>
+                    <div class="quasar-overview-item">
+                        <span class="dashicons dashicons-clock"></span>
+                        <span class="quasar-overview-value"><?php echo esc_html($total_all_scheduled); ?></span>
+                        <span class="quasar-overview-label">Total Scheduled</span>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
+    </div>
+    <?php
+}
+
+function quasar_render_settings() {
+    $connected = get_option('quasar_connection_status', 'disconnected') === 'connected';
+    $token = get_option('quasar_connection_token', '');
+    $site_url = home_url();
+    $site_name = get_bloginfo('name');
+    $rest_url = rest_url('quasar-ai-seo/v1');
+    $frontend_url = QUASAR_FRONTEND_URL;
+
+    ?>
+    <div class="wrap quasar-wrap">
+        <!-- Hero Header -->
+        <div class="quasar-hero">
+            <div class="quasar-hero-left">
+                <div class="quasar-logo">
+                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="40" height="40" rx="10" fill="url(#grad1)"/>
+                        <path d="M20 8L25 15L20 22L15 15L20 8Z" fill="white"/>
+                        <path d="M20 18L27 27L20 36L13 27L20 18Z" fill="white" opacity="0.7"/>
+                        <defs>
+                            <linearGradient id="grad1" x1="0" y1="0" x2="40" y2="40">
+                                <stop offset="0%" stop-color="#d946ef"/>
+                                <stop offset="100%" stop-color="#8b5cf6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="quasar-hero-title">Quasar AI SEO</h1>
+                    <p class="quasar-hero-sub">Connect your WordPress site to the AI SEO platform</p>
+                </div>
+            </div>
+            <div class="quasar-hero-status">
+                <?php if ($connected): ?>
+                    <span class="quasar-status-badge quasar-status-connected">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Connected
+                    </span>
+                <?php else: ?>
+                    <span class="quasar-status-badge quasar-status-disconnected">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                        Not Connected
+                    </span>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <?php if ($connected): ?>
+        <!-- Connected State -->
+        <div class="quasar-grid">
+            <!-- Connection Card -->
+            <div class="quasar-card quasar-card-animated">
+                <div class="quasar-card-header">
+                    <div class="quasar-card-icon quasar-icon-blue">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <h2>Connection Details</h2>
+                </div>
+                <div class="quasar-card-body">
+                    <div class="quasar-field">
+                        <label class="quasar-label">Site URL</label>
+                        <div class="quasar-field-value">
+                            <code><?php echo esc_html($site_url); ?></code>
+                            <button class="quasar-copy-btn" data-copy="<?php echo esc_attr($site_url); ?>" title="Copy">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="quasar-field">
+                        <label class="quasar-label">Site Name</label>
+                        <div class="quasar-field-value">
+                            <span><?php echo esc_html($site_name); ?></span>
+                        </div>
+                    </div>
+                    <div class="quasar-field">
+                        <label class="quasar-label">REST API Endpoint</label>
+                        <div class="quasar-field-value">
+                            <code><?php echo esc_html($rest_url); ?></code>
+                            <button class="quasar-copy-btn" data-copy="<?php echo esc_attr($rest_url); ?>" title="Copy">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Token Card -->
+            <div class="quasar-card quasar-card-animated">
+                <div class="quasar-card-header">
+                    <div class="quasar-card-icon quasar-icon-purple">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" stroke-width="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" stroke-width="2"/></svg>
+                    </div>
+                    <h2>Connection Token</h2>
+                </div>
+                <div class="quasar-card-body">
+                    <p class="quasar-card-desc">Copy this token and paste it in your Quasar AI SEO dashboard to connect this site.</p>
+                    <div class="quasar-token-display">
+                        <code id="quasar-token-text"><?php echo esc_html($token); ?></code>
+                        <button class="quasar-btn quasar-btn-primary quasar-btn-copy" data-copy="<?php echo esc_attr($token); ?>">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/></svg>
+                            Copy Token
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Card -->
+            <div class="quasar-card quasar-card-animated">
+                <div class="quasar-card-header">
+                    <div class="quasar-card-icon quasar-icon-green">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <h2>Quick Actions</h2>
+                </div>
+                <div class="quasar-card-body">
+                    <a href="<?php echo esc_url($frontend_url); ?>" target="_blank" class="quasar-action-btn">
+                        <div class="quasar-action-icon quasar-icon-purple">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <div>
+                            <div class="quasar-action-title">Open Dashboard</div>
+                            <div class="quasar-action-desc">Go to Quasar AI SEO</div>
+                        </div>
+                    </a>
+                    <a href="<?php echo esc_url($frontend_url . '/post-create'); ?>" target="_blank" class="quasar-action-btn">
+                        <div class="quasar-action-icon quasar-icon-blue">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <div>
+                            <div class="quasar-action-title">Create Post</div>
+                            <div class="quasar-action-desc">Generate AI content</div>
+                        </div>
+                    </a>
+                    <a href="<?php echo esc_url($frontend_url . '/content-strategy'); ?>" target="_blank" class="quasar-action-btn">
+                        <div class="quasar-action-icon quasar-icon-green">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <div>
+                            <div class="quasar-action-title">Content Strategy</div>
+                            <div class="quasar-action-desc">Use MCP agent</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="quasar-card quasar-card-animated quasar-danger-card">
+            <div class="quasar-card-header">
+                <div class="quasar-card-icon quasar-icon-red">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <h2>Danger Zone</h2>
+            </div>
+            <div class="quasar-card-body">
+                <p class="quasar-card-desc">Disconnecting will remove the connection between this site and your Quasar AI SEO account. You can reconnect at any time.</p>
+                <button id="quasar-disconnect-btn" class="quasar-btn quasar-btn-danger">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    Disconnect from Quasar AI SEO
+                </button>
+            </div>
+        </div>
+
+        <?php else: ?>
+        <!-- Not Connected State -->
+        <div class="quasar-card quasar-card-animated quasar-connect-hero">
+            <div class="quasar-connect-illustration">
+                <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="10" y="20" width="100" height="80" rx="8" fill="#f0f0f0"/>
+                    <rect x="20" y="30" width="40" height="8" rx="4" fill="#d946ef" opacity="0.3"/>
+                    <rect x="20" y="42" width="60" height="6" rx="3" fill="#e0e0e0"/>
+                    <rect x="20" y="52" width="50" height="6" rx="3" fill="#e0e0e0"/>
+                    <rect x="20" y="62" width="55" height="6" rx="3" fill="#e0e0e0"/>
+                    <rect x="70" y="30" width="30" height="30" rx="4" fill="#d946ef" opacity="0.1"/>
+                    <circle cx="85" cy="45" r="8" fill="#d946ef" opacity="0.2"/>
+                    <path d="M85 40v10M80 45h10" stroke="#d946ef" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <h2>Connect to Quasar AI SEO</h2>
+            <p>Copy the connection token below and paste it in your Quasar AI SEO dashboard to link this WordPress site.</p>
+            <div class="quasar-token-display">
+                <code id="quasar-token-text"><?php echo esc_html($token); ?></code>
+                <button class="quasar-btn quasar-btn-primary quasar-btn-copy" data-copy="<?php echo esc_attr($token); ?>">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/></svg>
+                    Copy Token
+                </button>
+            </div>
+            <a href="<?php echo esc_url($frontend_url); ?>" target="_blank" class="quasar-btn quasar-btn-outline quasar-btn-large">
+                Open Quasar AI SEO Dashboard
+            </a>
+        </div>
+
+        <!-- Steps -->
+        <div class="quasar-card quasar-card-animated">
+            <div class="quasar-card-header">
+                <div class="quasar-card-icon quasar-icon-blue">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/></svg>
+                </div>
+                <h2>How to Connect</h2>
+            </div>
+            <div class="quasar-card-body">
+                <div class="quasar-step">
+                    <div class="quasar-step-num">1</div>
+                    <div>
+                        <div class="quasar-step-title">Copy your connection token</div>
+                        <div class="quasar-step-desc">Click the "Copy Token" button above</div>
+                    </div>
+                </div>
+                <div class="quasar-step">
+                    <div class="quasar-step-num">2</div>
+                    <div>
+                        <div class="quasar-step-title">Open Quasar AI SEO dashboard</div>
+                        <div class="quasar-step-desc">Go to your Quasar AI SEO account settings</div>
+                    </div>
+                </div>
+                <div class="quasar-step">
+                    <div class="quasar-step-num">3</div>
+                    <div>
+                        <div class="quasar-step-title">Connect your site</div>
+                        <div class="quasar-step-desc">Paste the token and your site URL to establish the connection</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+    </div>
+
+    <script>
+    document.querySelectorAll('.quasar-copy-btn, .quasar-btn-copy').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var text = this.getAttribute('data-copy') || this.closest('.quasar-token-display').querySelector('code').textContent;
+            navigator.clipboard.writeText(text).then(function() {
+                var orig = btn.innerHTML;
+                btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Copied!';
+                btn.classList.add('quasar-btn-copied');
+                setTimeout(function() { btn.innerHTML = orig; btn.classList.remove('quasar-btn-copied'); }, 2000);
+            });
+        });
+    });
+    </script>
+    <?php
+}
+
+/**
+ * Output JSON-LD schema in the page <head> for posts that have schema saved as post meta.
+ * This is the proper way to add structured data in WordPress — NOT in post_content
+ * (which gets <script> tags stripped by wp_kses_post and wp_insert_post filters).
+ */
+function quasar_ai_seo_output_schema() {
+    if (!is_single()) {
+        return;
+    }
+    $post_id = get_the_ID();
+    if (!$post_id) {
+        return;
+    }
+    $schema_blocks = get_post_meta($post_id, '_quasar_schema_json', true);
+    if (empty($schema_blocks) || !is_array($schema_blocks)) {
+        return;
+    }
+    foreach ($schema_blocks as $schema_json) {
+        // Validate it's valid JSON before outputting
+        $decoded = json_decode($schema_json, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            echo "\n" . '<script type="application/ld+json">' . $schema_json . '</script>' . "\n";
+        }
+    }
+}
+add_action('wp_head', 'quasar_ai_seo_output_schema');
