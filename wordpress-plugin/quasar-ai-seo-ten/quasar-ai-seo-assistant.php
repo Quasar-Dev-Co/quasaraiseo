@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Quasar AI SEO
  * Description: Connect your WordPress site with Quasar AI SEO to publish AI-generated content directly from your Quasar dashboard.
- * Version: 2.0.1
+ * Version: 2.0.2
  * Author: Quasar AI SEO
  * Author URI: https://seo.quasarasoft.com
  * License: GPL-2.0+
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('QUASAR_VERSION', '2.0.1');
+define('QUASAR_VERSION', '2.0.2');
 define('QUASAR_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('QUASAR_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('QUASAR_API_URL', 'https://seo.teamcmp.cloud');
@@ -296,7 +296,10 @@ add_action('rest_api_init', function () {
                 wp_set_post_tags($post_id, $tags, true);
             }
 
-            if (!empty($featured_img)) {
+            $featured_media_id = isset($params['featured_media_id']) ? (int) $params['featured_media_id'] : 0;
+            if ($featured_media_id > 0 && get_post($featured_media_id)) {
+                set_post_thumbnail($post_id, $featured_media_id);
+            } elseif (!empty($featured_img)) {
                 if (!function_exists('media_sideload_image')) {
                     require_once ABSPATH . 'wp-admin/includes/media.php';
                     require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -1135,6 +1138,66 @@ add_action('rest_api_init', function () {
             }
 
             return rest_ensure_response(['tags' => $result]);
+        },
+        'permission_callback' => function ($request) {
+            return quasar_check_token($request);
+        },
+    ]);
+
+    // ─── Save a generated image into the site media library ───
+    register_rest_route($namespace, '/media', [
+        'methods'  => 'POST',
+        'callback' => function ($request) {
+            $params = json_decode($request->get_body(), true);
+            $filename = isset($params['filename']) ? sanitize_file_name($params['filename']) : '';
+            $data = isset($params['data']) ? $params['data'] : '';
+            $mime = isset($params['mime_type']) ? sanitize_text_field($params['mime_type']) : 'image/webp';
+
+            if ($filename === '' || $data === '') {
+                return new WP_Error('missing_fields', 'filename and data are required.', ['status' => 400]);
+            }
+
+            $allowed = ['image/webp', 'image/png', 'image/jpeg', 'image/gif'];
+            if (!in_array($mime, $allowed, true)) {
+                return new WP_Error('bad_type', 'Only image uploads are allowed.', ['status' => 400]);
+            }
+
+            $binary = base64_decode($data, true);
+            if ($binary === false || strlen($binary) === 0) {
+                return new WP_Error('bad_data', 'Image data is invalid.', ['status' => 400]);
+            }
+            if (strlen($binary) > 8 * 1024 * 1024) {
+                return new WP_Error('too_large', 'Image must be 8 MB or smaller.', ['status' => 400]);
+            }
+
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+            require_once ABSPATH . 'wp-admin/includes/media.php';
+            require_once ABSPATH . 'wp-admin/includes/image.php';
+
+            $upload = wp_upload_bits($filename, null, $binary);
+            if (!empty($upload['error'])) {
+                return new WP_Error('upload_failed', $upload['error'], ['status' => 500]);
+            }
+
+            $attachment = [
+                'post_mime_type' => $mime,
+                'post_title'     => preg_replace('/\.[^.]+$/', '', $filename),
+                'post_content'   => '',
+                'post_status'    => 'inherit',
+            ];
+            $attach_id = wp_insert_attachment($attachment, $upload['file']);
+            if (is_wp_error($attach_id)) {
+                return new WP_Error('upload_failed', $attach_id->get_error_message(), ['status' => 500]);
+            }
+
+            $meta = wp_generate_attachment_metadata($attach_id, $upload['file']);
+            wp_update_attachment_metadata($attach_id, $meta);
+
+            return rest_ensure_response([
+                'id'    => (int) $attach_id,
+                'url'   => wp_get_attachment_url($attach_id),
+                'title' => get_the_title($attach_id),
+            ]);
         },
         'permission_callback' => function ($request) {
             return quasar_check_token($request);
