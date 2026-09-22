@@ -38,6 +38,7 @@ import { brandingApi, type Branding } from "@/lib/branding-api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { keywordMcpApi } from "@/lib/keyword-mcp-api";
 import { useMinLoading } from "@/lib/use-min-loading";
+import { useAuth } from "@/hooks/use-auth";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   idle: { label: "Idle", color: "bg-slate-100 text-slate-600 border-slate-200", icon: Clock },
@@ -105,6 +106,8 @@ function postStatusPresentation(status: string): { label: string; className: str
 
 function PostCreateContent() {
   const searchParams = useSearchParams();
+  const { user } = useAuth();
+  const isSuper = user?.role === "super";
 
   // Skills
   const [skills, setSkills] = useState<PostSkillRecord[]>([]);
@@ -863,9 +866,9 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                   <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[12px] text-amber-800 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-400">
                     <AlertCircle className="size-4 shrink-0" />
                     <span>
-                      Could not load AI models. Go to{" "}
-                      <a href="/setting" className="font-bold underline">Settings → AI Provider</a>
-                      {" "}to configure your OpenAI or OpenRouter API key.
+                      {isSuper
+                        ? "Could not load AI models. Open Settings → AI Provider and save the key."
+                        : "Could not load AI models. The super user needs to set the AI provider."}
                     </span>
                   </div>
                 )}

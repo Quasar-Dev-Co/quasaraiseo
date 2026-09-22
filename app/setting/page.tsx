@@ -14,6 +14,7 @@ import { RequireAuth } from "@/components/auth/require-auth";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMinLoading } from "@/lib/use-min-loading";
+import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { googleApi, type GoogleStatus, type DeviceInfo } from "@/lib/google-api";
@@ -130,6 +131,8 @@ const hdr = "flex items-center justify-between gap-4 border-b border-slate-100 p
 
 function SettingsInner() {
   const searchParams = useSearchParams();
+  const { user } = useAuth();
+  const isSuper = user?.role === "super";
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<GoogleStatus | null>(null);
@@ -230,15 +233,16 @@ function SettingsInner() {
     fetchBrandings();
   }, [fetchBrandings]);
 
-  // Load AI provider settings
+  // Load AI provider settings for the super user only
   useEffect(() => {
+    if (!isSuper) return;
     aiProviderApi.getSettings().then((res) => {
       if (res.settings) {
         setAiSettings(res.settings);
         setAiActiveProvider(res.settings.activeProvider as ProviderType);
       }
     }).catch(() => {});
-  }, []);
+  }, [isSuper]);
 
   const reloadAiSettings = async () => {
     const res = await aiProviderApi.getSettings();
@@ -675,7 +679,7 @@ function SettingsInner() {
             <TabsTrigger value="notifications" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Bell className="size-4" /> Notifications</TabsTrigger>
             <TabsTrigger value="security" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Shield className="size-4" /> Security</TabsTrigger>
             <TabsTrigger value="workspace" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Settings className="size-4" /> Workspace</TabsTrigger>
-            <TabsTrigger value="ai-provider" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Sparkles className="size-4" /> AI Provider</TabsTrigger>
+            {isSuper && <TabsTrigger value="ai-provider" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Sparkles className="size-4" /> AI Provider</TabsTrigger>}
           </TabsList>
 
           {/* GOOGLE TAB */}
@@ -1295,7 +1299,7 @@ function SettingsInner() {
           </TabsContent>
 
           {/* AI PROVIDER TAB */}
-          <TabsContent value="ai-provider">
+          {isSuper && <TabsContent value="ai-provider">
             <div className="space-y-5">
               <div>
                 <h3 className="text-base font-black text-slate-900 dark:text-white">AI Provider Settings</h3>
@@ -1712,14 +1716,14 @@ function SettingsInner() {
                       <li>• Click "Switch to OpenAI" or "Switch to OpenRouter" to change the active provider instantly</li>
                       <li>• The active provider's models show up in /audit-mcp and /post-create dropdowns</li>
                       <li>• Keys are encrypted with AES-256 before storing in the database</li>
-                      <li>• Image generation still uses the server-level OpenAI key</li>
+                      <li>• Image generation uses the OpenAI key saved here, for every account</li>
                       <li>• <strong>Model selection happens in /audit-mcp and /post-create</strong> — pick from the dropdown there</li>
                     </ul>
                   </div>
                 </div>
               </article>
             </div>
-          </TabsContent>
+          </TabsContent>}
         </Tabs>
       </DashboardLayout>
     </RequireAuth>

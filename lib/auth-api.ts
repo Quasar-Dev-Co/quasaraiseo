@@ -6,6 +6,7 @@ export interface UserRecord {
   email: string;
   name: string;
   company: string | null;
+  role?: "user" | "super";
   createdAt: string;
   updatedAt: string;
 }

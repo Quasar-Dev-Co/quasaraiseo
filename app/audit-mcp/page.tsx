@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMinLoading } from "@/lib/use-min-loading";
+import { useAuth } from "@/hooks/use-auth";
 import {
   agentApi,
   type AgentJobRecord,
@@ -79,6 +80,8 @@ function formatDate(dateStr: string): string {
 }
 
 export default function AuditMcpPage() {
+  const { user } = useAuth();
+  const isSuper = user?.role === "super";
   const [skills, setSkills] = useState<SkillRecord[]>([]);
   const [jobs, setJobs] = useState<AgentJobRecord[]>([]);
   const [models, setModels] = useState<ModelRecord[]>([]);
@@ -376,9 +379,9 @@ export default function AuditMcpPage() {
                   <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[12px] text-amber-800 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-400">
                     <AlertCircle className="size-4 shrink-0" />
                     <span>
-                      Could not load AI models. Go to{" "}
-                      <a href="/setting" className="font-bold underline">Settings → AI Provider</a>
-                      {" "}to configure your OpenAI or OpenRouter API key.
+                      {isSuper
+                        ? "Could not load AI models. Open Settings → AI Provider and save the key."
+                        : "Could not load AI models. The super user needs to set the AI provider."}
                     </span>
                   </div>
                 )}

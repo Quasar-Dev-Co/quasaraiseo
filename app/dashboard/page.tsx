@@ -65,6 +65,7 @@ interface DashboardData {
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const isSuper = user?.role === "super";
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const showSkeleton = useMinLoading(loading, 800);
@@ -86,7 +87,7 @@ export default function DashboardPage() {
         wordpressApi.listGenerationJobs(),
         brandingApi.getAll(),
         googleApi.getStatus(),
-        aiProviderApi.getSettings().then(r => r.settings),
+        isSuper ? aiProviderApi.getSettings().then(r => r.settings) : Promise.resolve(null),
       ]);
 
       const tasks = tasksResult.status === "fulfilled" ? tasksResult.value : [];
@@ -103,7 +104,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isSuper]);
 
   useEffect(() => {
     fetchDashboard();
@@ -545,8 +546,8 @@ export default function DashboardPage() {
                   </div>
                 </header>
                 <div className="p-5 space-y-3">
-                  {/* AI Provider */}
-                  <div className="flex items-center justify-between">
+                  {/* AI Provider — super user only */}
+                  {isSuper && <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <span className="grid size-8 place-items-center rounded-lg bg-slate-100 dark:bg-slate-800">
                         <Cpu className="size-4 text-slate-600 dark:text-slate-300" />
@@ -559,9 +560,9 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <span className={`size-2 rounded-full ${aiSettings?.[aiSettings.activeProvider as "openai" | "openrouter"]?.hasApiKey ? "bg-fuchsia-500" : "bg-slate-300"}`} />
-                  </div>
+                  </div>}
 
-                  <Separator />
+                  {isSuper && <Separator />}
 
                   {/* Google */}
                   <div className="flex items-center justify-between">

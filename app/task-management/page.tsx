@@ -56,6 +56,7 @@ function getInitials(name: string): string {
 
 export default function TaskManagementPage() {
   const { user } = useAuth();
+  const canManage = user?.role === "super";
 
   const [tasks, setTasks] = useState<ApiSeoTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -156,6 +157,7 @@ export default function TaskManagementPage() {
   };
 
   const handleDragStart = (taskId: string) => {
+    if (!canManage) return;
     setDraggedTaskId(taskId);
   };
 
@@ -165,6 +167,7 @@ export default function TaskManagementPage() {
   };
 
   const handleDrop = async (col: TaskStatus) => {
+    if (!canManage) return;
     if (draggedTaskId) {
       const taskId = draggedTaskId;
       setDraggedTaskId(null);
@@ -256,6 +259,7 @@ export default function TaskManagementPage() {
   };
 
   const handleCreateTask = async () => {
+    if (!canManage) return;
     if (!newTask.title) return;
     setSubmitting(true);
     setError(null);
@@ -285,6 +289,7 @@ export default function TaskManagementPage() {
   };
 
   const handleUpdateStatus = async (taskId: string, status: TaskStatus) => {
+    if (!canManage) return;
     setTasks(prev => {
       const next = prev.map(t => t.id === taskId ? { ...t, status, progress: status === "done" ? 100 : t.progress } : t);
       void syncTasksToSelectedSheet(selectedSheet, next, true);
@@ -299,6 +304,7 @@ export default function TaskManagementPage() {
   };
 
   const handleUpdateProgress = async (taskId: string, progress: number) => {
+    if (!canManage) return;
     setTasks(prev => {
       const next = prev.map(t => t.id === taskId ? { ...t, progress } : t);
       void syncTasksToSelectedSheet(selectedSheet, next, true);
@@ -312,6 +318,7 @@ export default function TaskManagementPage() {
   };
 
   const handleDeleteTask = async (taskId: string) => {
+    if (!canManage) return;
     setTasks(prev => {
       const next = prev.filter(t => t.id !== taskId);
       setSelectedTaskId(null);
@@ -327,6 +334,7 @@ export default function TaskManagementPage() {
   };
 
   const handleAddComment = async (taskId: string) => {
+    if (!canManage) return;
     if (!commentText.trim() || !user) return;
     setSubmitting(true);
     try {
@@ -442,9 +450,11 @@ export default function TaskManagementPage() {
                 List
               </button>
             </div>
-            <Button size="sm" onClick={() => setShowNewTask(!showNewTask)}>
-              <Plus className="size-3.5" /> New Task
-            </Button>
+            {canManage && (
+              <Button size="sm" onClick={() => setShowNewTask(!showNewTask)}>
+                <Plus className="size-3.5" /> New Task
+              </Button>
+            )}
           </div>
         </div>
       </section>
@@ -511,7 +521,7 @@ export default function TaskManagementPage() {
           </div>
 
           {/* Google Sheets sync bar */}
-          {googleStatus?.connected && googleStatus.services.sheets ? (
+          {canManage && googleStatus?.connected && googleStatus.services.sheets ? (
             <div className="mb-6 rounded-2xl border border-blue-200/60 bg-blue-50/50 px-5 py-4 dark:border-blue-400/20 dark:bg-blue-400/5">
               <div className="flex flex-wrap items-center gap-3">
                 <FileSpreadsheet className="size-5 text-blue-600 dark:text-blue-400" />
@@ -707,7 +717,7 @@ export default function TaskManagementPage() {
           )}
 
           {/* New task form */}
-          {showNewTask && (
+          {canManage && showNewTask && (
             <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900/50">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white">Create New Task</h3>
@@ -814,9 +824,9 @@ export default function TaskManagementPage() {
                 return (
                   <div
                     key={col}
-                    onDragOver={(e) => handleDragOver(e, col)}
-                    onDragLeave={() => setDragOverCol(null)}
-                    onDrop={() => handleDrop(col)}
+                    onDragOver={canManage ? (e) => handleDragOver(e, col) : undefined}
+                    onDragLeave={canManage ? () => setDragOverCol(null) : undefined}
+                    onDrop={canManage ? () => handleDrop(col) : undefined}
                     className={`rounded-2xl border-2 p-3 transition-all ${dragOverCol === col ? "border-blue-400 bg-blue-50/30 dark:bg-blue-400/5" : cfg.border + " " + cfg.bg}`}
                   >
                     <div className="mb-3 flex items-center justify-between px-1">
@@ -832,10 +842,10 @@ export default function TaskManagementPage() {
                         return (
                           <div
                             key={t.id}
-                            draggable
-                            onDragStart={() => handleDragStart(t.id)}
+                            draggable={canManage}
+                            onDragStart={canManage ? () => handleDragStart(t.id) : undefined}
                             onClick={() => setSelectedTaskId(t.id)}
-                            className={`cursor-grab rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm transition-all hover:shadow-md active:cursor-grabbing dark:border-white/10 dark:bg-slate-900 ${draggedTaskId === t.id ? "opacity-50" : ""}`}
+                            className={`rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm transition-all hover:shadow-md dark:border-white/10 dark:bg-slate-900 ${canManage ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"} ${draggedTaskId === t.id ? "opacity-50" : ""}`}
                           >
                             <div className="flex items-start gap-2">
                               <span className={`mt-1 size-2 shrink-0 rounded-full ${ps.dot}`} />
@@ -990,9 +1000,11 @@ export default function TaskManagementPage() {
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <button onClick={() => handleDeleteTask(selectedTask.id)} className="grid size-8 place-items-center rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-400/10">
-                  <Trash2 className="size-4" />
-                </button>
+                {canManage && (
+                  <button onClick={() => handleDeleteTask(selectedTask.id)} className="grid size-8 place-items-center rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-400/10">
+                    <Trash2 className="size-4" />
+                  </button>
+                )}
                 <button onClick={() => setSelectedTaskId(null)} className="grid size-8 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/5 dark:hover:text-white"><X className="size-4" /></button>
               </div>
             </div>
@@ -1041,17 +1053,19 @@ export default function TaskManagementPage() {
                   <span className="text-xs font-black text-slate-900 dark:text-white">{selectedTask.progress}%</span>
                 </div>
                 <Progress value={selectedTask.progress} className="mt-2" />
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={selectedTask.progress}
-                  onChange={e => handleUpdateProgress(selectedTask.id, Number(e.target.value))}
-                  className="mt-3 w-full accent-blue-600"
-                />
+                {canManage && (
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={selectedTask.progress}
+                    onChange={e => handleUpdateProgress(selectedTask.id, Number(e.target.value))}
+                    className="mt-3 w-full accent-blue-600"
+                  />
+                )}
               </div>
 
-              <div className="grid grid-cols-4 gap-1.5">
+              {canManage && <div className="grid grid-cols-4 gap-1.5">
                 {columnOrder.map(col => (
                   <button
                     key={col}
@@ -1061,7 +1075,7 @@ export default function TaskManagementPage() {
                     {statusConfig[col].label}
                   </button>
                 ))}
-              </div>
+              </div>}
 
               <Separator />
 
@@ -1085,7 +1099,7 @@ export default function TaskManagementPage() {
                     <p className="text-[11px] text-slate-400">No comments yet.</p>
                   )}
                 </div>
-                <div className="mt-3 flex gap-2">
+                {canManage && <div className="mt-3 flex gap-2">
                   <input
                     placeholder="Add a comment..."
                     value={commentText}
@@ -1096,7 +1110,7 @@ export default function TaskManagementPage() {
                   <Button size="sm" onClick={() => handleAddComment(selectedTask.id)} disabled={!commentText.trim() || submitting}>
                     {submitting ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}
                   </Button>
-                </div>
+                </div>}
               </div>
             </div>
           </div>
