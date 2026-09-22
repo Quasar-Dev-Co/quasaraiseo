@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, Suspense, useRef, useMemo } from "rea
 import { useSearchParams } from "next/navigation";
 import {
   Settings, CheckCircle2, Circle, Loader2,
-  Globe2, BarChart3, FileSpreadsheet, Smartphone, Bell,
+  Globe2, BarChart3, FileSpreadsheet, Smartphone,
   Shield, Mail, Download, RefreshCw, Plug, Zap,
   Monitor, Tablet, KeyRound, Clock, MapPin, Trash2, LogOut, AlertCircle,
   Building2, Plus, Pencil, Star, X, Link2, Phone, MapPin as MapPinIcon, Upload, ChevronDown, Search, Sparkles,
@@ -136,7 +136,6 @@ function SettingsInner() {
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<GoogleStatus | null>(null);
-  const [notifOn, setNotifOn] = useState(true);
   const [twoFAOn, setTwoFAOn] = useState(false);
   const [devices, setDevices] = useState<DeviceInfo[]>([]);
 
@@ -646,7 +645,7 @@ function SettingsInner() {
           </div>
           <h1 className="mt-5 text-[clamp(34px,5vw,52px)] font-black leading-[1.02] tracking-[-0.052em] text-slate-900 dark:text-white">Settings</h1>
           <p className="mt-4 max-w-[700px] text-[15px] leading-relaxed text-slate-600 dark:text-slate-400">
-            Manage Google integrations, notification preferences, and workspace settings.
+            Manage Google integrations, security, and workspace settings.
           </p>
         </section>
 
@@ -656,10 +655,9 @@ function SettingsInner() {
           </div>
         )}
 
-        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-3">
           {[
             { i: Plug, l: "Integrations", v: `${cnt}/${svcList.length}` },
-            { i: Bell, l: "Alerts", v: notifOn ? "On" : "Off" },
             { i: Monitor, l: "Devices", v: `${devices.length}` },
             { i: Shield, l: "2FA", v: twoFAOn ? "On" : "Off", green: twoFAOn },
           ].map((s) => (
@@ -673,7 +671,6 @@ function SettingsInner() {
         <Tabs defaultValue="google">
           <TabsList className="mb-6 h-auto gap-1 rounded-[14px] bg-slate-100/80 p-1.5 dark:bg-slate-900/60">
             <TabsTrigger value="google" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><GIcon c="size-4" /> Google Connect</TabsTrigger>
-            <TabsTrigger value="notifications" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Bell className="size-4" /> Notifications</TabsTrigger>
             <TabsTrigger value="security" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Shield className="size-4" /> Security</TabsTrigger>
             <TabsTrigger value="workspace" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Settings className="size-4" /> Workspace</TabsTrigger>
             {isSuper && <TabsTrigger value="ai-provider" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Sparkles className="size-4" /> AI Provider</TabsTrigger>}
@@ -730,35 +727,6 @@ function SettingsInner() {
                 </div>
               </article>
             </div>
-          </TabsContent>
-
-          {/* NOTIFICATIONS + WORKSPACE TABS */}
-          <TabsContent value="notifications">
-            <article className={card}>
-              <header className={hdr}>
-                <div className="flex gap-2.75">
-                  <span className="grid size-9 place-items-center rounded-[12px] bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400"><Bell className="size-[18px]" /></span>
-                  <div><h3 className="m-0 text-base text-slate-900 dark:text-white">Notification Preferences</h3><p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Control how and when you get alerts</p></div>
-                </div>
-                <Toggle checked={notifOn} onChange={() => setNotifOn(!notifOn)} />
-              </header>
-              {notifOn && (
-                <div className="divide-y divide-slate-100 dark:divide-white/5">
-                  {[
-                    { t: "Audit Completion", d: "Get notified when an SEO audit finishes processing", on: true },
-                    { t: "Task Assignments", d: "Receive alerts when a new task is assigned to you", on: true },
-                    { t: "Weekly Digest", d: "Summary of audits, tasks, and scores every Monday", on: false },
-                    { t: "Sheet Sync Errors", d: "Alert when Google Sheets sync fails or has conflicts", on: true },
-                    { t: "Security Alerts", d: "Notifications for login attempts and API key changes", on: true },
-                  ].map((item) => (
-                    <div key={item.t} className="flex items-center justify-between px-6 py-4">
-                      <div><h4 className="text-[14px] font-bold text-slate-900 dark:text-white">{item.t}</h4><p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">{item.d}</p></div>
-                      <Toggle checked={item.on} onChange={() => {}} />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </article>
           </TabsContent>
 
           {/* SECURITY TAB */}
