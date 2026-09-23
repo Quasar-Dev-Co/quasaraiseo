@@ -19,6 +19,8 @@ import {
 import { googleApi, type GoogleStatus, type GoogleSheet } from "@/lib/google-api";
 import {
   taskApi,
+  assigneeLabel,
+  isAssignedTo,
   type SeoTask as ApiSeoTask,
   type TaskPriority,
   type TaskStatus,
@@ -137,23 +139,25 @@ export default function TaskManagementPage() {
     fetchGoogleData();
   }, [fetchTasks, fetchGoogleData]);
 
-  const assignees = Array.from(new Set(tasks.map(t => t.assignee).filter(Boolean)));
+  const scopedTasks = canManage ? tasks : tasks.filter((t) => isAssignedTo(t.assignee, user));
+  const assignees = Array.from(new Set(scopedTasks.map(t => t.assignee).filter(Boolean)));
 
-  const filteredTasks = tasks.filter(t => {
+  const filteredTasks = scopedTasks.filter(t => {
     if (searchQuery && !t.title.toLowerCase().includes(searchQuery.toLowerCase()) && !t.description.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     if (filterPriority !== "all" && t.priority !== filterPriority) return false;
-    if (filterAssignee !== "all" && t.assignee !== filterAssignee) return false;
+    if (filterAssignee === "unassigned" && t.assignee.trim()) return false;
+    if (filterAssignee !== "all" && filterAssignee !== "unassigned" && t.assignee !== filterAssignee) return false;
     return true;
   });
 
   const selectedTask = tasks.find(t => t.id === selectedTaskId) ?? null;
 
   const stats = {
-    total: tasks.length,
-    active: tasks.filter(t => t.status === "in_progress").length,
-    review: tasks.filter(t => t.status === "review").length,
-    done: tasks.filter(t => t.status === "done").length,
-    urgent: tasks.filter(t => t.priority === "urgent" && t.status !== "done").length,
+    total: scopedTasks.length,
+    active: scopedTasks.filter(t => t.status === "in_progress").length,
+    review: scopedTasks.filter(t => t.status === "review").length,
+    done: scopedTasks.filter(t => t.status === "done").length,
+    urgent: scopedTasks.filter(t => t.priority === "urgent" && t.status !== "done").length,
   };
 
   const handleDragStart = (taskId: string) => {
@@ -258,9 +262,25 @@ export default function TaskManagementPage() {
     }
   };
 
+  const handleAssignTask = async (taskId: string, assignee: string) => {
+    if (!canManage) return;
+    const nextAssignee = assignee.trim();
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, assignee: nextAssignee } : t));
+    try {
+      await taskApi.updateTask(taskId, { assignee: nextAssignee });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to assign task");
+      fetchTasks();
+    }
+  };
+
   const handleCreateTask = async () => {
     if (!canManage) return;
     if (!newTask.title) return;
+    if (!newTask.assignee.includes("@")) {
+      setError("Assign the task to the user's email.");
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -731,9 +751,11 @@ export default function TaskManagementPage() {
                   className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-blue-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                 />
                 <input
-                  placeholder="Assignee name"
+                  type="email"
+                  placeholder="Assign to user email"
                   value={newTask.assignee}
                   onChange={e => setNewTask({ ...newTask, assignee: e.target.value })}
+                  list="task-assignees"
                   className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-blue-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                 />
                 <textarea
@@ -773,8 +795,12 @@ export default function TaskManagementPage() {
                   className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-blue-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                 />
               </div>
+              <datalist id="task-assignees">
+                {assignees.map((assignee) => <option key={assignee} value={assignee} />)}
+              </datalist>
+              <p className="mt-3 text-[12px] text-slate-500 dark:text-slate-400">Only the assigned account sees this task. You can still see every task and filter by person.</p>
               <div className="mt-4 flex gap-2">
-                <Button size="sm" onClick={handleCreateTask} disabled={!newTask.title || submitting}>
+                <Button size="sm" onClick={handleCreateTask} disabled={!newTask.title || !newTask.assignee.trim() || submitting}>
                   {submitting ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}
                   Create Task
                 </Button>
@@ -804,15 +830,18 @@ export default function TaskManagementPage() {
                 <SelectItem value="low">Low</SelectItem>
               </SelectContent>
             </Select>
+            {canManage && (
             <Select value={filterAssignee} onValueChange={(v) => setFilterAssignee(v ?? "all")}>
-              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Assignees</SelectItem>
+                <SelectItem value="all">All users</SelectItem>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
                 {assignees.map(a => (
-                  <SelectItem key={a} value={a}>{a}</SelectItem>
+                  <SelectItem key={a} value={a}>{assigneeLabel(a)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            )}
           </div>
 
           {view === "board" ? (
@@ -864,7 +893,7 @@ export default function TaskManagementPage() {
                                   {t.assignee && (
                                     <div className="flex items-center gap-1.5">
                                       <span className="grid size-6 place-items-center rounded-full bg-slate-100 text-[9px] font-extrabold text-slate-700 dark:bg-slate-800 dark:text-slate-300">{getInitials(t.assignee)}</span>
-                                      <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">{t.assignee.split(" ")[0]}</span>
+                                      <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">{assigneeLabel(t.assignee)}</span>
                                     </div>
                                   )}
                                   {t.progress > 0 && (
@@ -939,7 +968,7 @@ export default function TaskManagementPage() {
                               {t.assignee && (
                                 <div className="flex items-center gap-2">
                                   <span className="grid size-7 place-items-center rounded-full bg-slate-100 text-[10px] font-extrabold text-slate-700 dark:bg-slate-800 dark:text-slate-300">{getInitials(t.assignee)}</span>
-                                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{t.assignee.split(" ")[0]}</span>
+                                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{assigneeLabel(t.assignee)}</span>
                                 </div>
                               )}
                             </td>
@@ -1029,9 +1058,22 @@ export default function TaskManagementPage() {
                 <div>
                   <span className="block text-[10px] font-bold uppercase text-slate-400">Assignee</span>
                   <div className="mt-1.5 flex items-center gap-2">
-                    <span className="grid size-6 place-items-center rounded-full bg-slate-100 text-[9px] font-extrabold text-slate-700 dark:bg-slate-800 dark:text-slate-300">{getInitials(selectedTask.assignee)}</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedTask.assignee || "Unassigned"}</span>
+                    <span className="grid size-6 place-items-center rounded-full bg-slate-100 text-[9px] font-extrabold text-slate-700 dark:bg-slate-800 dark:text-slate-300">{getInitials(assigneeLabel(selectedTask.assignee))}</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">{assigneeLabel(selectedTask.assignee)}</span>
                   </div>
+                  {canManage && (
+                    <input
+                      type="email"
+                      defaultValue={selectedTask.assignee}
+                      key={selectedTask.assignee}
+                      placeholder="Assign to user email"
+                      onBlur={(e) => {
+                        const next = e.target.value.trim();
+                        if (next !== selectedTask.assignee) void handleAssignTask(selectedTask.id, next);
+                      }}
+                      className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] font-semibold text-slate-900 outline-none focus:border-blue-400 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                    />
+                  )}
                 </div>
                 <div>
                   <span className="block text-[10px] font-bold uppercase text-slate-400">Due Date</span>

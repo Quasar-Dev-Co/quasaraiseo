@@ -62,6 +62,29 @@ export interface CreateTaskInput {
   tags?: string[];
 }
 
+export function assigneeEmail(assignee: string): string {
+  const match = assignee.match(/<([^>]+)>/);
+  if (match) return match[1].trim().toLowerCase();
+  if (assignee.includes("@")) return assignee.trim().toLowerCase();
+  return "";
+}
+
+export function assigneeLabel(assignee: string): string {
+  const name = assignee.replace(/<[^>]+>/, "").trim();
+  return name || assignee.trim() || "Unassigned";
+}
+
+export function isAssignedTo(
+  assignee: string,
+  user: { name?: string | null; email?: string | null } | null | undefined,
+): boolean {
+  if (!user || !assignee.trim()) return false;
+  const email = assigneeEmail(assignee);
+  if (email && user.email && email === user.email.trim().toLowerCase()) return true;
+  const label = assignee.replace(/<[^>]+>/, "").trim().toLowerCase();
+  return !!user.name && label === user.name.trim().toLowerCase();
+}
+
 export interface UpdateTaskInput {
   title?: string;
   description?: string;

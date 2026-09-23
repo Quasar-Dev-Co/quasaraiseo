@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMinLoading } from "@/lib/use-min-loading";
 import { useAuth } from "@/hooks/use-auth";
-import { taskApi, type SeoTask, type TaskStatus } from "@/lib/task-api";
+import { isAssignedTo, taskApi, type SeoTask, type TaskStatus } from "@/lib/task-api";
 import { keywordMcpApi, type McpSessionPreview } from "@/lib/keyword-mcp-api";
 import { wordpressApi, type WordPressSite, type GenerationJob } from "@/lib/wordpress-api";
 import { brandingApi, type Branding } from "@/lib/branding-api";
@@ -111,7 +111,7 @@ export default function DashboardPage() {
   }, [fetchDashboard]);
 
   // Compute stats from real data
-  const tasks = data?.tasks ?? [];
+  const tasks = (data?.tasks ?? []).filter((task) => isSuper || isAssignedTo(task.assignee, user));
   const sessions = data?.sessions ?? [];
   const wpSites = data?.wpSites ?? [];
   const genJobs = data?.genJobs ?? [];
