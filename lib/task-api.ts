@@ -54,6 +54,7 @@ export interface CreateTaskInput {
   title: string;
   description?: string;
   assignee?: string;
+  assigneeId?: string;
   priority?: TaskPriority;
   status?: TaskStatus;
   workType?: string;
@@ -89,6 +90,7 @@ export interface UpdateTaskInput {
   title?: string;
   description?: string;
   assignee?: string;
+  assigneeId?: string;
   priority?: TaskPriority;
   status?: TaskStatus;
   workType?: string;

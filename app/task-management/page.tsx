@@ -28,6 +28,7 @@ import {
   type CreateTaskInput,
 } from "@/lib/task-api";
 import { useAuth } from "@/hooks/use-auth";
+import { accountApi, type AccountOption } from "@/lib/account-api";
 
 const priorityStyles: Record<TaskPriority, { badge: string; dot: string; ring: string }> = {
   urgent: { badge: "bg-red-50 text-red-600 dark:bg-red-400/15 dark:text-red-400", dot: "bg-red-500", ring: "ring-red-400/30" },
@@ -54,6 +55,12 @@ const workTypes: WorkType[] = [
 function getInitials(name: string): string {
   if (!name) return "?";
   return name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
+}
+
+function accountOptionLabel(account: AccountOption, accounts: AccountOption[]): string {
+  const name = account.name.trim() || account.email;
+  const duplicated = accounts.filter((item) => item.name.trim().toLowerCase() === account.name.trim().toLowerCase()).length > 1;
+  return duplicated ? `${name} (${account.email})` : name;
 }
 
 export default function TaskManagementPage() {
@@ -89,10 +96,11 @@ export default function TaskManagementPage() {
     timeZone: "UTC",
   });
 
+  const [accounts, setAccounts] = useState<AccountOption[]>([]);
   const [newTask, setNewTask] = useState({
     title: "",
     description: "",
-    assignee: "",
+    assigneeId: "",
     priority: "medium" as TaskPriority,
     workType: "Technical SEO" as WorkType,
     websiteUrl: "",
@@ -139,14 +147,23 @@ export default function TaskManagementPage() {
     fetchGoogleData();
   }, [fetchTasks, fetchGoogleData]);
 
+  useEffect(() => {
+    if (!canManage) return;
+    accountApi.listAccounts()
+      .then(setAccounts)
+      .catch((e) => setError(e instanceof Error ? e.message : "Failed to load accounts"));
+  }, [canManage]);
+
   const scopedTasks = canManage ? tasks : tasks.filter((t) => isAssignedTo(t.assignee, user));
-  const assignees = Array.from(new Set(scopedTasks.map(t => t.assignee).filter(Boolean)));
 
   const filteredTasks = scopedTasks.filter(t => {
     if (searchQuery && !t.title.toLowerCase().includes(searchQuery.toLowerCase()) && !t.description.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     if (filterPriority !== "all" && t.priority !== filterPriority) return false;
     if (filterAssignee === "unassigned" && t.assignee.trim()) return false;
-    if (filterAssignee !== "all" && filterAssignee !== "unassigned" && t.assignee !== filterAssignee) return false;
+    if (filterAssignee !== "all" && filterAssignee !== "unassigned") {
+      const account = accounts.find((item) => item.id === filterAssignee);
+      if (!account || !isAssignedTo(t.assignee, account)) return false;
+    }
     return true;
   });
 
@@ -262,12 +279,11 @@ export default function TaskManagementPage() {
     }
   };
 
-  const handleAssignTask = async (taskId: string, assignee: string) => {
-    if (!canManage) return;
-    const nextAssignee = assignee.trim();
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, assignee: nextAssignee } : t));
+  const handleAssignTask = async (taskId: string, assigneeId: string) => {
+    if (!canManage || !assigneeId) return;
     try {
-      await taskApi.updateTask(taskId, { assignee: nextAssignee });
+      const updated = await taskApi.updateTask(taskId, { assigneeId });
+      setTasks(prev => prev.map(t => t.id === taskId ? updated : t));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to assign task");
       fetchTasks();
@@ -277,8 +293,8 @@ export default function TaskManagementPage() {
   const handleCreateTask = async () => {
     if (!canManage) return;
     if (!newTask.title) return;
-    if (!newTask.assignee.includes("@")) {
-      setError("Assign the task to the user's email.");
+    if (!newTask.assigneeId) {
+      setError("Assign this task to a user.");
       return;
     }
     setSubmitting(true);
@@ -287,7 +303,7 @@ export default function TaskManagementPage() {
       const input: CreateTaskInput = {
         title: newTask.title,
         description: newTask.description,
-        assignee: newTask.assignee,
+        assigneeId: newTask.assigneeId,
         priority: newTask.priority,
         status: "todo",
         workType: newTask.workType,
@@ -298,7 +314,7 @@ export default function TaskManagementPage() {
       const created = await taskApi.createTask(input);
       const nextTasks = [created, ...tasks];
       setTasks(nextTasks);
-      setNewTask({ title: "", description: "", assignee: "", priority: "medium", workType: "Technical SEO", websiteUrl: "", dueDate: "" });
+      setNewTask({ title: "", description: "", assigneeId: "", priority: "medium", workType: "Technical SEO", websiteUrl: "", dueDate: "" });
       setShowNewTask(false);
       void syncTasksToSelectedSheet(selectedSheet, nextTasks, true);
     } catch (e) {
@@ -750,14 +766,16 @@ export default function TaskManagementPage() {
                   onChange={e => setNewTask({ ...newTask, title: e.target.value })}
                   className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-blue-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                 />
-                <input
-                  type="email"
-                  placeholder="Assign to user email"
-                  value={newTask.assignee}
-                  onChange={e => setNewTask({ ...newTask, assignee: e.target.value })}
-                  list="task-assignees"
+                <select
+                  value={newTask.assigneeId}
+                  onChange={e => setNewTask({ ...newTask, assigneeId: e.target.value })}
                   className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-blue-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
-                />
+                >
+                  <option value="">Assign to</option>
+                  {accounts.map((account) => (
+                    <option key={account.id} value={account.id}>{accountOptionLabel(account, accounts)}</option>
+                  ))}
+                </select>
                 <textarea
                   placeholder="Description"
                   value={newTask.description}
@@ -795,12 +813,9 @@ export default function TaskManagementPage() {
                   className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-blue-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                 />
               </div>
-              <datalist id="task-assignees">
-                {assignees.map((assignee) => <option key={assignee} value={assignee} />)}
-              </datalist>
-              <p className="mt-3 text-[12px] text-slate-500 dark:text-slate-400">Only the assigned account sees this task. You can still see every task and filter by person.</p>
+              <p className="mt-3 text-[12px] text-slate-500 dark:text-slate-400">Only the person you assign can see this task.</p>
               <div className="mt-4 flex gap-2">
-                <Button size="sm" onClick={handleCreateTask} disabled={!newTask.title || !newTask.assignee.trim() || submitting}>
+                <Button size="sm" onClick={handleCreateTask} disabled={!newTask.title || !newTask.assigneeId || submitting}>
                   {submitting ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}
                   Create Task
                 </Button>
@@ -836,8 +851,8 @@ export default function TaskManagementPage() {
               <SelectContent>
                 <SelectItem value="all">All users</SelectItem>
                 <SelectItem value="unassigned">Unassigned</SelectItem>
-                {assignees.map(a => (
-                  <SelectItem key={a} value={a}>{assigneeLabel(a)}</SelectItem>
+                {accounts.map((account) => (
+                  <SelectItem key={account.id} value={account.id}>{accountOptionLabel(account, accounts)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -892,7 +907,7 @@ export default function TaskManagementPage() {
                                 <div className="mt-2.5 flex items-center justify-between">
                                   {t.assignee && (
                                     <div className="flex items-center gap-1.5">
-                                      <span className="grid size-6 place-items-center rounded-full bg-slate-100 text-[9px] font-extrabold text-slate-700 dark:bg-slate-800 dark:text-slate-300">{getInitials(t.assignee)}</span>
+                                      <span className="grid size-6 place-items-center rounded-full bg-slate-100 text-[9px] font-extrabold text-slate-700 dark:bg-slate-800 dark:text-slate-300">{getInitials(assigneeLabel(t.assignee))}</span>
                                       <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">{assigneeLabel(t.assignee)}</span>
                                     </div>
                                   )}
@@ -967,7 +982,7 @@ export default function TaskManagementPage() {
                             <td className="px-5 py-3">
                               {t.assignee && (
                                 <div className="flex items-center gap-2">
-                                  <span className="grid size-7 place-items-center rounded-full bg-slate-100 text-[10px] font-extrabold text-slate-700 dark:bg-slate-800 dark:text-slate-300">{getInitials(t.assignee)}</span>
+                                  <span className="grid size-7 place-items-center rounded-full bg-slate-100 text-[10px] font-extrabold text-slate-700 dark:bg-slate-800 dark:text-slate-300">{getInitials(assigneeLabel(t.assignee))}</span>
                                   <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{assigneeLabel(t.assignee)}</span>
                                 </div>
                               )}
@@ -1062,17 +1077,19 @@ export default function TaskManagementPage() {
                     <span className="font-semibold text-slate-800 dark:text-slate-200">{assigneeLabel(selectedTask.assignee)}</span>
                   </div>
                   {canManage && (
-                    <input
-                      type="email"
-                      defaultValue={selectedTask.assignee}
-                      key={selectedTask.assignee}
-                      placeholder="Assign to user email"
-                      onBlur={(e) => {
-                        const next = e.target.value.trim();
-                        if (next !== selectedTask.assignee) void handleAssignTask(selectedTask.id, next);
+                    <select
+                      value={accounts.find((account) => isAssignedTo(selectedTask.assignee, account))?.id ?? ""}
+                      onChange={(e) => {
+                        const next = e.target.value;
+                        if (next) void handleAssignTask(selectedTask.id, next);
                       }}
                       className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] font-semibold text-slate-900 outline-none focus:border-blue-400 dark:border-white/10 dark:bg-slate-900 dark:text-white"
-                    />
+                    >
+                      <option value="">Assign to</option>
+                      {accounts.map((account) => (
+                        <option key={account.id} value={account.id}>{accountOptionLabel(account, accounts)}</option>
+                      ))}
+                    </select>
                   )}
                 </div>
                 <div>
