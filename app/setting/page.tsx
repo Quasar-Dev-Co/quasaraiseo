@@ -692,10 +692,23 @@ function SettingsInner() {
                       <p className="mt-1 max-w-[520px] text-[13px] leading-relaxed text-slate-600 dark:text-slate-400">Connect all Google services at once with a single OAuth sign-in.</p>
                     </div>
                   </div>
-                  <Button size="lg" className="h-12 shrink-0 gap-2.5 rounded-[14px] bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 px-6 text-sm font-bold text-white shadow-[0_12px_28px_rgba(217,70,239,0.25)]"
-                    onClick={handleConnectAll} disabled={connecting || connected}>
-                    {connecting ? <><Loader2 className="size-4 animate-spin" /> Redirecting...</> : connected ? <><CheckCircle2 className="size-4" /> Connected</> : <><Zap className="size-4" /> Connect All</>}
-                  </Button>
+                  {isSuper ? (
+                    <div className="flex shrink-0 gap-2">
+                      <Button size="lg" className="h-12 gap-2.5 rounded-[14px] bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 px-6 text-sm font-bold text-white shadow-[0_12px_28px_rgba(217,70,239,0.25)]"
+                        onClick={handleConnectAll} disabled={connecting || connected}>
+                        {connecting ? <><Loader2 className="size-4 animate-spin" /> Redirecting...</> : connected ? <><CheckCircle2 className="size-4" /> Connected</> : <><Zap className="size-4" /> Connect All</>}
+                      </Button>
+                      {connected && (
+                        <Button size="lg" variant="destructive" className="h-12 gap-2 rounded-[14px] px-5 text-sm font-bold" onClick={handleDisconnect} disabled={connecting}>
+                          <Trash2 className="size-4" /> Disconnect All
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="shrink-0 rounded-[14px] border border-slate-200 bg-white px-4 py-3 text-[12px] font-semibold text-slate-500 dark:border-white/10 dark:bg-slate-800 dark:text-slate-400">
+                      Managed by the super user
+                    </div>
+                  )}
                 </div>
               </article>
 
@@ -717,7 +730,11 @@ function SettingsInner() {
                         </div>
                       </div>
                       <div className="shrink-0">
-                        {!connected ? <Button size="lg" className="h-11 gap-2 rounded-[12px] border border-slate-200 bg-white px-5 text-[13px] font-bold text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200" onClick={handleConnectSingle} disabled={connecting}><GIcon c="size-4" /> {connecting ? "Connecting..." : "Connect"}</Button> : <div className="flex gap-2"><Button size="lg" variant="outline" className="h-11 gap-2 rounded-[12px] px-4 text-[13px] font-bold"><RefreshCw className="size-3.5" /> Sync</Button><Button size="lg" variant="destructive" className="h-11 gap-2 rounded-[12px] px-4 text-[13px] font-bold" onClick={handleDisconnect}>Disconnect</Button></div>}
+                        {isSuper ? (
+                          !connected ? <Button size="lg" className="h-11 gap-2 rounded-[12px] border border-slate-200 bg-white px-5 text-[13px] font-bold text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200" onClick={handleConnectSingle} disabled={connecting}><GIcon c="size-4" /> {connecting ? "Connecting..." : "Connect"}</Button> : <div className="flex gap-2"><Button size="lg" variant="outline" className="h-11 gap-2 rounded-[12px] px-4 text-[13px] font-bold"><RefreshCw className="size-3.5" /> Sync</Button><Button size="lg" variant="destructive" className="h-11 gap-2 rounded-[12px] px-4 text-[13px] font-bold" onClick={handleDisconnect}>Disconnect</Button></div>
+                        ) : (
+                          <span className="text-[12px] font-semibold text-slate-400 dark:text-slate-500">Managed by the super user</span>
+                        )}
                       </div>
                     </div>
                   </article>
