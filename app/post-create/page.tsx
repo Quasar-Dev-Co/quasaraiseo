@@ -261,7 +261,7 @@ function PostCreateContent() {
     let updatedBody = body;
     for (const img of images) {
       const fullUrl = wordpressApi.imageUrl(img.url);
-      const imgTag = `<figure class="wp-block-image"><img src="${fullUrl}" alt="" class="wp-image-generated" /></figure>`;
+      const imgTag = `<figure class="wp-block-image"><img src="${fullUrl}" alt="" class="wp-image-${img.mediaId || "generated"}" /></figure>`;
 
       if (img.placement === "featured") {
         // Insert featured image right after the first heading/title (h1 or h2) or at the very start
@@ -608,10 +608,14 @@ This post should support and link UP to the ${refTitle} reference page. It must 
 
   const handleGenerateImages = async () => {
     if (!generatedContent?.imagePrompts || generatedContent.imagePrompts.length === 0) return;
+    if (!selectedSiteId) {
+      setImageError("Select a connected WordPress site first. Generated images are saved in that site's media library.");
+      return;
+    }
     setGeneratingImages(true);
     setImageError(null);
     try {
-      const result = await wordpressApi.generateImages(generatedContent.imagePrompts, selectedBrandId || undefined, generatedContent.title, generatedContent.headings);
+      const result = await wordpressApi.generateImages(generatedContent.imagePrompts, selectedBrandId || undefined, generatedContent.title, generatedContent.headings, selectedSiteId);
       setGeneratedImages(result.images);
       const updatedBody = insertImagesIntoBody(generatedContent.body, result.images);
       setGeneratedContent({ ...generatedContent, body: updatedBody });
@@ -651,6 +655,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
         categories: postCategories ? postCategories.split(",").map((c) => c.trim()).filter(Boolean) : [],
         tags: postTags ? postTags.split(",").map((t) => t.trim()).filter(Boolean) : [],
         featuredImage: featuredImage ? wordpressApi.imageUrl(featuredImage.url) : undefined,
+        featuredMediaId: featuredImage?.mediaId,
         scheduledDate: publishStatus === "future" ? scheduledDate : undefined,
       });
       const link = result.post.permalink ? ` View at: ${result.post.permalink}` : "";
@@ -699,7 +704,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
       await wordpressApi.deletePost(selectedSiteId, postId);
       setWpPosts((prev) => prev.filter((p) => p.id !== postId));
     } catch (e) {
-      console.error("Delete post failed:", e);
+      setError(e instanceof Error ? e.message : "Failed to delete the post on the WordPress site");
     }
   };
 
@@ -1486,7 +1491,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                         <button
                           onClick={() => handleDeletePost(post.id)}
                           className="grid size-7 shrink-0 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-400/10 dark:hover:text-red-400"
-                          title="Delete"
+                          title="Delete from this list and from the WordPress site"
                         >
                           <Trash2 className="size-3.5" />
                         </button>

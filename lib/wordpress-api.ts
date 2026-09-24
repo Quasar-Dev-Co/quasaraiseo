@@ -101,6 +101,7 @@ export interface GeneratedImage {
   prompt: string;
   url: string;
   filename: string;
+  mediaId?: number;
 }
 
 export type GenerationStatus = "idle" | "generating" | "completed" | "failed";
@@ -177,11 +178,11 @@ export const wordpressApi = {
   },
 
   // ─── Image Generation ───
-  async generateImages(imagePrompts: Array<{ placement: string; prompt: string }>, brandingId?: string, title?: string, headings?: string[]): Promise<{ images: GeneratedImage[] }> {
+  async generateImages(imagePrompts: Array<{ placement: string; prompt: string }>, brandingId?: string, title?: string, headings?: string[], siteId?: string): Promise<{ images: GeneratedImage[] }> {
     const res = await fetch(`${BACKEND_URL}/api/wordpress/generate-images`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ imagePrompts, brandingId, title, headings }),
+      body: JSON.stringify({ imagePrompts, brandingId, title, headings, siteId }),
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
@@ -409,6 +410,7 @@ export const wordpressApi = {
       categories?: string[];
       tags?: string[];
       featuredImage?: string;
+      featuredMediaId?: number;
       scheduledDate?: string;
     },
   ): Promise<{ success: boolean; post: WordPressPost }> {
