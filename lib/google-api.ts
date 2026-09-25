@@ -111,6 +111,7 @@ export interface AnalyticsProperty {
   displayName: string;
   propertyType: string;
   industryCategory: string | null;
+  websiteUrls?: string[];
 }
 
 export interface AnalyticsDataRow {
@@ -120,6 +121,7 @@ export interface AnalyticsDataRow {
   pageViews: number;
   avgSessionDuration: number;
   bounceRate: number;
+  engagementRate?: number;
 }
 
 export interface AnalyticsData {
@@ -267,8 +269,10 @@ export const googleApi = {
     siteUrl: string,
     startDate: string,
     endDate: string,
+    searchType?: string,
   ): Promise<SearchConsoleRow[]> {
     const params = new URLSearchParams({ siteUrl, startDate, endDate });
+    if (searchType) params.set("searchType", searchType);
     const res = await fetch(
       `${BACKEND_URL}/api/google/search-console/analytics?${params}`,
       { method: "GET", headers: { ...authHeaders() } },
@@ -285,8 +289,10 @@ export const googleApi = {
     siteUrl: string,
     startDate: string,
     endDate: string,
+    searchType?: string,
   ): Promise<SearchConsoleDailyRow[]> {
     const params = new URLSearchParams({ siteUrl, startDate, endDate });
+    if (searchType) params.set("searchType", searchType);
     const res = await fetch(
       `${BACKEND_URL}/api/google/search-console/daily?${params}`,
       { method: "GET", headers: { ...authHeaders() } },

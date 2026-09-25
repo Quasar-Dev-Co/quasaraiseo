@@ -26,21 +26,28 @@ import {
   type AnalyticsReport,
   type RealtimeReport,
   type GoogleStatus,
+  type SearchConsoleSite,
 } from "@/lib/google-api";
+import { searchConsoleSitesMissingFromAnalytics } from "@/lib/google-websites";
 
 /* ── helpers ────────────────────────────────────────────────────────────── */
 
 function formatDate(d: Date): string {
-  return d.toISOString().split("T")[0];
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseIsoDate(iso: string): Date {
+  const [year, month, day] = iso.split("-").map(Number);
+  return new Date(year, (month || 1) - 1, day || 1);
 }
 
 function formatGaDate(gaDate: string): string {
   if (!gaDate) return gaDate;
-  if (gaDate.length === 8) {
-    const y = gaDate.slice(0, 4);
-    const m = gaDate.slice(4, 6);
-    const d = gaDate.slice(6, 8);
-    const date = new Date(`${y}-${m}-${d}`);
+  if (gaDate.length === 8 && /^\d{8}$/.test(gaDate)) {
+    const date = new Date(Number(gaDate.slice(0, 4)), Number(gaDate.slice(4, 6)) - 1, Number(gaDate.slice(6, 8)));
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   }
   const d = new Date(gaDate);
@@ -110,6 +117,7 @@ const PIE_COLORS = ["#d946ef", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ef4
 export default function AnalyticsPage() {
   const [status, setStatus] = useState<GoogleStatus | null>(null);
   const [properties, setProperties] = useState<AnalyticsProperty[]>([]);
+  const [searchConsoleSites, setSearchConsoleSites] = useState<SearchConsoleSite[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<string>("");
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [prevData, setPrevData] = useState<AnalyticsData | null>(null);
@@ -142,8 +150,8 @@ export default function AnalyticsPage() {
     prevEndDate = formatDate(new Date(Date.now() - rangeDays * 24 * 60 * 60 * 1000));
     prevStartDate = formatDate(new Date(Date.now() - (2 * rangeDays - 1) * 24 * 60 * 60 * 1000));
   } else if (compareMode === "year") {
-    const startD = new Date(startDate);
-    const endD = new Date(endDate);
+    const startD = parseIsoDate(startDate);
+    const endD = parseIsoDate(endDate);
     prevStartDate = formatDate(new Date(startD.getFullYear() - 1, startD.getMonth(), startD.getDate()));
     prevEndDate = formatDate(new Date(endD.getFullYear() - 1, endD.getMonth(), endD.getDate()));
   } else if (compareMode === "custom") {
@@ -161,9 +169,13 @@ export default function AnalyticsPage() {
     try {
       const s = await googleApi.getStatus();
       setStatus(s);
-      if (s.connected && s.services.analytics) {
-        const props = await googleApi.getAnalyticsProperties();
+      if (s.connected) {
+        const [props, sites] = await Promise.all([
+          s.services.analytics ? googleApi.getAnalyticsProperties() : Promise.resolve([]),
+          s.services.searchConsole ? googleApi.getSearchConsoleSites().catch(() => []) : Promise.resolve([]),
+        ]);
         setProperties(props);
+        setSearchConsoleSites(sites);
         if (props.length > 0 && !selectedProperty) {
           setSelectedProperty(props[0].propertyId);
         }
@@ -283,19 +295,29 @@ export default function AnalyticsPage() {
     const prevMap: Record<string, number> = {};
     prevData?.totals.forEach(t => { prevMap[t.metric] = t.value; });
 
+    const engagement = totalsMap.engagementRate ?? (1 - (totalsMap.bounceRate ?? 0));
+    const prevEngagement = prevMap.engagementRate ?? (1 - (prevMap.bounceRate ?? 0));
+
     return {
       sessions: totalsMap.sessions ?? 0,
       users: totalsMap.totalUsers ?? 0,
       pageViews: totalsMap.pageViews ?? 0,
       avgDuration: totalsMap.avgSessionDuration ?? 0,
       bounceRate: totalsMap.bounceRate ?? 0,
+      engagementRate: engagement,
       prevSessions: hasComparison ? (prevMap.sessions ?? 0) : 0,
       prevUsers: hasComparison ? (prevMap.totalUsers ?? 0) : 0,
       prevPageViews: hasComparison ? (prevMap.pageViews ?? 0) : 0,
       prevAvgDuration: hasComparison ? (prevMap.avgSessionDuration ?? 0) : 0,
       prevBounceRate: hasComparison ? (prevMap.bounceRate ?? 0) : 0,
+      prevEngagementRate: hasComparison ? prevEngagement : 0,
     };
   }, [data, prevData, hasComparison]);
+
+  const searchConsoleOnlySites = useMemo(
+    () => searchConsoleSitesMissingFromAnalytics(searchConsoleSites, properties),
+    [searchConsoleSites, properties],
+  );
 
   // Build overlay chart data — align both periods by day index
   const chartData = useMemo(() => {
@@ -488,7 +510,7 @@ export default function AnalyticsPage() {
           )}
 
           {/* Property selector */}
-          {properties.length > 0 && (
+          {(properties.length > 0 || searchConsoleOnlySites.length > 0) && (
             <div className="mb-6">
               <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Property
@@ -498,10 +520,30 @@ export default function AnalyticsPage() {
                 onChange={(e) => setSelectedProperty(e.target.value)}
                 className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
               >
-                {properties.map(p => (
-                  <option key={p.propertyId} value={p.propertyId}>{p.displayName} ({p.propertyId})</option>
-                ))}
+                {properties.length > 0 && (
+                  <optgroup label="Google Analytics">
+                    {properties.map(p => (
+                      <option key={p.propertyId} value={p.propertyId}>
+                        {p.displayName}{(p.websiteUrls ?? []).length > 0 ? ` — ${(p.websiteUrls ?? []).join(", ")}` : ""}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {searchConsoleOnlySites.length > 0 && (
+                  <optgroup label="Search Console">
+                    {searchConsoleOnlySites.map(site => (
+                      <option key={site.siteUrl} value={site.siteUrl} disabled>
+                        {site.siteUrl} (Search Console only)
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
+              {searchConsoleOnlySites.length > 0 && (
+                <p className="mt-1.5 max-w-md text-[11px] text-slate-500 dark:text-slate-400">
+                  Every Analytics property is listed with its website URL. Search Console properties that are not in Analytics are shown too.
+                </p>
+              )}
             </div>
           )}
 
@@ -589,7 +631,7 @@ export default function AnalyticsPage() {
           {/* Second row: engagement stats */}
           <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard label="Bounce Rate" value={`${(stats.bounceRate * 100).toFixed(1)}%`} icon={TrendingDown} color="text-red-500" current={stats.bounceRate * 100} previous={stats.prevBounceRate * 100} invert />
-            <StatCard label="Engagement Rate" value={`${((1 - stats.bounceRate) * 100).toFixed(1)}%`} icon={Target} color="text-fuchsia-600 dark:text-fuchsia-400" current={(1 - stats.bounceRate) * 100} previous={(1 - stats.prevBounceRate) * 100} />
+            <StatCard label="Engagement Rate" value={`${(stats.engagementRate * 100).toFixed(1)}%`} icon={Target} color="text-fuchsia-600 dark:text-fuchsia-400" current={stats.engagementRate * 100} previous={stats.prevEngagementRate * 100} />
             <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900/50">
               <div className="flex items-center gap-2">
                 <MousePointerClick className="size-4 text-blue-600 dark:text-blue-400" />

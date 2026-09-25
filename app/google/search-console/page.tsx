@@ -27,17 +27,30 @@ import {
   type GoogleStatus,
   type SitemapInfo,
   type UrlInspectionResult,
+  type AnalyticsProperty,
 } from "@/lib/google-api";
+import {
+  aggregateSearchConsole,
+  analyticsSitesMissingFromSearchConsole,
+} from "@/lib/google-websites";
 
 /* ── helpers ────────────────────────────────────────────────────────────── */
 
 function formatDate(d: Date): string {
-  return d.toISOString().split("T")[0];
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseIsoDate(iso: string): Date {
+  const [year, month, day] = iso.split("-").map(Number);
+  return new Date(year, (month || 1) - 1, day || 1);
 }
 
 function formatScDate(dateStr: string): string {
   if (!dateStr) return dateStr;
-  const date = new Date(dateStr);
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(dateStr) ? parseIsoDate(dateStr) : new Date(dateStr);
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
@@ -99,6 +112,7 @@ const COMPARE_MODES: Array<{ label: string; value: CompareMode }> = [
 export default function SearchConsolePage() {
   const [status, setStatus] = useState<GoogleStatus | null>(null);
   const [sites, setSites] = useState<SearchConsoleSite[]>([]);
+  const [analyticsProperties, setAnalyticsProperties] = useState<AnalyticsProperty[]>([]);
   const [selectedSite, setSelectedSite] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const showSkeleton = useMinLoading(loading, 800);
@@ -143,8 +157,8 @@ export default function SearchConsolePage() {
     prevEndDate = formatDate(new Date(Date.now() - rangeDays * 24 * 60 * 60 * 1000));
     prevStartDate = formatDate(new Date(Date.now() - (2 * rangeDays - 1) * 24 * 60 * 60 * 1000));
   } else if (compareMode === "year") {
-    const startD = new Date(startDate);
-    const endD = new Date(endDate);
+    const startD = parseIsoDate(startDate);
+    const endD = parseIsoDate(endDate);
     prevStartDate = formatDate(new Date(startD.getFullYear() - 1, startD.getMonth(), startD.getDate()));
     prevEndDate = formatDate(new Date(endD.getFullYear() - 1, endD.getMonth(), endD.getDate()));
   } else if (compareMode === "custom") {
@@ -162,9 +176,13 @@ export default function SearchConsolePage() {
     try {
       const s = await googleApi.getStatus();
       setStatus(s);
-      if (s.connected && s.services.searchConsole) {
-        const siteList = await googleApi.getSearchConsoleSites();
+      if (s.connected) {
+        const [siteList, properties] = await Promise.all([
+          s.services.searchConsole ? googleApi.getSearchConsoleSites() : Promise.resolve([]),
+          s.services.analytics ? googleApi.getAnalyticsProperties().catch(() => []) : Promise.resolve([]),
+        ]);
         setSites(siteList);
+        setAnalyticsProperties(properties);
         if (siteList.length > 0 && !selectedSite) {
           setSelectedSite(siteList[0].siteUrl);
         }
@@ -189,10 +207,10 @@ export default function SearchConsolePage() {
     try {
       if (hasComparison) {
         const [queryData, dailyData, prevQueryData, prevDailyData] = await Promise.all([
-          googleApi.getSearchConsoleAnalytics(selectedSite, startDate, endDate),
-          googleApi.getSearchConsoleDaily(selectedSite, startDate, endDate),
-          googleApi.getSearchConsoleAnalytics(selectedSite, prevStartDate, prevEndDate),
-          googleApi.getSearchConsoleDaily(selectedSite, prevStartDate, prevEndDate),
+          googleApi.getSearchConsoleAnalytics(selectedSite, startDate, endDate, searchType),
+          googleApi.getSearchConsoleDaily(selectedSite, startDate, endDate, searchType),
+          googleApi.getSearchConsoleAnalytics(selectedSite, prevStartDate, prevEndDate, searchType),
+          googleApi.getSearchConsoleDaily(selectedSite, prevStartDate, prevEndDate, searchType),
         ]);
         setQueryRows(queryData);
         setDailyRows(dailyData);
@@ -200,8 +218,8 @@ export default function SearchConsolePage() {
         setPrevDailyRows(prevDailyData);
       } else {
         const [queryData, dailyData] = await Promise.all([
-          googleApi.getSearchConsoleAnalytics(selectedSite, startDate, endDate),
-          googleApi.getSearchConsoleDaily(selectedSite, startDate, endDate),
+          googleApi.getSearchConsoleAnalytics(selectedSite, startDate, endDate, searchType),
+          googleApi.getSearchConsoleDaily(selectedSite, startDate, endDate, searchType),
         ]);
         setQueryRows(queryData);
         setDailyRows(dailyData);
@@ -213,7 +231,7 @@ export default function SearchConsolePage() {
     } finally {
       setFetching(false);
     }
-  }, [selectedSite, startDate, endDate, prevStartDate, prevEndDate, hasComparison]);
+  }, [selectedSite, startDate, endDate, prevStartDate, prevEndDate, hasComparison, searchType]);
 
   useEffect(() => {
     if (selectedSite) {
@@ -274,22 +292,27 @@ export default function SearchConsolePage() {
   /* ── computed stats ──────────────────────────────────────────────── */
 
   const stats = useMemo(() => {
-    const totalClicks = queryRows.reduce((s, r) => s + r.clicks, 0);
-    const totalImpressions = queryRows.reduce((s, r) => s + r.impressions, 0);
-    const avgPosition = queryRows.length > 0
-      ? queryRows.reduce((s, r) => s + r.position, 0) / queryRows.length
-      : 0;
-    const avgCtr = totalImpressions > 0 ? (totalClicks / totalImpressions) : 0;
+    const current = aggregateSearchConsole(dailyRows);
+    const previous = hasComparison
+      ? aggregateSearchConsole(prevDailyRows)
+      : { totalClicks: 0, totalImpressions: 0, avgPosition: 0, avgCtr: 0 };
 
-    const prevClicks = hasComparison ? prevQueryRows.reduce((s, r) => s + r.clicks, 0) : 0;
-    const prevImpressions = hasComparison ? prevQueryRows.reduce((s, r) => s + r.impressions, 0) : 0;
-    const prevPosition = hasComparison && prevQueryRows.length > 0
-      ? prevQueryRows.reduce((s, r) => s + r.position, 0) / prevQueryRows.length
-      : 0;
-    const prevCtr = hasComparison && prevImpressions > 0 ? (prevClicks / prevImpressions) : 0;
+    return {
+      totalClicks: current.totalClicks,
+      totalImpressions: current.totalImpressions,
+      avgPosition: current.avgPosition,
+      avgCtr: current.avgCtr,
+      prevClicks: previous.totalClicks,
+      prevImpressions: previous.totalImpressions,
+      prevPosition: previous.avgPosition,
+      prevCtr: previous.avgCtr,
+    };
+  }, [dailyRows, prevDailyRows, hasComparison]);
 
-    return { totalClicks, totalImpressions, avgPosition, avgCtr, prevClicks, prevImpressions, prevPosition, prevCtr };
-  }, [queryRows, prevQueryRows]);
+  const analyticsOnlySites = useMemo(
+    () => analyticsSitesMissingFromSearchConsole(sites, analyticsProperties),
+    [sites, analyticsProperties],
+  );
 
   // Build overlay chart data — align both periods by day index (1, 2, 3...)
   // so they can be compared visually even if the actual dates differ
@@ -547,7 +570,7 @@ export default function SearchConsolePage() {
 
           {/* Controls row */}
           <div className="mb-6 flex flex-wrap items-end gap-4">
-            {sites.length > 0 && (
+            {(sites.length > 0 || analyticsOnlySites.length > 0) && (
               <div className="flex-1 min-w-[200px]">
                 <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Property
@@ -557,10 +580,24 @@ export default function SearchConsolePage() {
                   onChange={(e) => setSelectedSite(e.target.value)}
                   className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
                 >
-                  {sites.map((s) => (
-                    <option key={s.siteUrl} value={s.siteUrl}>{s.siteUrl}</option>
-                  ))}
+                  <optgroup label="Search Console">
+                    {sites.map((s) => (
+                      <option key={s.siteUrl} value={s.siteUrl}>{s.siteUrl}</option>
+                    ))}
+                  </optgroup>
+                  {analyticsOnlySites.length > 0 && (
+                    <optgroup label="Google Analytics">
+                      {analyticsOnlySites.map((site) => (
+                        <option key={site.key} value={site.key} disabled>{site.label}</option>
+                      ))}
+                    </optgroup>
+                  )}
                 </select>
+                {analyticsOnlySites.length > 0 && (
+                  <p className="mt-1.5 max-w-md text-[11px] text-slate-500 dark:text-slate-400">
+                    Every Search Console property is listed, including www and https variants. Analytics-only websites are shown but have no Search Console data.
+                  </p>
+                )}
               </div>
             )}
             <div>
@@ -692,7 +729,7 @@ export default function SearchConsolePage() {
             ) : chartData.length > 0 ? (
               <div className="px-6 py-6">
                 <ResponsiveContainer width="100%" height={260}>
-                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <AreaChart data={chartData} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id="clicksGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#d946ef" stopOpacity={0.3} />
@@ -713,18 +750,19 @@ export default function SearchConsolePage() {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
                     <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#94a3b8" }} interval={Math.max(Math.floor(chartData.length / 8), 1)} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <YAxis yAxisId="clicks" tick={{ fontSize: 11, fill: "#d946ef" }} tickLine={false} axisLine={false} allowDecimals={false} width={36} />
+                    <YAxis yAxisId="impressions" orientation="right" tick={{ fontSize: 11, fill: "#3b82f6" }} tickLine={false} axisLine={false} allowDecimals={false} width={42} />
                     <RTooltip contentStyle={{ borderRadius: "12px", border: "1px solid #e2e8f0", fontSize: "12px", fontWeight: 600 }} labelStyle={{ color: "#64748b", marginBottom: "4px" }} />
                     {/* Comparison period (drawn first, behind) */}
                     {hasComparison && (
                       <>
-                        <Area type="monotone" dataKey="prevClicks" stroke="#a78bfa" strokeWidth={1.5} strokeDasharray="4 4" fill="url(#prevClicksGradient)" dot={false} activeDot={{ r: 4, fill: "#a78bfa" }} />
-                        <Area type="monotone" dataKey="prevImpressions" stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="4 4" fill="url(#prevImprGradient)" dot={false} activeDot={{ r: 4, fill: "#94a3b8" }} />
+                        <Area yAxisId="clicks" type="monotone" dataKey="prevClicks" stroke="#a78bfa" strokeWidth={1.5} strokeDasharray="4 4" fill="url(#prevClicksGradient)" dot={false} activeDot={{ r: 4, fill: "#a78bfa" }} />
+                        <Area yAxisId="impressions" type="monotone" dataKey="prevImpressions" stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="4 4" fill="url(#prevImprGradient)" dot={false} activeDot={{ r: 4, fill: "#94a3b8" }} />
                       </>
                     )}
                     {/* Current period (drawn on top) */}
-                    <Area type="monotone" dataKey="clicks" stroke="#d946ef" strokeWidth={2} fill="url(#clicksGradient)" dot={false} activeDot={{ r: 5, fill: "#d946ef" }} />
-                    <Area type="monotone" dataKey="impressions" stroke="#3b82f6" strokeWidth={2} fill="url(#imprGradient)" dot={false} activeDot={{ r: 5, fill: "#3b82f6" }} />
+                    <Area yAxisId="clicks" type="monotone" dataKey="clicks" name="Clicks" stroke="#d946ef" strokeWidth={2} fill="url(#clicksGradient)" dot={false} activeDot={{ r: 5, fill: "#d946ef" }} />
+                    <Area yAxisId="impressions" type="monotone" dataKey="impressions" name="Impressions" stroke="#3b82f6" strokeWidth={2} fill="url(#imprGradient)" dot={false} activeDot={{ r: 5, fill: "#3b82f6" }} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
