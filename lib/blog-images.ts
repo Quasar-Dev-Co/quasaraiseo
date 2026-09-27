@@ -68,11 +68,14 @@ export function insertImagesIntoBody(body: string, images: BlogImage[]): string 
   let topUsed = false;
 
   const takeSection = (preferred: number): number => {
+    // Prefer the requested section, then later ones, then earlier ones. Clamp so a
+    // section number past the end of the post never indexes a missing slot.
+    const start = Math.min(Math.max(0, preferred), sectionSlots.length);
     const order: number[] = [];
-    for (let i = preferred; i < sectionSlots.length; i++) order.push(i);
-    for (let i = preferred - 1; i >= 0; i--) order.push(i);
+    for (let i = start; i < sectionSlots.length; i++) order.push(i);
+    for (let i = start - 1; i >= 0; i--) order.push(i);
     for (const i of order) {
-      if (i >= 0 && sectionSlots[i] !== -1 && !usedSections.has(i)) {
+      if (sectionSlots[i] !== undefined && sectionSlots[i] !== -1 && !usedSections.has(i)) {
         usedSections.add(i);
         return sectionSlots[i];
       }
