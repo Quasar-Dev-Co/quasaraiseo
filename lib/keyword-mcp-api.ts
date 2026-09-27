@@ -94,6 +94,12 @@ export interface SessionMetadataInput {
   mcpConnectionId?: string | null;
 }
 
+// createNewSession falls back to a browser-only id when the server is unreachable;
+// such chats can't hold uploads until a real server session exists.
+export function isLocalOnlySession(sessionId: string | null | undefined): boolean {
+  return !sessionId || sessionId.startsWith("sess_");
+}
+
 export function getStoredSessionSite(sessionId: string): SessionMetadataInput | null {
   if (typeof window === "undefined" || !sessionId) return null;
   try {
@@ -303,7 +309,38 @@ export const keywordMcpApi = {
     return resp.json();
   },
 
-  async uploadAttachment(sessionId: string, file: File): Promise<{ attachment: McpChatAttachment }> {
+  /**
+   * Uploads chat files as multipart form data. `onProgress` gets 0–100.
+   * Files the server rejects come back in `errors` while the rest still attach.
+   */
+  async uploadAttachments(
+    sessionId: string,
+    files: File[],
+    onProgress?: (percent: number) => void,
+  ): Promise<{ attachments: McpChatAttachment[]; errors: string[] }> {
+    try {
+      return await this.uploadMultipart(sessionId, files, onProgress);
+    } catch (err) {
+      // A backend that hasn't been updated yet only understands base64 JSON.
+      // (it answers multipart with 500 or "filename and data are required").
+      const status = (err as { status?: number }).status;
+      const legacyBackend = status === 500 || (err instanceof Error && err.message.includes("filename and data are required"));
+      if (!legacyBackend) throw err;
+      const attachments: McpChatAttachment[] = [];
+      const errors: string[] = [];
+      for (const file of files) {
+        try {
+          attachments.push((await this.uploadAttachmentLegacy(sessionId, file)).attachment);
+        } catch (legacyErr) {
+          errors.push(legacyErr instanceof Error ? `${file.name}: ${legacyErr.message}` : `${file.name}: upload failed`);
+        }
+      }
+      if (!attachments.length) throw new Error(errors.join(" ") || "Upload failed");
+      return { attachments, errors };
+    }
+  },
+
+  async uploadAttachmentLegacy(sessionId: string, file: File): Promise<{ attachment: McpChatAttachment }> {
     const data = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
@@ -320,10 +357,47 @@ export const keywordMcpApi = {
     });
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
-      throw new Error(err.message || "Upload failed");
+      throw new Error(err.message || (resp.status === 413 ? "File is too large for the server" : "Upload failed"));
     }
     const body = await resp.json() as { attachment: Omit<McpChatAttachment, "source"> };
     return { attachment: { ...body.attachment, source: "upload" } };
+  },
+
+  uploadMultipart(
+    sessionId: string,
+    files: File[],
+    onProgress?: (percent: number) => void,
+  ): Promise<{ attachments: McpChatAttachment[]; errors: string[] }> {
+    return new Promise((resolve, reject) => {
+      const form = new FormData();
+      for (const file of files) form.append("files", file, file.name);
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `${BACKEND_URL}/api/keyword-mcp/session/${sessionId}/attachments`);
+      const headers = authHeaders();
+      for (const [key, value] of Object.entries(headers)) xhr.setRequestHeader(key, value);
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100));
+      };
+      xhr.onerror = () => reject(new Error("Upload failed — check your connection and try again."));
+      xhr.onload = () => {
+        let body: { message?: string; attachment?: McpChatAttachment; attachments?: McpChatAttachment[]; errors?: string[] } = {};
+        try { body = JSON.parse(xhr.responseText || "{}"); } catch {}
+        if (xhr.status === 413) {
+          reject(new Error(body.message || "That file is too large for the server to accept."));
+          return;
+        }
+        if (xhr.status < 200 || xhr.status >= 300) {
+          reject(Object.assign(new Error(body.message || `Upload failed (${xhr.status})`), { status: xhr.status }));
+          return;
+        }
+        const list = body.attachments || (body.attachment ? [body.attachment] : []);
+        resolve({
+          attachments: list.map((attachment) => ({ ...attachment, source: "upload" as const })),
+          errors: body.errors || [],
+        });
+      };
+      xhr.send(form);
+    });
   },
 
   async listWebsiteMedia(sessionId: string): Promise<{ siteName: string | null; media: Array<{ id: number; title: string; url: string; alt: string }> }> {

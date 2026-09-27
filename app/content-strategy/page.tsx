@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import {
   keywordMcpApi,
+  isLocalOnlySession,
   setStoredSessionMessages,
   type McpChatAttachment,
   type McpChatMessage,
@@ -137,6 +138,36 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+// ─── Chat attachments ───
+
+const ATTACHMENT_EXTENSIONS = [
+  "png", "jpg", "jpeg", "webp", "gif", "pdf",
+  "csv", "tsv", "xls", "xlsx", "ods",
+  "doc", "docx", "odt", "rtf", "txt", "md", "json", "html", "htm", "xml",
+];
+const ATTACHMENT_ACCEPT = [...ATTACHMENT_EXTENSIONS.map((ext) => `.${ext}`), "image/*", "application/pdf"].join(",");
+const MAX_ATTACHMENT_MB = 20;
+const MAX_ATTACHMENTS = 8;
+
+const IMAGE_EXT_BY_TYPE: Record<string, string> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif" };
+
+// Clipboard images arrive as "image.png" (or with no name at all); give them a
+// unique name with an extension the server accepts.
+function nameClipboardFile(file: File, index: number): File {
+  const ext = IMAGE_EXT_BY_TYPE[file.type];
+  if (!ext) return file;
+  const hasExt = /\.[a-z0-9]+$/i.test(file.name) && file.name !== "image.png";
+  if (hasExt) return file;
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  return new File([file], `pasted-image-${stamp}${index ? `-${index}` : ""}.${ext}`, { type: file.type });
+}
+
+function formatBytes(bytes: number): string {
+  if (!bytes) return "";
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
 // ─── Main Component ───
 
 function QuasarMcpContent() {
@@ -147,6 +178,9 @@ function QuasarMcpContent() {
   const [pendingAttachments, setPendingAttachments] = useState<McpChatAttachment[]>([]);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadNote, setUploadNote] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+  const dragDepthRef = useRef(0);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const sessionIdRef = useRef<string | null>(null);
@@ -346,27 +380,129 @@ function QuasarMcpContent() {
     setGalleryOpen(false);
   };
 
-  const handleAttachFiles = async (files: FileList | null) => {
-    if (!files?.length || !session || uploadingFile) return;
-    const sessionId = session.id;
-    setUploadingFile(true);
-    setUploadNote(null);
-    try {
-      const uploaded: McpChatAttachment[] = [];
-      for (const file of Array.from(files).slice(0, 8 - pendingAttachments.length)) {
-        const result = await keywordMcpApi.uploadAttachment(sessionId, file);
-        uploaded.push(result.attachment);
+  // Chats created while the server was unreachable only exist in this browser.
+  // Promote such a chat to a real server session (keeping its messages) so files
+  // can be stored against it.
+  const ensureServerSession = async (): Promise<McpSession | null> => {
+    if (session && !isLocalOnlySession(session.id)) return session;
+    const meta = {
+      websiteName: siteName || undefined,
+      websiteUrl: siteUrl || undefined,
+      websiteLogoUrl: siteLogoUrl || undefined,
+      additionalInstructions: instructions || undefined,
+      mcpConnectionId: selectedMcpId === "auto" ? undefined : selectedMcpId,
+    };
+    const { session: created } = await keywordMcpApi.createNewSession(meta);
+    if (isLocalOnlySession(created.id)) return null;
+    const oldId = session?.id;
+    setSession({ ...created, messages });
+    setStoredSessionMessages(created.id, messages);
+    setSessions((prev) => [
+      { id: created.id, preview: prev.find((p) => p.id === oldId)?.preview || "New chat", websiteName: created.websiteName || null, websiteUrl: created.websiteUrl || null, messageCount: messages.length, updatedAt: created.updatedAt, createdAt: created.createdAt },
+      ...prev.filter((p) => p.id !== oldId),
+    ]);
+    return created;
+  };
+
+  const handleAttachFiles = async (fileInput: FileList | File[] | null) => {
+    const picked = fileInput ? Array.from(fileInput) : [];
+    if (!picked.length || uploadingFile) return;
+    const notes: string[] = [];
+
+    const room = MAX_ATTACHMENTS - pendingAttachments.length;
+    if (room <= 0) {
+      setUploadNote(`You can attach up to ${MAX_ATTACHMENTS} files per message.`);
+      return;
+    }
+    const valid = picked.filter((file) => {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "";
+      if (!ATTACHMENT_EXTENSIONS.includes(ext)) {
+        notes.push(`"${file.name}" is not a supported file type.`);
+        return false;
       }
+      if (file.size > MAX_ATTACHMENT_MB * 1024 * 1024) {
+        notes.push(`"${file.name}" is larger than ${MAX_ATTACHMENT_MB} MB.`);
+        return false;
+      }
+      if (file.size === 0) {
+        notes.push(`"${file.name}" is empty.`);
+        return false;
+      }
+      return true;
+    });
+    if (valid.length > room) notes.push(`Only the first ${room} file(s) were attached (max ${MAX_ATTACHMENTS}).`);
+    const toUpload = valid.slice(0, room);
+    if (!toUpload.length) {
+      setUploadNote(notes.join(" "));
+      return;
+    }
+
+    setUploadingFile(true);
+    setUploadProgress(0);
+    setUploadNote(notes.length ? notes.join(" ") : null);
+    let sessionId: string | null = null;
+    try {
+      const target = await ensureServerSession();
+      if (!target) throw new Error("Can't reach the server to save this chat. Check your connection and try again.");
+      sessionId = target.id;
+      const { attachments, errors } = await keywordMcpApi.uploadAttachments(sessionId, toUpload, setUploadProgress);
       if (sessionIdRef.current !== sessionId) return;
-      setPendingAttachments((prev) => [...prev, ...uploaded].slice(0, 8));
+      setPendingAttachments((prev) => [...prev, ...attachments].slice(0, MAX_ATTACHMENTS));
+      const allNotes = [...notes, ...errors];
+      setUploadNote(allNotes.length ? allNotes.join(" ") : null);
     } catch (err) {
-      if (sessionIdRef.current === sessionId) {
-        setUploadNote(err instanceof Error ? err.message : "Upload failed");
+      if (!sessionId || sessionIdRef.current === sessionId) {
+        setUploadNote([...notes, err instanceof Error ? err.message : "Upload failed"].join(" "));
       }
     } finally {
       setUploadingFile(false);
+      setUploadProgress(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = Array.from(e.clipboardData?.items || []);
+    const files = items
+      .filter((item) => item.kind === "file")
+      .map((item) => item.getAsFile())
+      .filter((file): file is File => !!file);
+    if (!files.length) return;
+    // Copying from Excel/Word also puts a picture of the selection on the
+    // clipboard; when there's text, paste the text and ignore that picture.
+    const hasText = items.some((item) => item.kind === "string" && item.type === "text/plain");
+    if (hasText && files.every((file) => file.type.startsWith("image/"))) return;
+    e.preventDefault();
+    handleAttachFiles(files.map(nameClipboardFile));
+  };
+
+  const hasDraggedFiles = (e: React.DragEvent) => Array.from(e.dataTransfer?.types || []).includes("Files");
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    if (!hasDraggedFiles(e)) return;
+    e.preventDefault();
+    dragDepthRef.current += 1;
+    setDragActive(true);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    if (!hasDraggedFiles(e)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    if (!hasDraggedFiles(e)) return;
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) setDragActive(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    if (!hasDraggedFiles(e)) return;
+    e.preventDefault();
+    dragDepthRef.current = 0;
+    setDragActive(false);
+    handleAttachFiles(e.dataTransfer.files);
   };
 
   const handleSend = async () => {
@@ -389,6 +525,7 @@ function QuasarMcpContent() {
     });
     setInput("");
     setPendingAttachments([]);
+    setUploadNote(null);
     setIsThinking(true);
     setActiveTools([]);
     bumpSessionPreview(session.id, text || "Attached files");
@@ -965,7 +1102,20 @@ function QuasarMcpContent() {
         </div>
 
         {/* ─── RIGHT: Chat ─── */}
-        <div className="flex flex-1 flex-col overflow-hidden min-h-0">
+        <div
+          className="relative flex flex-1 flex-col overflow-hidden min-h-0"
+          onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {dragActive && (
+            <div className="pointer-events-none absolute inset-3 z-40 flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-fuchsia-400 bg-white/85 text-center backdrop-blur-sm dark:bg-slate-950/85">
+              <Upload className="size-8 text-fuchsia-500" />
+              <p className="text-sm font-bold text-slate-800 dark:text-white">Drop files to attach</p>
+              <p className="text-xs text-slate-500">Images, PDFs, sheets (CSV, XLSX) and documents (DOCX, TXT, MD) · up to {MAX_ATTACHMENT_MB} MB each</p>
+            </div>
+          )}
 
           {/* Website Target Banner & Config Bar on Top */}
           <div className="border-b border-slate-200/90 bg-white px-4 py-2.5 backdrop-blur-md dark:border-white/10 dark:bg-slate-900">
@@ -1346,7 +1496,7 @@ function QuasarMcpContent() {
                     </button>
                   </div>
                 )}
-                {(pendingAttachments.length > 0 || uploadNote) && (
+                {(pendingAttachments.length > 0 || uploadNote || uploadingFile) && (
                   <div className="flex flex-wrap items-center gap-2 px-4 pt-3">
                     {pendingAttachments.map((attachment) => (
                       <span key={attachment.id} className="inline-flex max-w-[220px] items-center gap-1.5 rounded-lg bg-slate-100 px-2 py-1 text-[11px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">
@@ -1356,9 +1506,16 @@ function QuasarMcpContent() {
                           <Paperclip className="size-3 shrink-0" />
                         )}
                         <span className="truncate">{attachment.fileName}</span>
-                        <button type="button" onClick={() => setPendingAttachments((prev) => prev.filter((item) => item.id !== attachment.id))} className="text-slate-400 hover:text-red-500"><X className="size-3" /></button>
+                        {attachment.size > 0 && <span className="shrink-0 text-slate-400">{formatBytes(attachment.size)}</span>}
+                        <button type="button" title="Remove" onClick={() => setPendingAttachments((prev) => prev.filter((item) => item.id !== attachment.id))} className="text-slate-400 hover:text-red-500"><X className="size-3" /></button>
                       </span>
                     ))}
+                    {uploadingFile && (
+                      <span className="inline-flex items-center gap-1.5 rounded-lg bg-fuchsia-50 px-2 py-1 text-[11px] font-medium text-fuchsia-700 dark:bg-fuchsia-500/10 dark:text-fuchsia-300">
+                        <Loader2 className="size-3 animate-spin" />
+                        {uploadProgress !== null && uploadProgress < 100 ? `Uploading… ${uploadProgress}%` : "Reading file…"}
+                      </span>
+                    )}
                     {uploadNote && <span className="text-[11px] text-red-600">{uploadNote}</span>}
                   </div>
                 )}
@@ -1377,6 +1534,7 @@ function QuasarMcpContent() {
                       }
                     }}
                     onKeyDown={handleKeyDown}
+                    onPaste={handlePaste}
                     placeholder={
                       webBuilderMode
                         ? "Ask about your website... e.g. 'check my WordPress site' or 'rebuild my landing page'"
@@ -1396,15 +1554,15 @@ function QuasarMcpContent() {
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept=".png,.jpg,.jpeg,.webp,.gif,.pdf,.csv,.xls,.xlsx,.doc,.docx,.txt,.md,image/*,application/pdf"
+                      accept={ATTACHMENT_ACCEPT}
                       multiple
                       className="hidden"
                       onChange={(e) => handleAttachFiles(e.target.files)}
                     />
                     <button
                       type="button"
-                      title="Upload a sheet, document, PDF, or image"
-                      disabled={!session || uploadingFile || isThinking}
+                      title="Attach a sheet, document, PDF, or image — or drag files here, or paste an image"
+                      disabled={uploadingFile || isThinking}
                       onClick={() => fileInputRef.current?.click()}
                       className="grid size-7 place-items-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 dark:border-white/10 dark:text-slate-300 dark:hover:bg-slate-800"
                     >
@@ -1476,7 +1634,7 @@ function QuasarMcpContent() {
               </div>
               {/* Helper text */}
               <p className="mt-1.5 text-center text-[11px] text-slate-400 dark:text-slate-500">
-                Type <kbd className="rounded border border-slate-200 bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-slate-600 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300">/</kbd> for quick actions: /compact, /generate-post, /generate-page, /security-inspect
+                Type <kbd className="rounded border border-slate-200 bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-slate-600 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300">/</kbd> for quick actions · drag files here or paste an image to attach
               </p>
             </div>
           </div>
