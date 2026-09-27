@@ -39,6 +39,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { keywordMcpApi } from "@/lib/keyword-mcp-api";
 import { useMinLoading } from "@/lib/use-min-loading";
 import { useAuth } from "@/hooks/use-auth";
+import { ImageReorderLayer, stripImageEditorAttrs } from "@/components/post-editor/image-reorder-layer";
+import { insertImagesIntoBody as placeImagesInBody } from "@/lib/blog-images";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   idle: { label: "Idle", color: "bg-slate-100 text-slate-600 border-slate-200", icon: Clock },
@@ -231,13 +233,15 @@ function PostCreateContent() {
   const insertImage = () => {
     const url = window.prompt("Enter image URL:");
     if (url) {
-      document.execCommand("insertImage", false, url);
+      // Insert as its own block so it can be dragged like the generated images.
+      const safeUrl = url.replace(/"/g, "&quot;");
+      document.execCommand("insertHTML", false, `<figure class="wp-block-image"><img src="${safeUrl}" alt="" /></figure><p><br></p>`);
       bodyEditRef.current?.focus();
     }
   };
 
   const saveEdits = () => {
-    const editedBody = bodyEditRef.current?.innerHTML || previewContent?.body || "";
+    const editedBody = bodyEditRef.current ? stripImageEditorAttrs(bodyEditRef.current.innerHTML) : previewContent?.body || "";
     const wordCount = editedBody.replace(/<[^>]*>/g, "").split(/\s+/).filter(Boolean).length;
     const updated: GeneratedContent = {
       ...(previewContent as GeneratedContent),
@@ -257,62 +261,8 @@ function PostCreateContent() {
   const showSkeleton = useMinLoading(loading, 800);
   const [error, setError] = useState<string | null>(null);
 
-  const insertImagesIntoBody = (body: string, images: GeneratedImage[]): string => {
-    let updatedBody = body;
-    for (const img of images) {
-      const fullUrl = wordpressApi.imageUrl(img.url);
-      const imgTag = `<figure class="wp-block-image"><img src="${fullUrl}" alt="" class="wp-image-generated" /></figure>`;
-
-      if (img.placement === "featured") {
-        // Insert featured image right after the first heading/title (h1 or h2) or at the very start
-        const firstH1 = updatedBody.indexOf("</h1>");
-        const firstH2 = updatedBody.indexOf("</h2>");
-        let insertPos = -1;
-        if (firstH1 !== -1) insertPos = firstH1 + 5;
-        else if (firstH2 !== -1) insertPos = firstH2 + 5;
-        else {
-          const firstP = updatedBody.indexOf("</p>");
-          if (firstP !== -1) insertPos = firstP + 4;
-        }
-        if (insertPos !== -1) {
-          updatedBody = updatedBody.slice(0, insertPos) + "\n" + imgTag + updatedBody.slice(insertPos);
-        } else {
-          updatedBody = imgTag + "\n" + updatedBody;
-        }
-      } else if (img.placement === "after-intro") {
-        const firstP = updatedBody.indexOf("</p>");
-        if (firstP !== -1) {
-          updatedBody = updatedBody.slice(0, firstP + 4) + "\n" + imgTag + updatedBody.slice(firstP + 4);
-        }
-      } else {
-        const sectionMatch = img.placement.match(/after-section-(\d+)/);
-        if (sectionMatch) {
-          const sectionNum = parseInt(sectionMatch[1], 10);
-          let h2Count = 0;
-          let insertPos = -1;
-          let searchStart = 0;
-          while (true) {
-            const h2Start = updatedBody.indexOf("<h2", searchStart);
-            if (h2Start === -1) break;
-            const h2End = updatedBody.indexOf("</h2>", h2Start);
-            if (h2End === -1) break;
-            h2Count++;
-            if (h2Count === sectionNum) {
-              insertPos = h2End + 5;
-              break;
-            }
-            searchStart = h2End + 5;
-          }
-          // Fallback: if section not found, append at the end of the body
-          if (insertPos === -1) {
-            insertPos = updatedBody.length;
-          }
-          updatedBody = updatedBody.slice(0, insertPos) + "\n" + imgTag + updatedBody.slice(insertPos);
-        }
-      }
-    }
-    return updatedBody;
-  };
+  const insertImagesIntoBody = (body: string, images: GeneratedImage[]): string =>
+    placeImagesInBody(body, images.map((img) => ({ placement: img.placement, url: wordpressApi.imageUrl(img.url) })));
 
   const loadData = useCallback(async () => {
     try {
@@ -642,7 +592,10 @@ This post should support and link UP to the ${refTitle} reference page. It must 
     setPublishError(null);
     setPublishSuccess(null);
     try {
-      const featuredImage = generatedImages.find((img) => img.placement === "featured");
+      // Server-side generation only writes images into the body, so fall back to the
+      // figure marked as featured there.
+      const featuredFromBody = content.body.match(/<figure[^>]*data-placement="featured"[^>]*>\s*<img[^>]*src="([^"]+)"/i)?.[1];
+      const featuredUrl = generatedImages.find((img) => img.placement === "featured")?.url || featuredFromBody;
       const result = await wordpressApi.publishPost(selectedSiteId, {
         title: content.title,
         content: content.body,
@@ -650,7 +603,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
         status: publishStatus,
         categories: postCategories ? postCategories.split(",").map((c) => c.trim()).filter(Boolean) : [],
         tags: postTags ? postTags.split(",").map((t) => t.trim()).filter(Boolean) : [],
-        featuredImage: featuredImage ? wordpressApi.imageUrl(featuredImage.url) : undefined,
+        featuredImage: featuredUrl ? wordpressApi.imageUrl(featuredUrl) : undefined,
         scheduledDate: publishStatus === "future" ? scheduledDate : undefined,
       });
       const link = result.post.permalink ? ` View at: ${result.post.permalink}` : "";
@@ -1982,7 +1935,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                         ref={bodyEditRef}
                         contentEditable
                         suppressContentEditableWarning
-                        className="prose prose-lg max-w-none space-y-6 pt-8 text-slate-800 outline-none [&>*]:mb-6 [&_h2]:mt-10 [&_h2]:mb-5 [&_h2]:border-b [&_h2]:border-fuchsia-100 [&_h2]:pb-2 [&_h2]:text-2xl [&_h2]:font-extrabold [&_h2]:text-slate-900 [&_h3]:mt-8 [&_h3]:mb-4 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-slate-800 [&_p]:mb-5 [&_p]:leading-[1.85] [&_a]:font-semibold [&_a]:text-fuchsia-600 [&_a]:underline [&_ul]:my-5 [&_ul]:space-y-2 [&_ul]:pl-6 [&_ol]:my-5 [&_ol]:space-y-2 [&_ol]:pl-6 [&_li]:my-1 [&_blockquote]:my-6 [&_blockquote]:rounded-md [&_blockquote]:border-l-4 [&_blockquote]:border-fuchsia-500 [&_blockquote]:bg-fuchsia-50/40 [&_blockquote]:p-5 [&_blockquote]:italic [&_strong]:font-bold [&_table]:my-6 [&_table]:w-full [&_table]:overflow-x-auto [&_table]:border-collapse [&_table]:border [&_table]:border-slate-300 [&_thead]:bg-slate-100 [&_th]:border [&_th]:border-slate-300 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-sm [&_th]:font-bold [&_td]:border [&_td]:border-slate-300 [&_td]:px-4 [&_td]:py-3 [&_td]:text-sm [&_tr:nth-child(even)]:bg-slate-50/60 focus:outline-none"
+                        className="prose prose-lg max-w-none space-y-6 pt-8 text-slate-800 outline-none [&>*]:mb-6 [&_h2]:mt-10 [&_h2]:mb-5 [&_h2]:border-b [&_h2]:border-fuchsia-100 [&_h2]:pb-2 [&_h2]:text-2xl [&_h2]:font-extrabold [&_h2]:text-slate-900 [&_h3]:mt-8 [&_h3]:mb-4 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-slate-800 [&_p]:mb-5 [&_p]:leading-[1.85] [&_a]:font-semibold [&_a]:text-fuchsia-600 [&_a]:underline [&_ul]:my-5 [&_ul]:space-y-2 [&_ul]:pl-6 [&_ol]:my-5 [&_ol]:space-y-2 [&_ol]:pl-6 [&_li]:my-1 [&_blockquote]:my-6 [&_blockquote]:rounded-md [&_blockquote]:border-l-4 [&_blockquote]:border-fuchsia-500 [&_blockquote]:bg-fuchsia-50/40 [&_blockquote]:p-5 [&_blockquote]:italic [&_strong]:font-bold [&_table]:my-6 [&_table]:w-full [&_table]:overflow-x-auto [&_table]:border-collapse [&_table]:border [&_table]:border-slate-300 [&_thead]:bg-slate-100 [&_th]:border [&_th]:border-slate-300 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-sm [&_th]:font-bold [&_td]:border [&_td]:border-slate-300 [&_td]:px-4 [&_td]:py-3 [&_td]:text-sm [&_tr:nth-child(even)]:bg-slate-50/60 [&_figure]:relative [&_figure]:my-8 [&_figure]:cursor-grab [&_figure]:overflow-hidden [&_figure]:rounded-xl [&_figure]:border [&_figure]:border-slate-200 [&_figure:hover]:ring-2 [&_figure:hover]:ring-fuchsia-400 [&_img]:h-auto [&_img]:w-full [&_img]:rounded-xl focus:outline-none"
                         dangerouslySetInnerHTML={{ __html: cleanBodyForPreview(previewContent.body) }}
                       />
                     ) : (
@@ -1991,6 +1944,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                         dangerouslySetInnerHTML={{ __html: cleanBodyForPreview(previewContent.body) }}
                       />
                     )}
+                    <ImageReorderLayer editorRef={bodyEditRef} active={editMode} />
                   </article>
                 </div>
               </div>
