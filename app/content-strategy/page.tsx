@@ -38,6 +38,7 @@ import { wordpressApi, type WordPressSite } from "@/lib/wordpress-api";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ModelSelector, usePersistentModel } from "@/components/ModelSelector";
+import { ThreadSkillsPicker } from "@/components/mcp/thread-skills-picker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WebsiteMediaGallery } from "@/components/mcp/website-media-gallery";
 
@@ -458,6 +459,24 @@ function QuasarMcpContent() {
       setUploadingFile(false);
       setUploadProgress(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  // Skills belong to the thread: saved on the session, so switching threads
+  // switches skills and the server applies them to every message.
+  const threadSkillIds = session?.skillIds ?? [];
+  const handleSkillsChange = async (skillIds: string[]) => {
+    const target = await ensureServerSession().catch(() => null);
+    if (!target) {
+      setUploadNote("Can't reach the server to save this chat's skills. Try again.");
+      return;
+    }
+    setSession((prev) => (prev && prev.id === target.id ? { ...prev, skillIds } : { ...target, messages, skillIds }));
+    setSessions((prev) => prev.map((s) => (s.id === target.id ? { ...s, skillIds } : s)));
+    try {
+      await keywordMcpApi.updateSession(target.id, { skillIds });
+    } catch {
+      setUploadNote("Could not save the skills for this chat.");
     }
   };
 
@@ -1577,6 +1596,12 @@ function QuasarMcpContent() {
                     >
                       <Images className="size-3.5" />
                     </button>
+                    <ThreadSkillsPicker
+                      key={session?.id ?? "none"}
+                      selectedIds={threadSkillIds}
+                      onChange={handleSkillsChange}
+                      disabled={isThinking}
+                    />
                     {siteName && (
                       <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:bg-white/5 dark:text-slate-300 shrink-0">
                         <Globe className="size-3 text-fuchsia-500" />

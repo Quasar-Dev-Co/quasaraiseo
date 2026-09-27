@@ -8,13 +8,14 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Quasar AI SEO — Feature Status
 
-Last updated: 2026-08-24
+Last updated: 2026-09-27
 
 | Feature | Status | Where |
 |---|---|---|
 | Site audit | Have | `/audit-mcp` |
 | AI content generation | Have | `/post-create` |
-| Skills system | Have | Uploadable skills — now loads into MCP prompt |
+| Skills system | Have | Uploadable skills — selectable per thread in `/content-strategy` (shared library with `/post-create`) |
+| API cost tracking | Have | Settings → Costs (super user) — tokens & cost per model, feature, user |
 | AI provider (OpenAI/OpenRouter) | Have | Settings — model selector works in MCP |
 | WordPress publishing | Have | `/post-create` |
 | Branding extraction | Have | Branding module |

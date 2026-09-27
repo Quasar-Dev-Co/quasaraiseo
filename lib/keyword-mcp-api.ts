@@ -67,6 +67,7 @@ export interface McpSession {
   websiteLogoUrl?: string | null;
   additionalInstructions?: string | null;
   mcpConnectionId?: string | null;
+  skillIds?: string[];
   messages: McpChatMessage[];
   lastReport: Record<string, unknown> | null;
   createdAt: string;
@@ -81,12 +82,14 @@ export interface McpSessionPreview {
   websiteLogoUrl?: string | null;
   additionalInstructions?: string | null;
   mcpConnectionId?: string | null;
+  skillIds?: string[];
   messageCount: number;
   updatedAt: string;
   createdAt: string;
 }
 
 export interface SessionMetadataInput {
+  skillIds?: string[];
   websiteName?: string;
   websiteUrl?: string;
   websiteLogoUrl?: string;

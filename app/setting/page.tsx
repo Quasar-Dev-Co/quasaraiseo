@@ -8,6 +8,7 @@ import {
   Shield, Mail, Download, RefreshCw, Plug, Zap,
   Monitor, Tablet, KeyRound, Clock, MapPin, Trash2, LogOut, AlertCircle,
   Building2, Plus, Pencil, Star, X, Link2, Phone, MapPin as MapPinIcon, Upload, ChevronDown, Search, Sparkles,
+  DollarSign,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -16,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useMinLoading } from "@/lib/use-min-loading";
 import { useAuth } from "@/hooks/use-auth";
 import { FixedModelCard } from "@/components/settings/fixed-model-card";
+import { CostTab } from "@/components/settings/cost-tab";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -679,6 +681,7 @@ function SettingsInner() {
             <TabsTrigger value="security" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Shield className="size-4" /> Security</TabsTrigger>
             <TabsTrigger value="workspace" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Settings className="size-4" /> Workspace</TabsTrigger>
             {isSuper && <TabsTrigger value="ai-provider" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Sparkles className="size-4" /> AI Provider</TabsTrigger>}
+            {isSuper && <TabsTrigger value="costs" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><DollarSign className="size-4" /> Costs</TabsTrigger>}
           </TabsList>
 
           {/* GOOGLE TAB */}
@@ -1270,6 +1273,8 @@ function SettingsInner() {
           </TabsContent>
 
           {/* AI PROVIDER TAB */}
+          {isSuper && <TabsContent value="costs"><CostTab /></TabsContent>}
+
           {isSuper && <TabsContent value="ai-provider">
             <div className="space-y-5">
               <div>
