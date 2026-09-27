@@ -10,6 +10,8 @@ import {
   Aya, Inflection, Phind,
 } from "@lobehub/icons";
 
+import { useAuth } from "@/hooks/use-auth";
+
 export interface ModelRecord {
   id: string;
   label?: string;
@@ -134,7 +136,15 @@ interface ModelSelectorProps {
   compact?: boolean;
 }
 
-export function ModelSelector({ models, value, onChange, className = "", dark = false, compact = false }: ModelSelectorProps) {
+// Only the super user chooses models; everyone else runs on the fixed model set
+// in Settings → AI Provider, so the picker is hidden for them.
+export function ModelSelector(props: ModelSelectorProps) {
+  const { user } = useAuth();
+  if (user?.role !== "super") return null;
+  return <ModelSelectorMenu {...props} />;
+}
+
+function ModelSelectorMenu({ models, value, onChange, className = "", dark = false, compact = false }: ModelSelectorProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
@@ -224,30 +234,27 @@ export function ModelSelector({ models, value, onChange, className = "", dark = 
   );
 }
 
+/**
+ * The model to send with AI requests. For the super user it's their last pick
+ * (defaulting to the fixed model, which the server lists first). Everyone else
+ * gets "" so the server applies the fixed model.
+ */
 export function usePersistentModel(models: ModelRecord[]) {
-  const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL);
+  const { user } = useAuth();
+  const isSuper = user?.role === "super";
+  const [picked, setPicked] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    try { return localStorage.getItem(STORAGE_KEY) || ""; } catch { return ""; }
+  });
 
-  useEffect(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
-    if (saved) {
-      setSelectedModel(saved);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (models.length > 0) {
-      const exists = models.find((m) => m.id === selectedModel);
-      if (!exists && !localStorage.getItem(STORAGE_KEY)) {
-        setSelectedModel(DEFAULT_MODEL);
-      }
-    }
-  }, [models, selectedModel]);
+  // A saved pick that the current provider doesn't offer falls back to the
+  // fixed model instead of sending a model the provider will reject.
+  const available = models.length === 0 || models.some((m) => m.id === picked);
+  const selectedModel = !isSuper ? "" : (picked && available ? picked : models[0]?.id || picked);
 
   const setModel = (modelId: string) => {
-    setSelectedModel(modelId);
-    if (typeof window !== "undefined") {
-      localStorage.setItem(STORAGE_KEY, modelId);
-    }
+    setPicked(modelId);
+    try { localStorage.setItem(STORAGE_KEY, modelId); } catch {}
   };
 
   return { selectedModel, setModel };

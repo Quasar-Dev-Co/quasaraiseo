@@ -1180,7 +1180,7 @@ function QuasarMcpContent() {
 
             {/* Expandable Configuration Drawer */}
             {contextDrawerOpen && (
-              <div className="mx-auto mt-3 max-w-4xl rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900">
+              <div className="mx-auto mt-3 max-h-[60vh] max-w-4xl overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900">
                 <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Building2 className="size-4 text-fuchsia-600 dark:text-fuchsia-400" />
@@ -1312,7 +1312,7 @@ function QuasarMcpContent() {
                     value={instructions}
                     onChange={(e) => setInstructions(e.target.value)}
                     rows={2}
-                    className="min-h-[56px] text-xs bg-white dark:bg-slate-800"
+                    className="min-h-[56px] max-h-[240px] overflow-y-auto break-words text-xs bg-white dark:bg-slate-800"
                   />
                 </div>
 
@@ -1645,7 +1645,7 @@ function QuasarMcpContent() {
       {/* New Chat with Specific Website Modal */}
       {newChatModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
               <div className="flex items-center gap-2">
                 <div className="grid size-8 place-items-center rounded-lg bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 text-white">
@@ -1806,7 +1806,7 @@ function QuasarMcpContent() {
                   value={newInstructions}
                   onChange={(e) => setNewInstructions(e.target.value)}
                   rows={3}
-                  className="text-xs"
+                  className="min-h-[72px] max-h-[220px] overflow-y-auto break-words text-xs"
                 />
               </div>
             </div>
@@ -1886,6 +1886,29 @@ function ToolCallItem({ tool, compact }: { tool: McpToolCall; compact?: boolean 
 }
 
 // ─── Chat Message Item ───
+
+// Long pasted messages (briefs, instructions) fold so they don't push the chat
+// off screen; the full text is one click away.
+const COLLAPSE_CHARS = 700;
+
+function CollapsibleText({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const long = text.length > COLLAPSE_CHARS || text.split("\n").length > 12;
+  return (
+    <div>
+      <p className={`whitespace-pre-wrap font-normal [overflow-wrap:anywhere] ${long && !expanded ? "line-clamp-[10]" : ""}`}>{text}</p>
+      {long && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-2 text-[12px] font-semibold text-fuchsia-300 hover:text-fuchsia-200 hover:underline"
+        >
+          {expanded ? "Show less" : `Show more (${text.length.toLocaleString()} characters)`}
+        </button>
+      )}
+    </div>
+  );
+}
 
 function ChatMessageItem({ message, onQuickReply }: { message: McpChatMessage; onQuickReply?: (text: string) => void }) {
   const isUser = message.role === "user";
@@ -1969,7 +1992,7 @@ function ChatMessageItem({ message, onQuickReply }: { message: McpChatMessage; o
         {isUser ? <User className="size-4" /> : <Bot className="size-4.5" />}
       </div>
 
-      <div className={`flex max-w-[85%] flex-col ${isUser ? "items-end" : "items-start"}`}>
+      <div className={`flex min-w-0 max-w-[85%] flex-col ${isUser ? "items-end" : "items-start"}`}>
         {/* Tool calls inline */}
         {!isUser && message.toolCalls && message.toolCalls.length > 0 && (
           <div className="mb-2.5 w-full space-y-1.5">
@@ -1989,7 +2012,7 @@ function ChatMessageItem({ message, onQuickReply }: { message: McpChatMessage; o
         )}
 
         {/* Message text bubble with clean modern stack styling */}
-        <div className={`rounded-2xl px-5 py-3.5 text-sm leading-relaxed shadow-sm transition-all ${
+        <div className={`min-w-0 max-w-full overflow-x-auto break-words [overflow-wrap:anywhere] rounded-2xl px-5 py-3.5 text-sm leading-relaxed shadow-sm transition-all ${
           isUser
             ? "rounded-tr-xs bg-gradient-to-r from-slate-900 to-slate-800 text-white shadow-md dark:from-slate-800 dark:to-slate-700"
             : "rounded-tl-xs border border-slate-200/90 bg-white text-slate-800 shadow-[0_2px_10px_rgba(15,23,42,0.04)] dark:border-white/10 dark:bg-slate-900/90 dark:text-slate-200"
@@ -2007,7 +2030,7 @@ function ChatMessageItem({ message, onQuickReply }: { message: McpChatMessage; o
                   ))}
                 </div>
               )}
-              <p className="whitespace-pre-wrap font-normal">{message.content}</p>
+              <CollapsibleText text={message.content} />
             </div>
           ) : (
             <div className="prose-chat">

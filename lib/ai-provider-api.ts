@@ -158,6 +158,14 @@ export const aiProviderApi = {
     });
   },
 
+  /** Sets the model every non-super user runs on (super user only). */
+  async setFixedModel(model: string, provider?: AiProvider): Promise<{ success: boolean; message: string }> {
+    return providerRequest<{ success: boolean; message: string }>("/api/ai-provider/fixed-model", {
+      method: "POST",
+      body: JSON.stringify({ model, provider }),
+    });
+  },
+
   async listModels(): Promise<{ models: AiProviderModel[] }> {
     return providerRequest<{ models: AiProviderModel[] }>("/api/ai-provider/models");
   },

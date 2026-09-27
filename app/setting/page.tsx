@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMinLoading } from "@/lib/use-min-loading";
 import { useAuth } from "@/hooks/use-auth";
+import { FixedModelCard } from "@/components/settings/fixed-model-card";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -1308,6 +1309,15 @@ function SettingsInner() {
                     </div>
                   </div>
                 </article>
+              )}
+
+              {aiSettings && (aiSettings.openai.hasApiKey || aiSettings.openrouter.hasApiKey) && (
+                <FixedModelCard
+                  key={`${aiSettings.activeProvider}:${aiSettings.activeProvider === "openai" ? aiSettings.openai.defaultModel : aiSettings.openrouter.defaultModel}`}
+                  activeProvider={aiSettings.activeProvider as "openai" | "openrouter"}
+                  currentModel={aiSettings.activeProvider === "openai" ? aiSettings.openai.defaultModel : aiSettings.openrouter.defaultModel}
+                  onSaved={reloadAiSettings}
+                />
               )}
 
               {/* ─── OpenAI Section ─── */}

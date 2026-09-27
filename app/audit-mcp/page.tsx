@@ -386,16 +386,18 @@ export default function AuditMcpPage() {
                     disabled={submitting}
                   />
                 </div>
-                <div className="flex items-center gap-3">
-                  <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 whitespace-nowrap">AI Model</label>
-                  <ModelSelector
-                    models={models}
-                    value={selectedModel}
-                    onChange={setModel}
-                    dark
-                    className="flex-1"
-                  />
-                </div>
+                {isSuper && (
+                  <div className="flex items-center gap-3">
+                    <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 whitespace-nowrap">AI Model</label>
+                    <ModelSelector
+                      models={models}
+                      value={selectedModel}
+                      onChange={setModel}
+                      dark
+                      className="flex-1"
+                    />
+                  </div>
+                )}
                 {modelsError && (
                   <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[12px] text-amber-800 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-400">
                     <AlertCircle className="size-4 shrink-0" />
