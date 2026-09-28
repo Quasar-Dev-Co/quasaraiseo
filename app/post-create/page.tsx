@@ -49,6 +49,19 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof
   failed: { label: "Failed", color: "bg-red-100 text-red-700 border-red-200", icon: XCircle },
 };
 
+
+// How long the post page waits for server-side images before showing the post
+// without them.
+const IMAGE_WAIT_LIMIT_MS = 10 * 60 * 1000;
+
+// Images are finished (made, partly made, or failed) once the worker records a
+// status. Posts from before that status existed count as finished once the
+// body contains an image.
+function imagesSettled(result: GeneratedContent): boolean {
+  if (result.imageStatus) return result.imageStatus !== "pending";
+  return result.body.includes("<img");
+}
+
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -377,26 +390,37 @@ function PostCreateContent() {
               const hasImagePrompts = res.job.result.imagePrompts && res.job.result.imagePrompts.length > 0;
               const bodyHasImages = res.job.result.body && res.job.result.body.includes("<img");
 
-              if (hasImagePrompts && !bodyHasImages) {
+              if (hasImagePrompts && !imagesSettled(res.job.result)) {
                 // Images are still being generated server-side; keep main loader active
                 if (!imagePollingJobsRef.current.has(res.job.id)) {
                   imagePollingJobsRef.current.add(res.job.id);
                   setGenerationStep("Generating images with AI (server-side)...");
                   setGeneratingImages(true);
                   const imageJobId = res.job.id;
+                  const imageWaitStarted = Date.now();
                   if (imagePollRef.current) clearInterval(imagePollRef.current);
                   imagePollRef.current = setInterval(async () => {
                     try {
                       const imgRes = await wordpressApi.getGenerationJob(imageJobId);
-                      if (imgRes.job.result && imgRes.job.result.body && imgRes.job.result.body.includes("<img")) {
+                      const result = imgRes.job.result;
+                      const timedOut = Date.now() - imageWaitStarted > IMAGE_WAIT_LIMIT_MS;
+                      if (result && (imagesSettled(result) || timedOut)) {
                         processedJobsRef.current.add(imageJobId);
                         imagePollingJobsRef.current.delete(imageJobId);
-                        setGeneratedContent(imgRes.job.result);
+                        setGeneratedContent(result);
                         setGenJobs((prev) => prev.map((j) => (j.id === imageJobId ? imgRes.job : j)));
-                        setImagesInserted(true);
+                        const gotImages = result.body.includes("<img");
+                        setImagesInserted(gotImages);
+                        setImageError(
+                          timedOut && !imagesSettled(result)
+                            ? "Images are taking longer than 10 minutes. The post is ready without them — check the server logs, or open the post again later."
+                            : result.imageStatus === "failed" || result.imageStatus === "partial"
+                              ? `${result.imageStatus === "partial" ? "Some images could not be created" : "Images could not be created"}: ${result.imageError || "unknown error"}`
+                              : null,
+                        );
                         setGeneratingImages(false);
                         setGenerating(false);
-                        setGenerationStep("Content & images ready!");
+                        setGenerationStep(gotImages ? "Content & images ready!" : "Content ready (no images)");
                         if (imagePollRef.current) { clearInterval(imagePollRef.current); imagePollRef.current = null; }
                       }
                     } catch {}
@@ -409,6 +433,9 @@ function PostCreateContent() {
                 setGeneratedContent(res.job.result);
                 setGenerating(false);
                 setGeneratingImages(false);
+                if (res.job.result.imageStatus === "failed" || res.job.result.imageStatus === "partial") {
+                  setImageError(`Images could not be created: ${res.job.result.imageError || "unknown error"}`);
+                }
                 if (bodyHasImages) {
                   setImagesInserted(true);
                   setGenerationStep("Content & images ready!");
@@ -1133,6 +1160,11 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                 {genError && (
                   <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-400">
                     <AlertCircle className="size-4 shrink-0" /> {genError}
+                  </div>
+                )}
+                {imageError && generatedImages.length === 0 && (
+                  <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-300">
+                    <AlertCircle className="mt-0.5 size-4 shrink-0" /> <span className="[overflow-wrap:anywhere]">{imageError}</span>
                   </div>
                 )}
               </div>

@@ -60,6 +60,9 @@ export interface GeneratedContent {
   slug: string;
   headings: string[];
   imagePrompts?: Array<{ placement: string; prompt: string }>;
+  /** Set by the server's image worker; absent on posts made before it existed. */
+  imageStatus?: "pending" | "done" | "partial" | "failed" | "none";
+  imageError?: string | null;
 }
 
 export interface PostSkillRecord {
