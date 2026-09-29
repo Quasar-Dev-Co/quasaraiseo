@@ -173,6 +173,7 @@ function PostCreateContent() {
   const [postCategories, setPostCategories] = useState("");
   const [taxonomy, setTaxonomy] = useState<{ categories: SiteTerm[]; tags: SiteTerm[] } | null>(null);
   const [taxonomyLoading, setTaxonomyLoading] = useState(false);
+  const [taxonomyTick, setTaxonomyTick] = useState(0);
   const [postTags, setPostTags] = useState("");
   const [wpPosts, setWpPosts] = useState<WordPressPost[]>([]);
 
@@ -227,7 +228,7 @@ function PostCreateContent() {
       .catch(() => {})
       .finally(() => { if (!cancelled) setTaxonomyLoading(false); });
     return () => { cancelled = true; };
-  }, [publishModalOpen, selectedSiteId]);
+  }, [publishModalOpen, selectedSiteId, taxonomyTick]);
 
   const closePublishModal = () => {
     setPublishModalOpen(false);
@@ -2015,6 +2016,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
         siteTimezone={siteData?.timezone || ""}
         taxonomy={taxonomy}
         taxonomyLoading={taxonomyLoading}
+        onSyncTaxonomy={() => setTaxonomyTick((t) => t + 1)}
         postCategories={postCategories}
         setPostCategories={setPostCategories}
         postTags={postTags}
@@ -2041,8 +2043,8 @@ function TermPicker({ label, terms, loading, value, onChange }: { label: string;
     onChange(next.join(", "));
   };
   if (loading) return <p className="-mt-2 flex items-center gap-2 text-xs text-slate-500"><Loader2 className="size-3 animate-spin" /> Loading {label.toLowerCase()}…</p>;
-  if (!terms) return <p className="-mt-2 text-xs text-slate-500">Could not load {label.toLowerCase()}. You can still type them above.</p>;
-  if (terms.length === 0) return <p className="-mt-2 text-xs text-slate-500">No {label.toLowerCase()} yet. Anything you type above will be created.</p>;
+  if (!terms) return <p className="-mt-2 text-xs text-slate-500">Could not read this site’s {label.toLowerCase()}. Press Sync to try again, or type them above.</p>;
+  if (terms.length === 0) return <p className="-mt-2 text-xs text-slate-500">Nothing found. Press Sync to fetch again, or type a new name above and it will be created.</p>;
   return (
     <div className="-mt-2">
       <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
@@ -2077,6 +2079,7 @@ function PublishModal({
   siteTimezone,
   taxonomy,
   taxonomyLoading,
+  onSyncTaxonomy,
   postCategories,
   setPostCategories,
   postTags,
@@ -2102,6 +2105,7 @@ function PublishModal({
   siteTimezone: string;
   taxonomy: { categories: SiteTerm[]; tags: SiteTerm[] } | null;
   taxonomyLoading: boolean;
+  onSyncTaxonomy: () => void;
   postCategories: string;
   setPostCategories: (v: string) => void;
   postTags: string;
@@ -2194,7 +2198,18 @@ function PublishModal({
               </select>
             </div>
             <div>
-              <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Categories</label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Categories</label>
+                <button
+                  type="button"
+                  onClick={onSyncTaxonomy}
+                  disabled={taxonomyLoading}
+                  title="Fetch the categories and tags that exist on this site"
+                  className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-semibold normal-case text-brand-700 hover:bg-brand-50 disabled:opacity-60 dark:text-brand-300 dark:hover:bg-white/5"
+                >
+                  <RefreshCw className={`size-3 ${taxonomyLoading ? "animate-spin" : ""}`} /> Sync
+                </button>
+              </div>
               <Input className="mt-2" placeholder="Pick below or type a new one" value={postCategories} onChange={(e) => setPostCategories(e.target.value)} />
             </div>
           </div>
