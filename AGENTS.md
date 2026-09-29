@@ -19,7 +19,7 @@ Last updated: 2026-09-29
 | Onboarding tour & guided dashboard | Have | First-sign-in tour + "How it works" button; Overview shows setup checklist and Plan → Create → Publish → Measure loop |
 | Personal activity summary | Have | Overview → "Your activity": each user's own tokens, active time, top websites and tools (`/api/insights/me`) |
 | Admin tracking | Have | `/tracking` (super only): every person's tokens, active time, tools, top website and cost; open a person to see what they see |
-| Permalink guard | Have | Publishing sends a clean slug that matches the title, then checks the link WordPress made (`lib/permalink.ts` on the backend; editable "Page link" in the publish dialog). Plugin 2.0.2 accepts slugs |
+| Permalink guard | Have | Publishing sends a clean slug that matches the title, then checks the link WordPress made (`lib/permalink.ts` on the backend; editable "Page link" in the publish dialog). Works with any plugin version: the link is set right after the post is created, no plugin update needed |
 | AI provider (OpenAI/OpenRouter) | Have | Settings — model selector works in MCP |
 | WordPress publishing | Have | `/post-create` |
 | Branding extraction | Have | Branding module |
