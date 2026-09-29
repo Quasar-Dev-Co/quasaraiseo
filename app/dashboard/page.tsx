@@ -9,6 +9,7 @@ import {
 
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { MyActivity } from "@/components/dashboard/my-activity";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -197,6 +198,10 @@ export default function DashboardPage() {
             <AlertTriangle className="size-4 shrink-0" /> {error}
           </div>
         )}
+
+        <div className="mb-8">
+          <MyActivity />
+        </div>
 
         {showSkeleton ? (
           <div className="space-y-6">

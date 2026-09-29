@@ -17,6 +17,7 @@ Last updated: 2026-09-29
 | Skills system | Have | Uploadable skills — selectable per thread in `/content-strategy` (shared library with `/post-create`) |
 | API cost tracking | Have | Settings → Costs (super user) — tokens & cost per model, feature, user |
 | Onboarding tour & guided dashboard | Have | First-sign-in tour + "How it works" button; Overview shows setup checklist and Plan → Create → Publish → Measure loop |
+| Personal activity summary | Have | Overview → "Your activity": each user's own tokens, active time, top websites and tools (`/api/insights/me`) |
 | AI provider (OpenAI/OpenRouter) | Have | Settings — model selector works in MCP |
 | WordPress publishing | Have | `/post-create` |
 | Branding extraction | Have | Branding module |

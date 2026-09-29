@@ -5,6 +5,7 @@ import { AlertTriangle, Loader2, Pencil, RefreshCw, RotateCcw, X } from "lucide-
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { Button } from "@/components/ui/button";
+import { featureLabel } from "@/lib/insights-api";
 import { costsApi, type CostSummary, type ModelPrice } from "@/lib/costs-api";
 
 // Super-user view of what the paid APIs cost: totals, a daily chart, and
@@ -277,7 +278,7 @@ export function CostTab() {
                 <tbody>
                   {data.byFeature.map((f) => (
                     <tr key={f.feature} className="border-b border-slate-50 last:border-0 dark:border-white/5">
-                      <td className={td}>{f.feature}</td><td className={tdNum}>{f.calls.toLocaleString()}</td>
+                      <td className={td}>{featureLabel(f.feature)}</td><td className={tdNum}>{f.calls.toLocaleString()}</td>
                       <td className={tdNum}>{tokens(f.inputTokens + f.outputTokens)}</td><td className={`${tdNum} font-bold`}>{usd(f.costUsd)}</td>
                     </tr>
                   ))}
@@ -311,7 +312,7 @@ export function CostTab() {
                   <tr key={i} className="border-b border-slate-50 last:border-0 dark:border-white/5">
                     <td className={td}>{new Date(r.createdAt).toLocaleString()}</td>
                     <td className={td}>{r.email || "System"}</td>
-                    <td className={td}>{r.feature}</td>
+                    <td className={td}>{featureLabel(r.feature)}</td>
                     <td className={td}>{r.model}{r.kind === "image" && <span className="ml-1.5 text-[10px] text-slate-400">image</span>}</td>
                     <td className={tdNum}>{tokens(r.inputTokens)}</td>
                     <td className={tdNum}>{tokens(r.outputTokens)}{r.reasoningTokens ? <span className="ml-1 text-[10px] text-slate-400">({tokens(r.reasoningTokens)} reasoning)</span> : null}</td>
