@@ -25,7 +25,7 @@ export function FaqSection() {
           </p>
           <Link
             href="/audit-mcp"
-            className="mt-6 inline-flex min-h-13 items-center gap-2 rounded-[15px] bg-brand-700 px-5 text-sm font-bold text-white shadow-sm transition-transform hover:-translate-y-px"
+            className="mt-6 inline-flex min-h-13 items-center gap-2 rounded-[15px] bg-brand-700 px-5 text-sm font-bold text-white shadow-sm transition-transform hover:-translate-y-px hover:bg-brand-hover"
           >
             Create free audit <ArrowUpRight className="size-4" />
           </Link>

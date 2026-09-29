@@ -88,7 +88,7 @@ export function WebsiteMediaGallery({
               onUse(media.filter((item) => selected.includes(item.id)));
               onClose();
             }}
-            className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+            className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40 hover:bg-brand-hover"
           >
             Use selected
           </button>

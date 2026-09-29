@@ -311,7 +311,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-1.5 flex h-13 items-center justify-center gap-2.5 rounded-[15px] bg-brand-700 text-sm font-bold text-white shadow-sm transition-transform hover:-translate-y-px disabled:opacity-70"
+              className="mt-1.5 flex h-13 items-center justify-center gap-2.5 rounded-[15px] bg-brand-700 text-sm font-bold text-white shadow-sm transition-transform hover:-translate-y-px disabled:opacity-70 hover:bg-brand-hover"
             >
               {loading ? (
                 <><Loader2 className="size-4.5 animate-spin" /> Creating account...</>

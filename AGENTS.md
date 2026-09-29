@@ -38,4 +38,4 @@ Last updated: 2026-09-29
 - `Built now` = working but not yet in the original product vision from the user table
 - `Missing` = still needs to be implemented
 - Update this table when a feature is finished.
-- Design system: brand color `brand-*` (ember, from the logo spark), IBM Plex Sans, neutral surfaces. Page names/descriptions live in `lib/navigation.ts`; use `PageHeader` at the top of dashboard pages. Avoid gradient text, purple gradients, glow shadows and eyebrow labels (checked with the `impeccable` detector).
+- Design system: brand color `brand-*` (magenta #D11F76 = brand-700, hover #7A48ED = `brand-hover`), IBM Plex Sans, neutral surfaces. Page names/descriptions live in `lib/navigation.ts`; use `PageHeader` at the top of dashboard pages. Avoid gradient text, purple gradients, glow shadows and eyebrow labels (checked with the `impeccable` detector).

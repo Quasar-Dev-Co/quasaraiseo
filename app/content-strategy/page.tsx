@@ -899,8 +899,8 @@ function QuasarMcpContent() {
       <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-background px-4 py-3 lg:px-6 dark:border-white/10">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h1 className="text-lg font-semibold text-slate-950 dark:text-white">Strategy chat</h1>
-            <span className="hidden text-xs text-slate-500 sm:inline dark:text-slate-400">Quasar MCP</span>
+            <h1 className="text-lg font-semibold text-slate-950 dark:text-white">MCP Chat</h1>
+            <span className="hidden text-xs text-slate-500 sm:inline dark:text-slate-400">Workspace</span>
             {siteName && (
               <span className="inline-flex max-w-48 items-center gap-1 truncate rounded-md border border-slate-200 bg-card px-2 py-0.5 text-xs font-medium text-slate-700 dark:border-white/10 dark:text-slate-300">
                 <Globe className="size-3 shrink-0" />
@@ -980,7 +980,7 @@ function QuasarMcpContent() {
           <div className="border-b border-slate-200/90 p-3.5 dark:border-white/10 bg-white/60 dark:bg-slate-900/60">
             <Button
               onClick={handleNewChat}
-              className="w-full gap-2 bg-brand-700 text-xs font-bold text-white shadow-sm transition hover:opacity-95"
+              className="w-full gap-2 bg-brand-700 text-xs font-bold text-white shadow-sm transition hover:opacity-95 hover:bg-brand-hover"
               size="sm"
             >
               <Plus className="size-4" />
@@ -1337,7 +1337,7 @@ function QuasarMcpContent() {
                     size="sm"
                     onClick={handleSaveContext}
                     disabled={isSavingContext}
-                    className="gap-1.5 h-8 bg-brand-700 text-xs font-bold text-white shadow-sm hover:opacity-95"
+                    className="gap-1.5 h-8 bg-brand-700 text-xs font-bold text-white shadow-sm hover:opacity-95 hover:bg-brand-hover"
                   >
                     {isSavingContext ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
                     Save Website Settings
@@ -1372,7 +1372,7 @@ function QuasarMcpContent() {
                 </div>
               ) : messages.length === 0 ? (
                 <div className="py-12 text-center">
-                  <div className="mx-auto mb-4 grid size-16 place-items-center rounded-2xl bg-brand-700 text-white shadow-xl shadow-brand-500/20">
+                  <div className="mx-auto mb-4 grid size-16 place-items-center rounded-2xl bg-brand-700 text-white shadow-xl shadow-brand-500/20 hover:bg-brand-hover">
                     {siteLogoUrl ? (
                       <img src={siteLogoUrl} alt={siteName || "Logo"} className="size-10 rounded-xl object-contain" />
                     ) : (
@@ -1418,7 +1418,7 @@ function QuasarMcpContent() {
               {/* Thinking indicator */}
               {isThinking && (
                 <div className="flex gap-3.5">
-                  <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-700 text-white shadow-sm">
+                  <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-700 text-white shadow-sm hover:bg-brand-hover">
                     <Bot className="size-4.5" />
                   </div>
                   <div className="flex items-center gap-2.5 rounded-2xl rounded-tl-xs border border-slate-200/90 bg-white px-5 py-3.5 shadow-sm dark:border-white/10 dark:bg-slate-900/90">
@@ -1642,7 +1642,7 @@ function QuasarMcpContent() {
                       type="button"
                       onClick={handleSend}
                       disabled={(!input.trim() && pendingAttachments.length === 0) || isThinking || uploadingFile}
-                      className="grid size-8 place-items-center rounded-lg bg-brand-700 text-white shadow-xs transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-30"
+                      className="grid size-8 place-items-center rounded-lg bg-brand-700 text-white shadow-xs transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-30 hover:bg-brand-hover"
                     >
                       {isThinking ? <Loader2 className="size-4 animate-spin" /> : <ArrowUp className="size-4" />}
                     </button>
@@ -1840,7 +1840,7 @@ function QuasarMcpContent() {
               <Button
                 size="sm"
                 onClick={handleCreateChatWithSite}
-                className="gap-1.5 bg-brand-700 text-xs font-bold text-white shadow-sm hover:opacity-95"
+                className="gap-1.5 bg-brand-700 text-xs font-bold text-white shadow-sm hover:opacity-95 hover:bg-brand-hover"
               >
                 <Plus className="size-3.5" />
                 Start Chat
@@ -2004,7 +2004,7 @@ function ChatMessageItem({ message, onQuickReply }: { message: McpChatMessage; o
       <div className={`grid size-9 shrink-0 place-items-center rounded-xl shadow-sm ${
         isUser
           ? "bg-slate-700 text-white dark:bg-slate-600"
-          : "bg-brand-700 text-white shadow-sm"
+          : "bg-brand-700 text-white shadow-sm hover:bg-brand-hover"
       }`}>
         {isUser ? <User className="size-4" /> : <Bot className="size-4.5" />}
       </div>

@@ -42,7 +42,7 @@ export function Navbar() {
           <Link
             href="/audit-mcp"
             onClick={() => setMenuOpen(false)}
-            className="flex items-center justify-center gap-2 rounded-[13px] bg-brand-700 px-4 py-3 text-sm font-bold text-white shadow-sm md:hidden"
+            className="flex items-center justify-center gap-2 rounded-[13px] bg-brand-700 px-4 py-3 text-sm font-bold text-white shadow-sm md:hidden hover:bg-brand-hover"
           >
             Create free audit <ArrowUpRight className="size-3.5" />
           </Link>
@@ -57,7 +57,7 @@ export function Navbar() {
           </Link>
           <Link
             href="/audit-mcp"
-            className="flex items-center gap-2 rounded-[13px] bg-brand-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-transform hover:-translate-y-px"
+            className="flex items-center gap-2 rounded-[13px] bg-brand-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-transform hover:-translate-y-px hover:bg-brand-hover"
           >
             Create free audit <ArrowUpRight className="size-3.5" />
           </Link>

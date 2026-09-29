@@ -390,19 +390,19 @@ export default function AdditionalMcpPage() {
             <div className="space-y-5 px-6 py-5">
               <ol className="space-y-3 text-sm text-slate-600 dark:text-slate-300">
                 <li className="flex gap-3">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-700 text-xs font-bold text-white">1</span>
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-700 text-xs font-bold text-white hover:bg-brand-hover">1</span>
                   <span>
                     In your WordPress admin, open <strong>Custom Web Render → MCP Server</strong>. Create a token with the permissions you need (read, write, settings).
                   </span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-700 text-xs font-bold text-white">2</span>
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-700 text-xs font-bold text-white hover:bg-brand-hover">2</span>
                   <span>
                     Copy the <strong>endpoint URL</strong> (e.g. <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs dark:bg-white/10">https://yoursite.com/wp-json/custom-web-render/v1/mcp</code>) and the <strong>token</strong> (shown once).
                   </span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-700 text-xs font-bold text-white">3</span>
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-700 text-xs font-bold text-white hover:bg-brand-hover">3</span>
                   <span>
                     Add them above. When enabled, WordPress tool calls from <strong>/content-strategy</strong> route through this MCP server — the exact same protocol Cursor and Codex use.
                   </span>

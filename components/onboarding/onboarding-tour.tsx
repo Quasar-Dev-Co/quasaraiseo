@@ -31,26 +31,26 @@ const STEPS: Step[] = [
     body: "Quasar helps you grow a website's search traffic with one repeatable loop. The menu on the left follows the same order.",
   },
   {
-    title: "Plan in the strategy chat",
+    title: "Plan in MCP Chat",
     body: "Open a chat for one website and tell the agent what you need.",
     points: [
       "It researches keywords and builds a pillar and cluster content plan.",
       "Attach files, sheets or screenshots, and choose skills for that chat only.",
       "Ask for a PDF report whenever you want to share the plan.",
     ],
-    links: [{ href: "/content-strategy", label: "Open strategy chat" }],
+    links: [{ href: "/content-strategy", label: "Open MCP Chat" }],
   },
   {
     title: "Create and publish posts",
-    body: "Send a brief from the chat, or start in the post writer.",
+    body: "Send a brief from MCP Chat, or start in Post Writer.",
     points: [
       "Posts come with images placed section by section, in your brand's style.",
       "Edit the text and drag images where you want them.",
       "Publish, save as a draft, or schedule on a connected WordPress site.",
     ],
     links: [
-      { href: "/post-create", label: "Open post writer" },
-      { href: "/branding", label: "Add a brand profile" },
+      { href: "/post-create", label: "Open Post Writer" },
+      { href: "/branding", label: "Set up Branding" },
     ],
   },
   {

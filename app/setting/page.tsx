@@ -1406,7 +1406,7 @@ function SettingsInner() {
               <article className="overflow-hidden rounded-3xl border border-slate-200/60 bg-white dark:border-slate-700/50 dark:bg-slate-800/50">
                 <div className="space-y-4 p-6">
                   <div className="flex items-center gap-3">
-                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-700 text-white text-[14px] font-black">OR</span>
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-700 text-white text-[14px] font-black hover:bg-brand-hover">OR</span>
                     <div className="flex-1">
                       <p className="text-[14px] font-bold text-slate-900 dark:text-white">OpenRouter</p>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400">Claude, GLM-5.2, Gemini, DeepSeek, Llama, 70+ models</p>
@@ -1578,7 +1578,7 @@ function SettingsInner() {
                       onClick={() => setModelsFilter(f.id as "all" | "openai" | "openrouter" | "new")}
                       className={`rounded-lg px-3 py-1.5 text-[11px] font-bold transition-colors ${
                         modelsFilter === f.id
-                          ? "bg-brand-700 text-white"
+                          ? "bg-brand-700 text-white hover:bg-brand-hover"
                           : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
                       }`}
                     >
@@ -1639,7 +1639,7 @@ function SettingsInner() {
                                   <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase ${
                                     m.provider === "openai"
                                       ? "bg-slate-900 text-white"
-                                      : "bg-brand-700 text-white"
+                                      : "bg-brand-700 text-white hover:bg-brand-hover"
                                   }`}>
                                     {m.provider === "openai" ? "AI" : "OR"}
                                   </span>

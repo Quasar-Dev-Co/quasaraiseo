@@ -130,9 +130,9 @@ export default function DashboardPage() {
   // Setup checklist: the few things that make everything else work.
   const checklist = [
     ...(isSuper ? [{ done: aiReady, label: "Add an AI provider key", hint: "Needed for every AI feature. Admins only.", href: "/setting" }] : []),
-    { done: brandings.length > 0, label: "Create a brand profile", hint: "Logo, colors and tone used in posts and images.", href: "/branding" },
+    { done: brandings.length > 0, label: "Set up Branding", hint: "Logo, colors and tone used in posts and images.", href: "/branding" },
     { done: connectedWpSites > 0, label: "Connect a WordPress site", hint: "So posts can be published directly.", href: "/wordpress" },
-    { done: sessions.length > 0, label: "Start a strategy chat", hint: "Research keywords and plan content for a site.", href: "/content-strategy" },
+    { done: sessions.length > 0, label: "Start an MCP Chat", hint: "Research keywords and plan content for a site.", href: "/content-strategy" },
     { done: completedJobs > 0, label: "Write your first post", hint: "From a chat brief or a short prompt.", href: "/post-create" },
     { done: !!googleStatus?.connected, label: "Connect Google", hint: "See clicks, rankings and visitors.", href: "/setting" },
   ];
@@ -142,8 +142,8 @@ export default function DashboardPage() {
   // The loop the product is built around, with live numbers.
   const loop = [
     {
-      icon: Network, stage: "Plan", value: sessions.length, unit: sessions.length === 1 ? "strategy chat" : "strategy chats",
-      text: "Research keywords and turn them into a content plan.", href: "/content-strategy", cta: "Open strategy chat",
+      icon: Network, stage: "Plan", value: sessions.length, unit: sessions.length === 1 ? "MCP chat" : "MCP chats",
+      text: "Research keywords and turn them into a content plan.", href: "/content-strategy", cta: "Open MCP Chat",
     },
     {
       icon: PenLine, stage: "Create", value: completedJobs, unit: completedJobs === 1 ? "post written" : "posts written",
@@ -173,7 +173,7 @@ export default function DashboardPage() {
   type Activity = { text: string; where: string; href: string; at: number };
   const activity: Activity[] = [
     ...tasks.slice(0, 4).map((t) => ({ text: t.title, where: t.status === "done" ? "Task done" : "Task updated", href: "/task-management", at: new Date(t.updatedAt).getTime() })),
-    ...sessions.slice(0, 4).map((s) => ({ text: s.preview, where: "Strategy chat", href: "/content-strategy", at: new Date(s.updatedAt).getTime() })),
+    ...sessions.slice(0, 4).map((s) => ({ text: s.preview, where: "MCP Chat", href: "/content-strategy", at: new Date(s.updatedAt).getTime() })),
     ...genJobs.slice(0, 4).map((j) => ({ text: j.prompt, where: j.status === "completed" ? "Post written" : j.status === "failed" ? "Post failed" : "Post in progress", href: "/post-create", at: new Date(j.createdAt).getTime() })),
   ].sort((a, b) => b.at - a.at).slice(0, 7);
 
@@ -216,7 +216,7 @@ export default function DashboardPage() {
                   <p className="text-[13px] font-semibold text-brand-700 dark:text-brand-300">Next step</p>
                   <h2 className="mt-1 text-xl font-semibold text-slate-950 dark:text-white">{nextStep.label}</h2>
                   <p className="mt-1 text-[15px] text-slate-600 dark:text-slate-400">{nextStep.hint}</p>
-                  <Link href={nextStep.href} className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-700 px-3.5 text-sm font-semibold text-white hover:bg-brand-800 dark:bg-brand-400 dark:text-slate-950 dark:hover:bg-brand-300">
+                  <Link href={nextStep.href} className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-700 px-3.5 text-sm font-semibold text-white hover:bg-brand-hover dark:bg-brand-700 dark:text-white dark:hover:bg-brand-hover">
                     Do it now <ArrowRight className="size-4" />
                   </Link>
                 </div>
@@ -275,7 +275,7 @@ export default function DashboardPage() {
                 <Panel
                   title="Posts written this week"
                   description={weekTotal > 0 ? `${weekTotal} in the last 7 days` : "Nothing yet this week"}
-                  action={<Link href="/post-create" className="text-[13px] font-semibold text-brand-700 hover:underline dark:text-brand-300">Post writer</Link>}
+                  action={<Link href="/post-create" className="text-[13px] font-semibold text-brand-700 hover:underline dark:text-brand-300">Post Writer</Link>}
                 >
                   {weekTotal === 0 ? (
                     <div className="rounded-lg border border-dashed border-slate-300 px-4 py-8 text-center dark:border-white/15">

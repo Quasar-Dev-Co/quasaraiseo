@@ -49,23 +49,24 @@
 }
 
 /*
- * Brand: "ember", the orange of the spark in the Quasar logo. One hue family
- * for every accent in the app (it replaced the old fuchsia/purple/pink mix).
- * Use 700 for filled buttons with white text (>= 4.5:1), 600-700 for accent
- * text on light surfaces and 300-400 on dark ones.
+ * Brand: magenta #D11F76 (brand-700) for buttons, links and highlights, with
+ * violet #7A48ED as the hover color on filled buttons. White text passes AA
+ * on both. Use 700 for filled buttons, 600-700 for accent text on light
+ * surfaces and 300-400 on dark ones.
  */
 @theme {
-  --color-brand-50: oklch(0.975 0.014 55);
-  --color-brand-100: oklch(0.945 0.035 55);
-  --color-brand-200: oklch(0.895 0.07 52);
-  --color-brand-300: oklch(0.825 0.115 49);
-  --color-brand-400: oklch(0.75 0.155 45);
-  --color-brand-500: oklch(0.68 0.18 41);
-  --color-brand-600: oklch(0.61 0.185 37);
-  --color-brand-700: oklch(0.53 0.165 34);
-  --color-brand-800: oklch(0.45 0.135 32);
-  --color-brand-900: oklch(0.38 0.105 31);
-  --color-brand-950: oklch(0.27 0.075 30);
+  --color-brand-50: oklch(0.972 0.018 358);
+  --color-brand-100: oklch(0.94 0.04 358);
+  --color-brand-200: oklch(0.885 0.08 358);
+  --color-brand-300: oklch(0.81 0.13 358);
+  --color-brand-400: oklch(0.73 0.175 358);
+  --color-brand-500: oklch(0.66 0.205 358);
+  --color-brand-600: oklch(0.615 0.215 358);
+  --color-brand-700: #d11f76;
+  --color-brand-800: oklch(0.49 0.19 358);
+  --color-brand-900: oklch(0.41 0.155 358);
+  --color-brand-950: oklch(0.3 0.105 358);
+  --color-brand-hover: #7a48ed;
 
   /* Restrained motion: short, decelerating, never bouncy. */
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
@@ -82,8 +83,9 @@
   --card-foreground: oklch(0.21 0.015 260);
   --popover: oklch(0.995 0.002 255);
   --popover-foreground: oklch(0.21 0.015 260);
-  --primary: oklch(0.53 0.165 34);
-  --primary-foreground: oklch(0.985 0.005 55);
+  --primary: #d11f76;
+  --primary-foreground: oklch(0.99 0.004 358);
+  --primary-hover: #7a48ed;
   --secondary: oklch(0.955 0.006 255);
   --secondary-foreground: oklch(0.25 0.015 260);
   --muted: oklch(0.955 0.006 255);
@@ -93,8 +95,8 @@
   --destructive: oklch(0.56 0.2 27);
   --border: oklch(0.905 0.008 255);
   --input: oklch(0.88 0.01 255);
-  --ring: oklch(0.61 0.185 37);
-  --chart-1: oklch(0.61 0.185 37);
+  --ring: #d11f76;
+  --chart-1: #d11f76;
   --chart-2: oklch(0.55 0.13 250);
   --chart-3: oklch(0.62 0.12 165);
   --chart-4: oklch(0.72 0.14 80);
@@ -102,12 +104,12 @@
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0.003 255);
   --sidebar-foreground: oklch(0.25 0.015 260);
-  --sidebar-primary: oklch(0.53 0.165 34);
-  --sidebar-primary-foreground: oklch(0.985 0.005 55);
-  --sidebar-accent: oklch(0.945 0.012 55);
+  --sidebar-primary: #d11f76;
+  --sidebar-primary-foreground: oklch(0.99 0.004 358);
+  --sidebar-accent: oklch(0.955 0.025 358);
   --sidebar-accent-foreground: oklch(0.21 0.015 260);
   --sidebar-border: oklch(0.905 0.008 255);
-  --sidebar-ring: oklch(0.61 0.185 37);
+  --sidebar-ring: #d11f76;
 }
 
 .dark {
@@ -117,8 +119,9 @@
   --card-foreground: oklch(0.945 0.006 255);
   --popover: oklch(0.225 0.014 262);
   --popover-foreground: oklch(0.945 0.006 255);
-  --primary: oklch(0.75 0.155 45);
-  --primary-foreground: oklch(0.2 0.03 35);
+  --primary: #d11f76;
+  --primary-foreground: oklch(0.99 0.004 358);
+  --primary-hover: #7a48ed;
   --secondary: oklch(0.26 0.014 262);
   --secondary-foreground: oklch(0.945 0.006 255);
   --muted: oklch(0.26 0.014 262);
@@ -128,20 +131,20 @@
   --destructive: oklch(0.7 0.17 25);
   --border: oklch(0.3 0.014 262);
   --input: oklch(0.34 0.014 262);
-  --ring: oklch(0.75 0.155 45);
-  --chart-1: oklch(0.75 0.155 45);
+  --ring: oklch(0.73 0.175 358);
+  --chart-1: oklch(0.73 0.175 358);
   --chart-2: oklch(0.7 0.12 250);
   --chart-3: oklch(0.72 0.12 165);
   --chart-4: oklch(0.8 0.13 80);
   --chart-5: oklch(0.65 0.02 260);
   --sidebar: oklch(0.185 0.013 262);
   --sidebar-foreground: oklch(0.86 0.008 255);
-  --sidebar-primary: oklch(0.75 0.155 45);
-  --sidebar-primary-foreground: oklch(0.2 0.03 35);
-  --sidebar-accent: oklch(0.27 0.03 40);
+  --sidebar-primary: #d11f76;
+  --sidebar-primary-foreground: oklch(0.99 0.004 358);
+  --sidebar-accent: oklch(0.27 0.04 358);
   --sidebar-accent-foreground: oklch(0.97 0.006 255);
   --sidebar-border: oklch(0.28 0.014 262);
-  --sidebar-ring: oklch(0.75 0.155 45);
+  --sidebar-ring: oklch(0.73 0.175 358);
 }
 
 @layer base {

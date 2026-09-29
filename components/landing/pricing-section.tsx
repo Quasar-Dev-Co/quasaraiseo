@@ -82,7 +82,7 @@ export function PricingSection({ showToast }: { showToast: ShowToast }) {
           <article className="relative overflow-hidden rounded-3xl border-2 border-brand-500/60 bg-slate-950 p-7.5 text-white shadow-sm transition-all duration-300 lg:-translate-y-2">
             <div className="pointer-events-none absolute -right-20 -top-20 size-64 rounded-full bg-brand-600/25 blur-3xl" />
             
-            <em className="absolute right-5 top-5 rounded-full bg-brand-700 px-3.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-sm not-italic">
+            <em className="absolute right-5 top-5 rounded-full bg-brand-700 px-3.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-sm not-italic hover:bg-brand-hover">
               Most popular
             </em>
             <small className="text-xs font-black uppercase tracking-[0.2em] text-brand-400">Growth</small>
@@ -100,7 +100,7 @@ export function PricingSection({ showToast }: { showToast: ShowToast }) {
 
             <Link
               href="/audit-mcp"
-              className="mt-6 flex w-full items-center justify-center rounded-[14px] bg-brand-700 px-4 py-3.5 text-sm font-extrabold text-white shadow-sm transition-all hover:scale-[1.02] hover:shadow-sm"
+              className="mt-6 flex w-full items-center justify-center rounded-[14px] bg-brand-700 px-4 py-3.5 text-sm font-extrabold text-white shadow-sm transition-all hover:scale-[1.02] hover:shadow-sm hover:bg-brand-hover"
             >
               Start growing
             </Link>

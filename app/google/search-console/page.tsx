@@ -622,7 +622,7 @@ export default function SearchConsolePage() {
                 onClick={() => setRangeDays(r.days)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
                   rangeDays === r.days
-                    ? "bg-brand-700 text-white"
+                    ? "bg-brand-700 text-white hover:bg-brand-hover"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
                 }`}
               >

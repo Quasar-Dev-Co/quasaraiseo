@@ -32,7 +32,7 @@ export type NavItem = {
 };
 
 export type NavGroup = {
-  id: "home" | "plan" | "create" | "publish" | "measure" | "team";
+  id: "home" | "workspace" | "setup" | "measure" | "team";
   label: string;
   items: NavItem[];
 };
@@ -52,21 +52,29 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    id: "plan",
-    label: "Plan",
+    id: "workspace",
+    label: "Workspace",
     items: [
       {
         href: "/content-strategy",
-        label: "Strategy chat",
-        alias: "Quasar MCP",
+        label: "MCP Chat",
+        alias: "Quasar MCP / Strategy chat",
         hint: "Keywords and content plans",
         description:
           "Chat with the SEO agent about one website: research keywords, build a pillar and cluster plan, and send finished briefs to the post writer.",
         icon: Network,
       },
       {
+        href: "/post-create",
+        label: "Post Writer",
+        alias: "Post Create",
+        hint: "Write blog posts with images",
+        description: "Write a full blog post with images from a short prompt, edit it, then publish or schedule it on WordPress.",
+        icon: PenLine,
+      },
+      {
         href: "/audit-mcp",
-        label: "Site audit",
+        label: "Site Audit",
         alias: "Audit MCP",
         hint: "Find SEO problems on a site",
         description: "Run an SEO audit with a skill and get a report of what to fix, in priority order.",
@@ -75,45 +83,31 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    id: "create",
-    label: "Create",
+    id: "setup",
+    label: "Setup",
     items: [
       {
-        href: "/post-create",
-        label: "Post writer",
-        alias: "Post Create",
-        hint: "Write blog posts with images",
-        description: "Write a full blog post with images from a short prompt, edit it, then publish or schedule it on WordPress.",
-        icon: PenLine,
-      },
-      {
         href: "/branding",
-        label: "Brand profiles",
-        alias: "Branding",
+        label: "Branding",
+        alias: "Brand profiles",
         hint: "Logo, colors and tone for the AI",
         description: "Save each client's logo, colors and voice so every post and image matches their brand.",
         icon: Building2,
-      },
-    ],
-  },
-  {
-    id: "publish",
-    label: "Publish",
-    items: [
-      {
-        href: "/wordpress",
-        label: "WordPress sites",
-        hint: "Connected sites and their posts",
-        description: "Connect client WordPress sites so posts can be published to them directly.",
-        icon: Newspaper,
       },
       {
         href: "/additional-mcp",
         label: "Connected tools",
         alias: "Additional MCP",
         hint: "Extra tools the agent can use",
-        description: "Add outside MCP servers (for example a site's own publishing tools) that the strategy chat can call.",
+        description: "Add outside MCP servers (for example a site's own publishing tools) that MCP Chat can call.",
         icon: Server,
+      },
+      {
+        href: "/wordpress",
+        label: "WordPress sites",
+        hint: "Connected sites and their posts",
+        description: "Connect client WordPress sites so posts can be published to them directly.",
+        icon: Newspaper,
       },
     ],
   },

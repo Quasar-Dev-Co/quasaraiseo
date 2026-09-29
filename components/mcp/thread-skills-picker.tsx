@@ -124,7 +124,7 @@ export function ThreadSkillsPicker({
                   onClick={() => toggle(skill.id)}
                   className={`flex w-full items-start gap-2.5 rounded-lg px-2 py-2 text-left transition ${on ? "bg-brand-50 dark:bg-brand-400/10" : "hover:bg-slate-50 dark:hover:bg-white/5"}`}
                 >
-                  <span className={`mt-0.5 grid size-4 shrink-0 place-items-center rounded border ${on ? "border-brand-600 bg-brand-700 text-white" : "border-slate-300 dark:border-white/20"}`}>
+                  <span className={`mt-0.5 grid size-4 shrink-0 place-items-center rounded border ${on ? "border-brand-600 bg-brand-700 text-white hover:bg-brand-hover" : "border-slate-300 dark:border-white/20"}`}>
                     {on && <Check className="size-3" />}
                   </span>
                   <span className="min-w-0">

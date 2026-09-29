@@ -23,7 +23,7 @@ export function CtaSection({ showToast }: { showToast: ShowToast }) {
           <div className="flex flex-col gap-2.5 sm:flex-row lg:flex-col lg:min-w-[190px]">
             <Link
               href="/audit-mcp"
-              className="flex min-h-13 items-center justify-center gap-2 rounded-[15px] bg-brand-700 px-6 text-sm font-bold text-white shadow-sm transition-transform hover:-translate-y-px"
+              className="flex min-h-13 items-center justify-center gap-2 rounded-[15px] bg-brand-700 px-6 text-sm font-bold text-white shadow-sm transition-transform hover:-translate-y-px hover:bg-brand-hover"
             >
               Create free audit <ArrowUpRight className="size-4" />
             </Link>

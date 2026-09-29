@@ -883,7 +883,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                             {/* Icon */}
                             <div className={`grid size-9 shrink-0 place-items-center rounded-lg ${
                               isPillar
-                                ? "bg-brand-700 text-white"
+                                ? "bg-brand-700 text-white hover:bg-brand-hover"
                                 : isCluster
                                 ? "bg-teal-500 text-white"
                                 : "bg-slate-400 text-white"
@@ -1021,7 +1021,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                     size="lg"
                     onClick={handleGenerate}
                     disabled={!prompt.trim() || generating || (!selectedSkillId && !selectedContentFileId)}
-                    className="bg-brand-700 text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="bg-brand-700 text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {generating ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
                     {generating ? "Generating..." : "Generate Post"}
