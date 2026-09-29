@@ -181,7 +181,7 @@ function ModelSelectorMenu({ models, value, onChange, className = "", dark = fal
           : `flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-sm outline-none transition-colors ${
               dark
                 ? "border-slate-600 bg-slate-800 text-white hover:border-blue-500"
-                : "border-slate-300 bg-white text-slate-900 hover:border-fuchsia-500 dark:border-white/15 dark:bg-slate-800 dark:text-white"
+                : "border-slate-300 bg-white text-slate-900 hover:border-brand-500 dark:border-white/15 dark:bg-slate-800 dark:text-white"
             }`}
       >
         <ModelIcon modelId={value} size={compact ? 16 : 20} />

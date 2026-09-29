@@ -6,6 +6,7 @@ import {
   Plus, ExternalLink, Table2,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -91,7 +92,7 @@ export default function GoogleSheetsPage() {
     return (
       <RequireAuth>
         <DashboardLayout>
-          <div className="px-6 py-8 lg:px-8">
+          <div>
             <Skeleton className="h-8 w-48" />
             <Skeleton className="mt-2 h-4 w-72" />
             <div className="mt-8 space-y-3">
@@ -138,18 +139,11 @@ export default function GoogleSheetsPage() {
   return (
     <RequireAuth>
       <DashboardLayout>
-        <div className="px-6 py-8 lg:px-8">
-          {/* Header */}
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
-                Google Sheets
-              </h1>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                View and manage your Google Sheets spreadsheets
-              </p>
-            </div>
-            <div className="flex gap-2">
+        <div>
+          <PageHeader
+            actions={
+              <>
+<div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={fetchSheetData} disabled={fetching || !selectedSheet}>
                 <RefreshCw className={`size-4 ${fetching ? "animate-spin" : ""}`} />
                 Refresh
@@ -159,7 +153,9 @@ export default function GoogleSheetsPage() {
                 New Sheet
               </Button>
             </div>
-          </div>
+              </>
+            }
+          />
 
           {error && (
             <div className="mb-6 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-400">
@@ -169,7 +165,7 @@ export default function GoogleSheetsPage() {
           )}
 
           {msg && (
-            <div className="mb-6 flex items-center gap-2 rounded-xl border border-fuchsia-200 bg-fuchsia-50 px-4 py-3 text-sm font-semibold text-fuchsia-700 dark:border-fuchsia-400/20 dark:bg-fuchsia-400/10 dark:text-fuchsia-400">
+            <div className="mb-6 flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-700 dark:border-brand-400/20 dark:bg-brand-400/10 dark:text-brand-400">
               <FileSpreadsheet className="size-4 shrink-0" />
               {msg}
             </div>
@@ -184,7 +180,7 @@ export default function GoogleSheetsPage() {
               <select
                 value={selectedSheet}
                 onChange={(e) => setSelectedSheet(e.target.value)}
-                className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
               >
                 {sheets.map(s => (
                   <option key={s.id} value={s.id}>{s.name}</option>
@@ -199,13 +195,11 @@ export default function GoogleSheetsPage() {
               {sheets.map(s => (
                 <div
                   key={s.id}
-                  className={`cursor-pointer rounded-2xl border-2 p-4 transition-all ${selectedSheet === s.id ? "border-fuchsia-400 bg-fuchsia-50/30 dark:bg-fuchsia-400/5" : "border-slate-200 bg-white hover:border-slate-300 dark:border-white/10 dark:bg-slate-900/50"}`}
+                  className={`cursor-pointer rounded-2xl border-2 p-4 transition-all ${selectedSheet === s.id ? "border-brand-400 bg-brand-50/30 dark:bg-brand-400/5" : "border-slate-200 bg-white hover:border-slate-300 dark:border-white/10 dark:bg-slate-900/50"}`}
                   onClick={() => setSelectedSheet(s.id)}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="grid size-10 place-items-center rounded-xl bg-fuchsia-50 text-fuchsia-600 dark:bg-fuchsia-400/10 dark:text-fuchsia-400">
-                      <FileSpreadsheet className="size-5" />
-                    </span>
+                    <FileSpreadsheet className="size-5 shrink-0 text-slate-500 dark:text-slate-400" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold text-slate-900 dark:text-white">{s.name}</p>
                       <p className="text-[10px] text-slate-400">
@@ -233,7 +227,7 @@ export default function GoogleSheetsPage() {
             </div>
             {fetching ? (
               <div className="flex h-40 items-center justify-center">
-                <Loader2 className="size-6 animate-spin text-fuchsia-500" />
+                <Loader2 className="size-6 animate-spin text-brand-500" />
               </div>
             ) : sheetData.length > 0 ? (
               <div className="overflow-x-auto">

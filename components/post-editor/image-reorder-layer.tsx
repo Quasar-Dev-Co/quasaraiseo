@@ -187,10 +187,10 @@ export function ImageReorderLayer({ editorRef, active }: { editorRef: RefObject<
           <span className="flex cursor-grab items-center gap-1 px-1.5 text-[11px] font-semibold text-slate-500" title="Drag the image to move it">
             <GripVertical className="size-3.5" /> Drag
           </span>
-          <button type="button" className="grid size-7 place-items-center rounded text-slate-600 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Move up" onClick={() => move(-1)}>
+          <button type="button" className="grid size-7 place-items-center rounded text-slate-600 hover:bg-brand-50 hover:text-brand-700" title="Move up" onClick={() => move(-1)}>
             <ArrowUp className="size-3.5" />
           </button>
-          <button type="button" className="grid size-7 place-items-center rounded text-slate-600 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Move down" onClick={() => move(1)}>
+          <button type="button" className="grid size-7 place-items-center rounded text-slate-600 hover:bg-brand-50 hover:text-brand-700" title="Move down" onClick={() => move(1)}>
             <ArrowDown className="size-3.5" />
           </button>
           <button type="button" className="grid size-7 place-items-center rounded text-red-500 hover:bg-red-50" title="Remove image" onClick={remove}>
@@ -199,7 +199,7 @@ export function ImageReorderLayer({ editorRef, active }: { editorRef: RefObject<
         </div>
       )}
       {dropLine && (
-        <div className="pointer-events-none fixed z-[110] rounded-full bg-fuchsia-500" style={{ top: dropLine.top, left: dropLine.left, width: dropLine.width, height: dropLine.height }} />
+        <div className="pointer-events-none fixed z-[110] rounded-full bg-brand-500" style={{ top: dropLine.top, left: dropLine.left, width: dropLine.width, height: dropLine.height }} />
       )}
     </>
   );

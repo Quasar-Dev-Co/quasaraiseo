@@ -13,6 +13,7 @@ import {
   CartesianGrid, Tooltip as RTooltip, BarChart, Bar,
 } from "recharts";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -454,7 +455,7 @@ export default function SearchConsolePage() {
     return (
       <RequireAuth>
         <DashboardLayout>
-          <div className="px-6 py-8 lg:px-8">
+          <div>
             <Skeleton className="h-8 w-48" />
             <Skeleton className="mt-2 h-4 w-72" />
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -505,7 +506,7 @@ export default function SearchConsolePage() {
     if (isPosition) {
       const { text, isGood } = formatPosChange(current, previous);
       return (
-        <span className={`flex items-center gap-0.5 text-[10px] font-bold ${isGood ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-red-500"}`}>
+        <span className={`flex items-center gap-0.5 text-[10px] font-bold ${isGood ? "text-brand-600 dark:text-brand-400" : "text-red-500"}`}>
           {isGood ? <ArrowUpRight className="size-3" /> : <ArrowDownRight className="size-3" />}
           {text}
         </span>
@@ -513,7 +514,7 @@ export default function SearchConsolePage() {
     }
     const { text, positive, isGood } = formatPctChange(current, previous);
     return (
-      <span className={`flex items-center gap-0.5 text-[10px] font-bold ${isGood ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-red-500"}`}>
+      <span className={`flex items-center gap-0.5 text-[10px] font-bold ${isGood ? "text-brand-600 dark:text-brand-400" : "text-red-500"}`}>
         {positive ? <ArrowUpRight className="size-3" /> : <ArrowDownRight className="size-3" />}
         {text}
       </span>
@@ -543,23 +544,20 @@ export default function SearchConsolePage() {
   return (
     <RequireAuth>
       <DashboardLayout>
-        <div className="px-6 py-8 lg:px-8">
-          {/* Header */}
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
-                Google Search Console
-              </h1>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                {startDate} to {endDate}
-                {comparisonLabel ? ` · ${comparisonLabel}` : ""}
-              </p>
-            </div>
-            <Button variant="outline" size="sm" onClick={fetchAnalytics} disabled={fetching}>
+        <div>
+          <PageHeader
+            actions={
+              <>
+<Button variant="outline" size="sm" onClick={fetchAnalytics} disabled={fetching}>
               <RefreshCw className={`size-4 ${fetching ? "animate-spin" : ""}`} />
               Refresh
             </Button>
-          </div>
+              </>
+            }
+          >
+            <p className="mt-1 text-sm tabular-nums text-slate-600 dark:text-slate-400">{startDate} to {endDate}
+                {comparisonLabel ? ` · ${comparisonLabel}` : ""}</p>
+          </PageHeader>
 
           {error && (
             <div className="mb-6 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-400">
@@ -578,7 +576,7 @@ export default function SearchConsolePage() {
                 <select
                   value={selectedSite}
                   onChange={(e) => setSelectedSite(e.target.value)}
-                  className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                  className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
                 >
                   <optgroup label="Search Console">
                     {sites.map((s) => (
@@ -607,7 +605,7 @@ export default function SearchConsolePage() {
               <select
                 value={searchType}
                 onChange={(e) => setSearchType(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
               >
                 {SEARCH_TYPES.map(t => (
                   <option key={t.value} value={t.value}>{t.label}</option>
@@ -624,7 +622,7 @@ export default function SearchConsolePage() {
                 onClick={() => setRangeDays(r.days)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
                   rangeDays === r.days
-                    ? "bg-fuchsia-600 text-white"
+                    ? "bg-brand-700 text-white"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
                 }`}
               >
@@ -642,7 +640,7 @@ export default function SearchConsolePage() {
               <select
                 value={compareMode}
                 onChange={(e) => setCompareMode(e.target.value as CompareMode)}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
               >
                 {COMPARE_MODES.map((m) => (
                   <option key={m.value} value={m.value}>{m.label}</option>
@@ -659,7 +657,7 @@ export default function SearchConsolePage() {
                     type="date"
                     value={customPrevStart}
                     onChange={(e) => setCustomPrevStart(e.target.value)}
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
                   />
                 </div>
                 <div>
@@ -670,7 +668,7 @@ export default function SearchConsolePage() {
                     type="date"
                     value={customPrevEnd}
                     onChange={(e) => setCustomPrevEnd(e.target.value)}
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
                   />
                 </div>
               </>
@@ -678,7 +676,7 @@ export default function SearchConsolePage() {
             {hasComparison && (
               <div className="ml-auto flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 dark:bg-slate-800">
                 <span className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
-                  <span className="inline-block h-2.5 w-2.5 rounded-full bg-fuchsia-500" />
+                  <span className="inline-block h-2.5 w-2.5 rounded-full bg-brand-500" />
                   Current
                 </span>
                 <span className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
@@ -691,9 +689,9 @@ export default function SearchConsolePage() {
 
           {/* Stats cards with comparison */}
           <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCard label="Total Clicks" value={stats.totalClicks.toLocaleString()} icon={MousePointerClick} color="text-fuchsia-600 dark:text-fuchsia-400" current={stats.totalClicks} previous={stats.prevClicks} />
+            <StatCard label="Total Clicks" value={stats.totalClicks.toLocaleString()} icon={MousePointerClick} color="text-brand-600 dark:text-brand-400" current={stats.totalClicks} previous={stats.prevClicks} />
             <StatCard label="Impressions" value={stats.totalImpressions.toLocaleString()} icon={Eye} color="text-blue-600 dark:text-blue-400" current={stats.totalImpressions} previous={stats.prevImpressions} />
-            <StatCard label="Avg CTR" value={`${(stats.avgCtr * 100).toFixed(2)}%`} icon={Target} color="text-purple-600 dark:text-purple-400" current={stats.avgCtr * 100} previous={stats.prevCtr * 100} />
+            <StatCard label="Avg CTR" value={`${(stats.avgCtr * 100).toFixed(2)}%`} icon={Target} color="text-brand-600 dark:text-brand-400" current={stats.avgCtr * 100} previous={stats.prevCtr * 100} />
             <StatCard label="Avg Position" value={stats.avgPosition.toFixed(1)} icon={TrendingUp} color="text-orange-600 dark:text-orange-400" current={stats.avgPosition} previous={stats.prevPosition} isPosition />
           </div>
 
@@ -709,8 +707,8 @@ export default function SearchConsolePage() {
               <div className="flex items-center gap-3">
                 {hasComparison && (
                   <div className="flex items-center gap-3 text-[10px] font-bold">
-                    <span className="flex items-center gap-1 text-fuchsia-600 dark:text-fuchsia-400">
-                      <span className="inline-block h-2.5 w-2.5 rounded-full bg-fuchsia-500" /> Current
+                    <span className="flex items-center gap-1 text-brand-600 dark:text-brand-400">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full bg-brand-500" /> Current
                     </span>
                     <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
                       <span className="inline-block h-2.5 w-2.5 rounded-full bg-slate-400" /> Comparison
@@ -724,7 +722,7 @@ export default function SearchConsolePage() {
             </div>
             {fetching ? (
               <div className="flex h-40 items-center justify-center">
-                <Loader2 className="size-6 animate-spin text-fuchsia-500" />
+                <Loader2 className="size-6 animate-spin text-brand-500" />
               </div>
             ) : chartData.length > 0 ? (
               <div className="px-6 py-6">
@@ -776,7 +774,7 @@ export default function SearchConsolePage() {
           {/* Opportunities section */}
           <div className="mb-8">
             <h2 className="mb-4 flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white">
-              <Zap className="size-5 text-fuchsia-500" />
+              <Zap className="size-5 text-brand-500" />
               SEO Opportunities
             </h2>
             <div className="grid gap-4 lg:grid-cols-2">
@@ -784,10 +782,10 @@ export default function SearchConsolePage() {
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
                 <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3 dark:border-white/5">
                   <div className="flex items-center gap-2">
-                    <Target className="size-4 text-fuchsia-500" />
+                    <Target className="size-4 text-brand-500" />
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white">CTR Opportunities</h3>
                   </div>
-                  <Badge className="bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-400">{opportunities.ctrOpps.length}</Badge>
+                  <Badge className="bg-brand-100 text-brand-700 dark:bg-brand-400/15 dark:text-brand-400">{opportunities.ctrOpps.length}</Badge>
                 </div>
                 <div className="p-3">
                   {opportunities.ctrOpps.length === 0 ? (
@@ -854,10 +852,10 @@ export default function SearchConsolePage() {
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
               <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3 dark:border-white/5">
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="size-4 text-fuchsia-500" />
+                  <TrendingUp className="size-4 text-brand-500" />
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">Rising Keywords</h3>
                 </div>
-                <Badge className="bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-400">{opportunities.rising.length}</Badge>
+                <Badge className="bg-brand-100 text-brand-700 dark:bg-brand-400/15 dark:text-brand-400">{opportunities.rising.length}</Badge>
               </div>
               <div className="p-3">
                 {opportunities.rising.length === 0 ? (
@@ -872,7 +870,7 @@ export default function SearchConsolePage() {
                             {r.prevClicks} → {r.currentClicks} clicks · Pos {r.prevPos === 999 ? "—" : r.prevPos.toFixed(1)} → {r.currentPos.toFixed(1)}
                           </p>
                         </div>
-                        <span className="ml-2 flex items-center gap-0.5 text-[10px] font-bold text-fuchsia-600 dark:text-fuchsia-400">
+                        <span className="ml-2 flex items-center gap-0.5 text-[10px] font-bold text-brand-600 dark:text-brand-400">
                           <ArrowUpRight className="size-3" />
                           {r.prevClicks === 0 ? "New" : `${Math.round(((r.currentClicks - r.prevClicks) / r.prevClicks) * 100)}%`}
                         </span>
@@ -929,7 +927,7 @@ export default function SearchConsolePage() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
                       activeTab === tab.id
-                        ? "bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"
+                        ? "bg-brand-50 text-brand-700 dark:bg-brand-400/10 dark:text-brand-400"
                         : "text-slate-500 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-white/5"
                     }`}
                   >
@@ -943,7 +941,7 @@ export default function SearchConsolePage() {
             {/* Table content */}
             {fetching ? (
               <div className="flex h-40 items-center justify-center">
-                <Loader2 className="size-6 animate-spin text-fuchsia-500" />
+                <Loader2 className="size-6 animate-spin text-brand-500" />
               </div>
             ) : activeTab === "queries" ? (
               /* Queries table (uses existing data) */
@@ -974,14 +972,14 @@ export default function SearchConsolePage() {
                         const imprDelta = prev ? formatPctChange(row.impressions, prev.impressions) : null;
                         const posDelta = prev ? formatPosChange(row.position, prev.position) : null;
                         return (
-                          <tr key={`${row.query}-${i}`} className="transition-colors hover:bg-fuchsia-50/50 dark:hover:bg-fuchsia-900/10">
+                          <tr key={`${row.query}-${i}`} className="transition-colors hover:bg-brand-50/50 dark:hover:bg-brand-900/10">
                             <td className="px-6 py-3 font-semibold text-slate-900 dark:text-white">{row.query}</td>
-                            <td className="px-6 py-3 text-right font-bold text-fuchsia-600 dark:text-fuchsia-400">{row.clicks.toLocaleString()}</td>
+                            <td className="px-6 py-3 text-right font-bold text-brand-600 dark:text-brand-400">{row.clicks.toLocaleString()}</td>
                             {hasComparison && <td className="px-3 py-3 text-right text-slate-400 dark:text-slate-500">{prev ? prev.clicks.toLocaleString() : "—"}</td>}
                             {hasComparison && (
                               <td className="px-3 py-3 text-right">
                                 {clickDelta && prev && prev.clicks > 0 ? (
-                                  <span className={`text-[10px] font-bold ${clickDelta.isGood ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-red-500"}`}>
+                                  <span className={`text-[10px] font-bold ${clickDelta.isGood ? "text-brand-600 dark:text-brand-400" : "text-red-500"}`}>
                                     {clickDelta.text}
                                   </span>
                                 ) : <span className="text-[10px] text-slate-400">—</span>}
@@ -992,7 +990,7 @@ export default function SearchConsolePage() {
                             {hasComparison && (
                               <td className="px-3 py-3 text-right">
                                 {imprDelta && prev && prev.impressions > 0 ? (
-                                  <span className={`text-[10px] font-bold ${imprDelta.isGood ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-red-500"}`}>
+                                  <span className={`text-[10px] font-bold ${imprDelta.isGood ? "text-brand-600 dark:text-brand-400" : "text-red-500"}`}>
                                     {imprDelta.text}
                                   </span>
                                 ) : <span className="text-[10px] text-slate-400">—</span>}
@@ -1004,7 +1002,7 @@ export default function SearchConsolePage() {
                             {hasComparison && (
                               <td className="px-3 py-3 text-right">
                                 {posDelta && prev ? (
-                                  <span className={`text-[10px] font-bold ${posDelta.isGood ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-red-500"}`}>
+                                  <span className={`text-[10px] font-bold ${posDelta.isGood ? "text-brand-600 dark:text-brand-400" : "text-red-500"}`}>
                                     {posDelta.text}
                                   </span>
                                 ) : <span className="text-[10px] text-slate-400">—</span>}
@@ -1046,14 +1044,14 @@ export default function SearchConsolePage() {
                         const imprDelta = prev ? formatPctChange(row.impressions, prev.impressions) : null;
                         const posDelta = prev ? formatPosChange(row.position, prev.position) : null;
                         return (
-                          <tr key={i} className="transition-colors hover:bg-fuchsia-50/50 dark:hover:bg-fuchsia-900/10">
+                          <tr key={i} className="transition-colors hover:bg-brand-50/50 dark:hover:bg-brand-900/10">
                             <td className="max-w-[300px] truncate px-6 py-3 font-semibold text-slate-900 dark:text-white">{row.keys[0] ?? "—"}</td>
-                            <td className="px-6 py-3 text-right font-bold text-fuchsia-600 dark:text-fuchsia-400">{row.clicks.toLocaleString()}</td>
+                            <td className="px-6 py-3 text-right font-bold text-brand-600 dark:text-brand-400">{row.clicks.toLocaleString()}</td>
                             {hasComparison && <td className="px-3 py-3 text-right text-slate-400 dark:text-slate-500">{prev ? prev.clicks.toLocaleString() : "—"}</td>}
                             {hasComparison && (
                               <td className="px-3 py-3 text-right">
                                 {clickDelta && prev && prev.clicks > 0 ? (
-                                  <span className={`text-[10px] font-bold ${clickDelta.isGood ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-red-500"}`}>
+                                  <span className={`text-[10px] font-bold ${clickDelta.isGood ? "text-brand-600 dark:text-brand-400" : "text-red-500"}`}>
                                     {clickDelta.text}
                                   </span>
                                 ) : <span className="text-[10px] text-slate-400">—</span>}
@@ -1064,7 +1062,7 @@ export default function SearchConsolePage() {
                             {hasComparison && (
                               <td className="px-3 py-3 text-right">
                                 {imprDelta && prev && prev.impressions > 0 ? (
-                                  <span className={`text-[10px] font-bold ${imprDelta.isGood ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-red-500"}`}>
+                                  <span className={`text-[10px] font-bold ${imprDelta.isGood ? "text-brand-600 dark:text-brand-400" : "text-red-500"}`}>
                                     {imprDelta.text}
                                   </span>
                                 ) : <span className="text-[10px] text-slate-400">—</span>}
@@ -1076,7 +1074,7 @@ export default function SearchConsolePage() {
                             {hasComparison && (
                               <td className="px-3 py-3 text-right">
                                 {posDelta && prev ? (
-                                  <span className={`text-[10px] font-bold ${posDelta.isGood ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-red-500"}`}>
+                                  <span className={`text-[10px] font-bold ${posDelta.isGood ? "text-brand-600 dark:text-brand-400" : "text-red-500"}`}>
                                     {posDelta.text}
                                   </span>
                                 ) : <span className="text-[10px] text-slate-400">—</span>}
@@ -1097,7 +1095,7 @@ export default function SearchConsolePage() {
             {/* URL Inspection */}
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
               <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4 dark:border-white/5">
-                <Search className="size-4 text-fuchsia-500" />
+                <Search className="size-4 text-brand-500" />
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white">URL Inspection</h3>
               </div>
               <div className="p-5">
@@ -1108,7 +1106,7 @@ export default function SearchConsolePage() {
                     onChange={(e) => setInspectUrlInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleInspect()}
                     placeholder="https://example.com/page"
-                    className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                    className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
                   />
                   <Button size="sm" onClick={handleInspect} disabled={inspectLoading}>
                     {inspectLoading ? <Loader2 className="size-4 animate-spin" /> : "Inspect"}
@@ -1129,7 +1127,7 @@ export default function SearchConsolePage() {
                       <div className="rounded-xl border border-slate-200 p-4 dark:border-white/10">
                         <div className="flex items-center gap-2">
                           {inspectResult.indexStatusResult.verdict === "PASS" ? (
-                            <CheckCircle2 className="size-5 text-fuchsia-500" />
+                            <CheckCircle2 className="size-5 text-brand-500" />
                           ) : inspectResult.indexStatusResult.verdict === "FAIL" ? (
                             <XCircle className="size-5 text-red-500" />
                           ) : (
@@ -1171,7 +1169,7 @@ export default function SearchConsolePage() {
                         <div className="flex items-center gap-2">
                           <Smartphone className="size-4 text-slate-400" />
                           <span className="text-xs font-bold text-slate-900 dark:text-white">Mobile Usability</span>
-                          <span className={`ml-auto text-[10px] font-bold ${inspectResult.mobileUsabilityResult.verdict === "PASS" ? "text-fuchsia-600" : "text-red-500"}`}>
+                          <span className={`ml-auto text-[10px] font-bold ${inspectResult.mobileUsabilityResult.verdict === "PASS" ? "text-brand-600" : "text-red-500"}`}>
                             {inspectResult.mobileUsabilityResult.verdict}
                           </span>
                         </div>
@@ -1184,7 +1182,7 @@ export default function SearchConsolePage() {
                         <div className="flex items-center gap-2">
                           <Sparkles className="size-4 text-slate-400" />
                           <span className="text-xs font-bold text-slate-900 dark:text-white">Rich Results</span>
-                          <span className={`ml-auto text-[10px] font-bold ${inspectResult.richResultsResult.verdict === "PASS" ? "text-fuchsia-600" : "text-amber-500"}`}>
+                          <span className={`ml-auto text-[10px] font-bold ${inspectResult.richResultsResult.verdict === "PASS" ? "text-brand-600" : "text-amber-500"}`}>
                             {inspectResult.richResultsResult.verdict}
                           </span>
                         </div>
@@ -1215,7 +1213,7 @@ export default function SearchConsolePage() {
                     onChange={(e) => setNewSitemapPath(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSubmitSitemap()}
                     placeholder="sitemap.xml"
-                    className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                    className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
                   />
                   <Button size="sm" variant="outline" onClick={handleSubmitSitemap} disabled={!newSitemapPath.trim()}>
                     <Plus className="size-4" />

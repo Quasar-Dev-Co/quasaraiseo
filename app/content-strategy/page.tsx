@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  Server, Send, Bot, User, Wrench, Loader2, CheckCircle2,
+  Send, Bot, User, Wrench, Loader2, CheckCircle2,
   Search, Globe, FileText, FileSpreadsheet, Trash2, Download,
-  CircleDot, Cpu, Activity, ChevronRight, Sparkles, Terminal,
+  Activity, ChevronRight, Sparkles, Terminal,
   Plus, MessageSquare, Paperclip, ArrowUp, X, BarChart3,
   ShieldCheck, Wand2, Code2, Image, FilePlus, Edit3, Layout,
   Info, Eye, Calendar, Layers, FolderTree, GitBranch, Settings,
@@ -300,7 +300,7 @@ function QuasarMcpContent() {
       label: "Compact Conversation",
       desc: "Summarize chat history into a concise context block to reduce tokens",
       icon: Sparkles,
-      color: "text-purple-500",
+      color: "text-brand-500",
       prompt: `Please compact and summarize our conversation so far. Retain all key decisions, identified target keywords, site details, and action items in a concise briefing summary so we can continue smoothly without losing context.`,
     },
     {
@@ -893,45 +893,37 @@ function QuasarMcpContent() {
   }
 
   return (
-    <div className="-mx-4 -my-8 flex h-[calc(100vh-64px-5px)] flex-col overflow-hidden lg:-mx-9">
+    <div className="-mx-4 -my-7 flex h-[calc(100dvh-56px)] flex-col overflow-hidden lg:-mx-8">
 
       {/* Header Bar */}
-      <div className="flex items-center justify-between border-b border-slate-200/90 bg-white/80 px-4 py-3 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/80">
-        <div className="flex items-center gap-3">
-          <div className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-fuchsia-600 via-purple-600 to-indigo-600 text-white shadow-[0_4px_14px_rgba(217,70,239,0.35)]">
-            <Server className="size-5" />
+      <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-background px-4 py-3 lg:px-6 dark:border-white/10">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-semibold text-slate-950 dark:text-white">Strategy chat</h1>
+            <span className="hidden text-xs text-slate-500 sm:inline dark:text-slate-400">Quasar MCP</span>
+            {siteName && (
+              <span className="inline-flex max-w-48 items-center gap-1 truncate rounded-md border border-slate-200 bg-card px-2 py-0.5 text-xs font-medium text-slate-700 dark:border-white/10 dark:text-slate-300">
+                <Globe className="size-3 shrink-0" />
+                {siteName}
+              </span>
+            )}
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white">
-                Quasar MCP
-              </h1>
-              {siteName && (
-                <span className="hidden items-center gap-1 rounded-full border border-fuchsia-200/80 bg-fuchsia-50/80 px-2 py-0.5 text-[10px] font-bold text-fuchsia-700 dark:border-fuchsia-500/20 dark:bg-fuchsia-950/40 dark:text-fuchsia-300 sm:inline-flex">
-                  <Globe className="size-2.5" />
-                  {siteName}
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              AI SEO Agent Server & Workspace
-            </p>
-          </div>
+          <p className="hidden truncate text-[13px] text-slate-600 md:block dark:text-slate-400">
+            Research keywords, plan content and publish for one website per chat.
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="gap-1.5 text-xs">
-            <CircleDot className="size-3 text-emerald-500" />
-            Online
-          </Badge>
-          <Badge variant="outline" className="gap-1.5 text-xs">
-            <Cpu className="size-3 text-blue-500" />
-            {isThinking ? "Thinking" : "Idle"}
-          </Badge>
+        <div className="flex shrink-0 items-center gap-2">
+          {isThinking && (
+            <Badge variant="outline" className="gap-1.5 text-xs">
+              <Loader2 className="size-3 animate-spin" />
+              Working…
+            </Badge>
+          )}
           {/* Additional MCP switch — toggles WordPress tools routing */}
           {mcpConnections.length === 0 ? (
             <Link
               href="/additional-mcp"
-              className="flex items-center gap-1.5 rounded-full border border-dashed border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:border-fuchsia-400 hover:text-fuchsia-600 dark:border-slate-700 dark:text-slate-400 dark:hover:border-fuchsia-500 dark:hover:text-fuchsia-400"
+              className="flex items-center gap-1.5 rounded-full border border-dashed border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:border-brand-400 hover:text-brand-600 dark:border-slate-700 dark:text-slate-400 dark:hover:border-brand-500 dark:hover:text-brand-400"
             >
               <Plug className="size-3" />
               Add MCP
@@ -988,7 +980,7 @@ function QuasarMcpContent() {
           <div className="border-b border-slate-200/90 p-3.5 dark:border-white/10 bg-white/60 dark:bg-slate-900/60">
             <Button
               onClick={handleNewChat}
-              className="w-full gap-2 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 text-xs font-bold text-white shadow-sm transition hover:opacity-95"
+              className="w-full gap-2 bg-brand-700 text-xs font-bold text-white shadow-sm transition hover:opacity-95"
               size="sm"
             >
               <Plus className="size-4" />
@@ -1002,7 +994,7 @@ function QuasarMcpContent() {
             {isThinking && (
               <div className="mb-4">
                 <div className="mb-2 flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2.5 shadow-2xs dark:border-white/10 dark:bg-slate-900">
-                  <Loader2 className="size-4 animate-spin text-fuchsia-600 dark:text-fuchsia-400" />
+                  <Loader2 className="size-4 animate-spin text-brand-600 dark:text-brand-400" />
                   <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                     Agent is working...
                   </span>
@@ -1046,7 +1038,7 @@ function QuasarMcpContent() {
                       onClick={() => handleSelectSession(s.id)}
                       className={`group relative cursor-pointer rounded-xl border p-3 transition-all duration-150 ${
                         isSelected
-                          ? "border-fuchsia-500 bg-white text-slate-900 shadow-sm ring-1 ring-fuchsia-500/30 dark:border-fuchsia-500/80 dark:bg-slate-900 dark:text-white dark:ring-fuchsia-500/30"
+                          ? "border-brand-500 bg-white text-slate-900 shadow-sm ring-1 ring-brand-500/30 dark:border-brand-500/80 dark:bg-slate-900 dark:text-white dark:ring-brand-500/30"
                           : "border-slate-200/80 bg-white/70 text-slate-700 hover:border-slate-300 hover:bg-white dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200 dark:hover:border-white/20 dark:hover:bg-slate-900"
                       }`}
                     >
@@ -1091,7 +1083,7 @@ function QuasarMcpContent() {
                               type="button"
                               onClick={(e) => handleDeleteSession(s.id, e)}
                               title="Delete thread"
-                              className="rounded p-1 text-slate-400 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 dark:hover:bg-red-950/40"
+                              className="rounded p-1 text-slate-500 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 dark:hover:bg-red-950/40"
                             >
                               <Trash2 className="size-3" />
                             </button>
@@ -1129,8 +1121,8 @@ function QuasarMcpContent() {
           onDrop={handleDrop}
         >
           {dragActive && (
-            <div className="pointer-events-none absolute inset-3 z-40 flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-fuchsia-400 bg-white/85 text-center backdrop-blur-sm dark:bg-slate-950/85">
-              <Upload className="size-8 text-fuchsia-500" />
+            <div className="pointer-events-none absolute inset-3 z-40 flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand-400 bg-white/85 text-center backdrop-blur-sm dark:bg-slate-950/85">
+              <Upload className="size-8 text-brand-500" />
               <p className="text-sm font-bold text-slate-800 dark:text-white">Drop files to attach</p>
               <p className="text-xs text-slate-500">Images, PDFs, sheets (CSV, XLSX) and documents (DOCX, TXT, MD) · up to {MAX_ATTACHMENT_MB} MB each</p>
             </div>
@@ -1202,7 +1194,7 @@ function QuasarMcpContent() {
               <div className="mx-auto mt-3 max-h-[60vh] max-w-4xl overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900">
                 <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Building2 className="size-4 text-fuchsia-600 dark:text-fuchsia-400" />
+                    <Building2 className="size-4 text-brand-600 dark:text-brand-400" />
                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
                       Target Website Settings for this Chat
                     </h3>
@@ -1225,9 +1217,9 @@ function QuasarMcpContent() {
                         key={b.id}
                         type="button"
                         onClick={() => handleSelectBrandingPreset(b)}
-                        className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700 transition hover:border-fuchsia-400 hover:text-fuchsia-600 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300"
+                        className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700 transition hover:border-brand-400 hover:text-brand-600 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300"
                       >
-                        <Building2 className="size-3 text-fuchsia-500" />
+                        <Building2 className="size-3 text-brand-500" />
                         {b.companyName}
                       </button>
                     ))}
@@ -1345,7 +1337,7 @@ function QuasarMcpContent() {
                     size="sm"
                     onClick={handleSaveContext}
                     disabled={isSavingContext}
-                    className="gap-1.5 h-8 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 text-xs font-bold text-white shadow-sm hover:opacity-95"
+                    className="gap-1.5 h-8 bg-brand-700 text-xs font-bold text-white shadow-sm hover:opacity-95"
                   >
                     {isSavingContext ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
                     Save Website Settings
@@ -1380,7 +1372,7 @@ function QuasarMcpContent() {
                 </div>
               ) : messages.length === 0 ? (
                 <div className="py-12 text-center">
-                  <div className="mx-auto mb-4 grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-fuchsia-600 via-purple-600 to-indigo-600 text-white shadow-xl shadow-fuchsia-500/20">
+                  <div className="mx-auto mb-4 grid size-16 place-items-center rounded-2xl bg-brand-700 text-white shadow-xl shadow-brand-500/20">
                     {siteLogoUrl ? (
                       <img src={siteLogoUrl} alt={siteName || "Logo"} className="size-10 rounded-xl object-contain" />
                     ) : (
@@ -1407,9 +1399,9 @@ function QuasarMcpContent() {
                       <button
                         key={cmd}
                         onClick={() => setInput(cmd)}
-                        className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-left text-sm text-slate-600 transition-all hover:border-fuchsia-300 hover:bg-fuchsia-50/50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-fuchsia-700 dark:hover:bg-fuchsia-950/30"
+                        className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-left text-sm text-slate-600 transition-all hover:border-brand-300 hover:bg-brand-50/50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-brand-700 dark:hover:bg-brand-950/30"
                       >
-                        <Terminal className="size-4 text-fuchsia-500" />
+                        <Terminal className="size-4 text-brand-500" />
                         {cmd}
                         <ChevronRight className="ml-auto size-3.5 text-slate-300" />
                       </button>
@@ -1426,11 +1418,11 @@ function QuasarMcpContent() {
               {/* Thinking indicator */}
               {isThinking && (
                 <div className="flex gap-3.5">
-                  <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-fuchsia-600 via-purple-600 to-indigo-600 text-white shadow-[0_4px_12px_rgba(217,70,239,0.3)]">
+                  <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-700 text-white shadow-sm">
                     <Bot className="size-4.5" />
                   </div>
                   <div className="flex items-center gap-2.5 rounded-2xl rounded-tl-xs border border-slate-200/90 bg-white px-5 py-3.5 shadow-sm dark:border-white/10 dark:bg-slate-900/90">
-                    <Loader2 className="size-4 animate-spin text-fuchsia-600 dark:text-fuchsia-400" />
+                    <Loader2 className="size-4 animate-spin text-brand-600 dark:text-brand-400" />
                     <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
                       {activeTools.length > 0
                         ? `Using ${activeTools[activeTools.length - 1].name}...`
@@ -1498,11 +1490,11 @@ function QuasarMcpContent() {
               )}
 
               {/* Rounded input card */}
-              <div className="rounded-2xl border border-slate-200/90 bg-white shadow-xs transition-all focus-within:border-fuchsia-400 focus-within:ring-2 focus-within:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900/90 dark:focus-within:border-fuchsia-500">
+              <div className="rounded-2xl border border-slate-200/90 bg-white shadow-xs transition-all focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-400/20 dark:border-white/10 dark:bg-slate-900/90 dark:focus-within:border-brand-500">
                 {/* Web Builder mode badge */}
                 {webBuilderMode && (
                   <div className="flex items-center justify-between px-4 pt-3">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 px-3 py-1.5 text-xs font-bold text-blue-700 ring-1 ring-inset ring-blue-500/20 dark:text-blue-400 dark:ring-blue-400/20">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 px-3 py-1.5 text-xs font-bold text-blue-700 ring-1 ring-inset ring-blue-500/20 dark:text-blue-400 dark:ring-blue-400/20">
                       <Globe className="size-3.5" />
                       Web Builder Mode
                     </div>
@@ -1530,7 +1522,7 @@ function QuasarMcpContent() {
                       </span>
                     ))}
                     {uploadingFile && (
-                      <span className="inline-flex items-center gap-1.5 rounded-lg bg-fuchsia-50 px-2 py-1 text-[11px] font-medium text-fuchsia-700 dark:bg-fuchsia-500/10 dark:text-fuchsia-300">
+                      <span className="inline-flex items-center gap-1.5 rounded-lg bg-brand-50 px-2 py-1 text-[11px] font-medium text-brand-700 dark:bg-brand-500/10 dark:text-brand-300">
                         <Loader2 className="size-3 animate-spin" />
                         {uploadProgress !== null && uploadProgress < 100 ? `Uploading… ${uploadProgress}%` : "Reading file…"}
                       </span>
@@ -1604,7 +1596,7 @@ function QuasarMcpContent() {
                     />
                     {siteName && (
                       <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:bg-white/5 dark:text-slate-300 shrink-0">
-                        <Globe className="size-3 text-fuchsia-500" />
+                        <Globe className="size-3 text-brand-500" />
                         {siteName}
                       </span>
                     )}
@@ -1613,7 +1605,7 @@ function QuasarMcpContent() {
                       onClick={() => handleSelectSlashCommand(slashCommands[0])}
                       className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600 transition hover:bg-slate-100 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 shrink-0"
                     >
-                      <Sparkles className="size-2.5 text-purple-500" /> /compact
+                      <Sparkles className="size-2.5 text-brand-500" /> /compact
                     </button>
                     <button
                       type="button"
@@ -1650,7 +1642,7 @@ function QuasarMcpContent() {
                       type="button"
                       onClick={handleSend}
                       disabled={(!input.trim() && pendingAttachments.length === 0) || isThinking || uploadingFile}
-                      className="grid size-8 place-items-center rounded-lg bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white shadow-xs transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-30"
+                      className="grid size-8 place-items-center rounded-lg bg-brand-700 text-white shadow-xs transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-30"
                     >
                       {isThinking ? <Loader2 className="size-4 animate-spin" /> : <ArrowUp className="size-4" />}
                     </button>
@@ -1673,7 +1665,7 @@ function QuasarMcpContent() {
           <div className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
               <div className="flex items-center gap-2">
-                <div className="grid size-8 place-items-center rounded-lg bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 text-white">
+                <div className="grid size-8 place-items-center rounded-lg bg-blue-600 text-white">
                   <Globe className="size-4" />
                 </div>
                 <div>
@@ -1692,8 +1684,8 @@ function QuasarMcpContent() {
 
             {/* Quick Pick from Existing Brandings / WP Sites */}
             {(brandings.length > 0 || wpSites.length > 0) && (
-              <div className="my-3.5 rounded-xl border border-fuchsia-100 bg-fuchsia-50/50 p-3 dark:border-fuchsia-500/10 dark:bg-fuchsia-950/20">
-                <span className="block text-[11px] font-bold text-fuchsia-900 dark:text-fuchsia-300 mb-2">
+              <div className="my-3.5 rounded-xl border border-brand-100 bg-brand-50/50 p-3 dark:border-brand-500/10 dark:bg-brand-950/20">
+                <span className="block text-[11px] font-bold text-brand-900 dark:text-brand-300 mb-2">
                   Quick Select Existing Website:
                 </span>
                 <div className="flex flex-wrap gap-1.5">
@@ -1727,11 +1719,11 @@ function QuasarMcpContent() {
                       }}
                       className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
                         newSiteName.toLowerCase() === b.companyName.toLowerCase()
-                          ? "border-fuchsia-500 bg-fuchsia-100 text-fuchsia-800 shadow-xs dark:bg-fuchsia-900/50 dark:text-fuchsia-200"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-fuchsia-400 hover:text-fuchsia-600 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200"
+                          ? "border-brand-500 bg-brand-100 text-brand-800 shadow-xs dark:bg-brand-900/50 dark:text-brand-200"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-brand-400 hover:text-brand-600 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200"
                       }`}
                     >
-                      <Building2 className="size-3 text-fuchsia-500" />
+                      <Building2 className="size-3 text-brand-500" />
                       {b.companyName}
                     </button>
                   ))}
@@ -1848,7 +1840,7 @@ function QuasarMcpContent() {
               <Button
                 size="sm"
                 onClick={handleCreateChatWithSite}
-                className="gap-1.5 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 text-xs font-bold text-white shadow-sm hover:opacity-95"
+                className="gap-1.5 bg-brand-700 text-xs font-bold text-white shadow-sm hover:opacity-95"
               >
                 <Plus className="size-3.5" />
                 Start Chat
@@ -1926,7 +1918,7 @@ function CollapsibleText({ text }: { text: string }) {
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="mt-2 text-[12px] font-semibold text-fuchsia-300 hover:text-fuchsia-200 hover:underline"
+          className="mt-2 text-[12px] font-semibold text-brand-300 hover:text-brand-200 hover:underline"
         >
           {expanded ? "Show less" : `Show more (${text.length.toLocaleString()} characters)`}
         </button>
@@ -2011,8 +2003,8 @@ function ChatMessageItem({ message, onQuickReply }: { message: McpChatMessage; o
     <div className={`flex gap-3.5 transition-all duration-200 ${isUser ? "flex-row-reverse" : ""}`}>
       <div className={`grid size-9 shrink-0 place-items-center rounded-xl shadow-sm ${
         isUser
-          ? "bg-gradient-to-br from-slate-700 to-slate-900 text-white dark:from-slate-600 dark:to-slate-800"
-          : "bg-gradient-to-br from-fuchsia-600 via-purple-600 to-indigo-600 text-white shadow-[0_4px_12px_rgba(217,70,239,0.3)]"
+          ? "bg-slate-700 text-white dark:bg-slate-600"
+          : "bg-brand-700 text-white shadow-sm"
       }`}>
         {isUser ? <User className="size-4" /> : <Bot className="size-4.5" />}
       </div>
@@ -2022,7 +2014,7 @@ function ChatMessageItem({ message, onQuickReply }: { message: McpChatMessage; o
         {!isUser && message.toolCalls && message.toolCalls.length > 0 && (
           <div className="mb-2.5 w-full space-y-1.5">
             {message.toolCalls.map((tc, i) => (
-              <div key={i} className="flex items-center gap-2.5 rounded-xl border border-blue-200/70 bg-gradient-to-r from-blue-50/80 to-purple-50/40 px-3 py-1.5 shadow-xs dark:border-blue-500/20 dark:from-blue-950/40 dark:to-purple-950/20">
+              <div key={i} className="flex items-center gap-2.5 rounded-xl border border-blue-200/70 bg-blue-50/80 px-3 py-1.5 shadow-xs dark:border-blue-500/20 dark:bg-blue-950/40">
                 {(() => {
                   const Icon = TOOL_ICONS[tc.name] || Wrench;
                   return <Icon className="size-3.5 text-blue-600 dark:text-blue-400" />;
@@ -2039,7 +2031,7 @@ function ChatMessageItem({ message, onQuickReply }: { message: McpChatMessage; o
         {/* Message text bubble with clean modern stack styling */}
         <div className={`min-w-0 max-w-full overflow-x-auto break-words [overflow-wrap:anywhere] rounded-2xl px-5 py-3.5 text-sm leading-relaxed shadow-sm transition-all ${
           isUser
-            ? "rounded-tr-xs bg-gradient-to-r from-slate-900 to-slate-800 text-white shadow-md dark:from-slate-800 dark:to-slate-700"
+            ? "rounded-tr-xs bg-slate-900 text-white shadow-md dark:bg-slate-800"
             : "rounded-tl-xs border border-slate-200/90 bg-white text-slate-800 shadow-[0_2px_10px_rgba(15,23,42,0.04)] dark:border-white/10 dark:bg-slate-900/90 dark:text-slate-200"
         }`}>
           {isUser ? (
@@ -2072,13 +2064,13 @@ function ChatMessageItem({ message, onQuickReply }: { message: McpChatMessage; o
                   li: ({ children }) => <li className="leading-relaxed">{children}</li>,
                   strong: ({ children }) => <strong className="font-bold text-slate-900 dark:text-white">{children}</strong>,
                   em: ({ children }) => <em className="italic text-slate-600 dark:text-slate-400">{children}</em>,
-                  code: ({ children }) => <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-mono text-fuchsia-600 dark:bg-slate-800 dark:text-fuchsia-400">{children}</code>,
+                  code: ({ children }) => <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-mono text-brand-600 dark:bg-slate-800 dark:text-brand-400">{children}</code>,
                   pre: ({ children }) => <pre className="mb-2 overflow-x-auto rounded-xl bg-slate-950 p-3.5 text-xs text-slate-100 shadow-xs dark:bg-black">{children}</pre>,
                   a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-semibold hover:text-blue-700 dark:text-blue-400">{children}</a>,
                   table: ({ children }) => <table className="mb-2 w-full border-collapse text-xs overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">{children}</table>,
                   th: ({ children }) => <th className="border border-slate-200 bg-slate-50 px-3 py-1.5 text-left font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-800/80 dark:text-slate-300">{children}</th>,
                   td: ({ children }) => <td className="border border-slate-200 px-3 py-1.5 text-slate-600 dark:border-slate-800 dark:text-slate-300">{children}</td>,
-                  blockquote: ({ children }) => <blockquote className="my-2 border-l-3 border-fuchsia-500 pl-3.5 italic text-slate-600 dark:text-slate-400">{children}</blockquote>,
+                  blockquote: ({ children }) => <blockquote className="my-2 border-l-3 border-brand-500 pl-3.5 italic text-slate-600 dark:text-slate-400">{children}</blockquote>,
                   hr: () => <hr className="my-3 border-slate-200 dark:border-slate-800" />,
                 }}
               >
@@ -2104,11 +2096,11 @@ function ChatMessageItem({ message, onQuickReply }: { message: McpChatMessage; o
               <button
                 key={i}
                 onClick={() => onQuickReply(qr.text)}
-                className="group inline-flex items-center gap-1.5 rounded-full border border-fuchsia-200/80 bg-fuchsia-50/80 px-3.5 py-1.5 text-xs font-semibold text-fuchsia-800 shadow-2xs transition-all hover:border-fuchsia-400 hover:bg-fuchsia-100 hover:shadow-sm dark:border-fuchsia-800 dark:bg-fuchsia-950/60 dark:text-fuchsia-300 dark:hover:bg-fuchsia-900"
+                className="group inline-flex items-center gap-1.5 rounded-full border border-brand-200/80 bg-brand-50/80 px-3.5 py-1.5 text-xs font-semibold text-brand-800 shadow-2xs transition-all hover:border-brand-400 hover:bg-brand-100 hover:shadow-sm dark:border-brand-800 dark:bg-brand-950/60 dark:text-brand-300 dark:hover:bg-brand-900"
               >
-                <Sparkles className="size-3 text-fuchsia-500 transition-transform group-hover:scale-110" />
+                <Sparkles className="size-3 text-brand-500 transition-transform group-hover:scale-110" />
                 {qr.label}
-                <ArrowUp className="size-3 text-fuchsia-400 opacity-0 transition-opacity group-hover:opacity-100" />
+                <ArrowUp className="size-3 text-brand-400 opacity-0 transition-opacity group-hover:opacity-100" />
               </button>
             ))}
           </div>
@@ -2144,14 +2136,14 @@ function FileDownloadButton({ file }: { file: McpFile }) {
     <button
       onClick={handleDownload}
       disabled={downloading}
-      className="flex items-center gap-2.5 rounded-xl border border-fuchsia-200/90 bg-gradient-to-r from-fuchsia-50/70 to-purple-50/40 px-4 py-2 text-sm font-medium text-fuchsia-900 shadow-2xs transition-all hover:bg-fuchsia-100 disabled:opacity-50 dark:border-fuchsia-500/20 dark:bg-fuchsia-950/30 dark:text-fuchsia-300 dark:hover:bg-fuchsia-950/60"
+      className="flex items-center gap-2.5 rounded-xl border border-brand-200/90 bg-brand-50/70 px-4 py-2 text-sm font-medium text-brand-900 shadow-2xs transition-all hover:bg-brand-100 disabled:opacity-50 dark:border-brand-500/20 dark:bg-brand-950/30 dark:text-brand-300 dark:hover:bg-brand-950/60"
     >
-      <Icon className="size-4.5 text-fuchsia-600 dark:text-fuchsia-400" />
+      <Icon className="size-4.5 text-brand-600 dark:text-brand-400" />
       <div className="text-left">
         <p className="text-xs font-bold leading-tight">Download {file.fileType.toUpperCase()}</p>
-        <p className="text-[10px] text-fuchsia-700/80 dark:text-fuchsia-400/80 max-w-48 truncate">{file.fileName}</p>
+        <p className="text-[10px] text-brand-700/80 dark:text-brand-400/80 max-w-48 truncate">{file.fileName}</p>
       </div>
-      {downloading ? <Loader2 className="ml-2 size-4 animate-spin text-fuchsia-600" /> : <Download className="ml-2 size-4 text-fuchsia-600 dark:text-fuchsia-400" />}
+      {downloading ? <Loader2 className="ml-2 size-4 animate-spin text-brand-600" /> : <Download className="ml-2 size-4 text-brand-600 dark:text-brand-400" />}
     </button>
   );
 }

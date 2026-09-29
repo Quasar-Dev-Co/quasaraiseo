@@ -88,7 +88,7 @@ export function ThreadSkillsPicker({
         title="Choose skills for this chat"
         className={`inline-flex h-7 items-center gap-1 rounded-lg border px-2 text-[11px] font-semibold transition disabled:opacity-40 ${
           selectedIds.length > 0
-            ? "border-fuchsia-300 bg-fuchsia-50 text-fuchsia-700 dark:border-fuchsia-400/30 dark:bg-fuchsia-400/10 dark:text-fuchsia-300"
+            ? "border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-400/30 dark:bg-brand-400/10 dark:text-brand-300"
             : "border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-slate-800"
         }`}
       >
@@ -122,9 +122,9 @@ export function ThreadSkillsPicker({
                   key={skill.id}
                   type="button"
                   onClick={() => toggle(skill.id)}
-                  className={`flex w-full items-start gap-2.5 rounded-lg px-2 py-2 text-left transition ${on ? "bg-fuchsia-50 dark:bg-fuchsia-400/10" : "hover:bg-slate-50 dark:hover:bg-white/5"}`}
+                  className={`flex w-full items-start gap-2.5 rounded-lg px-2 py-2 text-left transition ${on ? "bg-brand-50 dark:bg-brand-400/10" : "hover:bg-slate-50 dark:hover:bg-white/5"}`}
                 >
-                  <span className={`mt-0.5 grid size-4 shrink-0 place-items-center rounded border ${on ? "border-fuchsia-600 bg-fuchsia-600 text-white" : "border-slate-300 dark:border-white/20"}`}>
+                  <span className={`mt-0.5 grid size-4 shrink-0 place-items-center rounded border ${on ? "border-brand-600 bg-brand-700 text-white" : "border-slate-300 dark:border-white/20"}`}>
                     {on && <Check className="size-3" />}
                   </span>
                   <span className="min-w-0">
@@ -142,7 +142,7 @@ export function ThreadSkillsPicker({
               type="button"
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
-              className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-[12px] font-semibold text-slate-600 hover:border-fuchsia-400 hover:text-fuchsia-700 disabled:opacity-50 dark:border-white/15 dark:text-slate-300"
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-[12px] font-semibold text-slate-600 hover:border-brand-400 hover:text-brand-700 disabled:opacity-50 dark:border-white/15 dark:text-slate-300"
             >
               {uploading ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
               Upload skill (.md or .zip)

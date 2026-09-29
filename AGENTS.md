@@ -8,7 +8,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Quasar AI SEO — Feature Status
 
-Last updated: 2026-09-27
+Last updated: 2026-09-29
 
 | Feature | Status | Where |
 |---|---|---|
@@ -16,6 +16,7 @@ Last updated: 2026-09-27
 | AI content generation | Have | `/post-create` |
 | Skills system | Have | Uploadable skills — selectable per thread in `/content-strategy` (shared library with `/post-create`) |
 | API cost tracking | Have | Settings → Costs (super user) — tokens & cost per model, feature, user |
+| Onboarding tour & guided dashboard | Have | First-sign-in tour + "How it works" button; Overview shows setup checklist and Plan → Create → Publish → Measure loop |
 | AI provider (OpenAI/OpenRouter) | Have | Settings — model selector works in MCP |
 | WordPress publishing | Have | `/post-create` |
 | Branding extraction | Have | Branding module |
@@ -37,3 +38,4 @@ Last updated: 2026-09-27
 - `Built now` = working but not yet in the original product vision from the user table
 - `Missing` = still needs to be implemented
 - Update this table when a feature is finished.
+- Design system: brand color `brand-*` (ember, from the logo spark), IBM Plex Sans, neutral surfaces. Page names/descriptions live in `lib/navigation.ts`; use `PageHeader` at the top of dashboard pages. Avoid gradient text, purple gradients, glow shadows and eyebrow labels (checked with the `impeccable` detector).

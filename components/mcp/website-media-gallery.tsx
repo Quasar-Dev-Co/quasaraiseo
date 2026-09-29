@@ -48,7 +48,7 @@ export function WebsiteMediaGallery({
       <div className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-slate-900">
         <header className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4 dark:border-white/10">
           <div className="flex items-center gap-2">
-            <span className="grid size-9 place-items-center rounded-xl bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-300"><Images className="size-4" /></span>
+            <Images className="size-4 shrink-0 text-slate-500 dark:text-slate-400" />
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">Website images</h3>
               <p className="text-xs text-slate-500">{siteName || "Images already uploaded on the connected site"}</p>
@@ -70,7 +70,7 @@ export function WebsiteMediaGallery({
                   key={item.id}
                   type="button"
                   onClick={() => toggle(item.id)}
-                  className={`overflow-hidden rounded-xl border text-left ${active ? "border-fuchsia-500 ring-2 ring-fuchsia-400" : "border-slate-200 dark:border-white/10"}`}
+                  className={`overflow-hidden rounded-xl border text-left ${active ? "border-brand-500 ring-2 ring-brand-400" : "border-slate-200 dark:border-white/10"}`}
                 >
                   <img src={item.url} alt={item.alt || item.title} className="aspect-square w-full object-cover" />
                   <p className="truncate px-2 py-1.5 text-[11px] text-slate-600 dark:text-slate-300">{item.title}</p>
@@ -88,7 +88,7 @@ export function WebsiteMediaGallery({
               onUse(media.filter((item) => selected.includes(item.id)));
               onClose();
             }}
-            className="rounded-lg bg-fuchsia-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+            className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
           >
             Use selected
           </button>

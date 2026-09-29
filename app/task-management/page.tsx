@@ -7,6 +7,7 @@ import {
   Loader2, AlertCircle, RefreshCw, Trash2, ExternalLink,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -453,35 +454,19 @@ export default function TaskManagementPage() {
   return (
     <RequireAuth>
     <DashboardLayout>
-      {/* Hero */}
-      <section className="mb-8">
-        <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/80 bg-blue-50/86 px-3 py-2 text-xs font-bold uppercase tracking-[0.19em] text-blue-700 dark:border-blue-400/20 dark:bg-blue-400/10 dark:text-blue-300">
-          <ClipboardList className="size-3.5" />
-          Execution Hub
-        </div>
-        <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 className="text-[clamp(34px,5vw,52px)] font-black leading-[1.02] tracking-[-0.052em] text-slate-900 dark:text-white">
-              Task{" "}
-              <em className="not-italic bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">
-                Management
-              </em>
-            </h1>
-            <p className="mt-4 max-w-[700px] text-[15px] leading-relaxed text-slate-600 dark:text-slate-400">
-              Track, assign, and execute technical SEO recommendations. Sync bidirectionally with Google Sheets, drag-and-drop tasks across workflow columns, and monitor team performance.
-            </p>
-          </div>
+      <PageHeader
+        actions={
           <div className="flex items-center gap-2">
-            <div className="flex rounded-xl border border-slate-200 bg-white p-1 dark:border-white/10 dark:bg-slate-900">
+            <div className="flex rounded-lg border border-slate-200 bg-card p-1 dark:border-white/10 dark:bg-slate-900">
               <button
                 onClick={() => setView("board")}
-                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${view === "board" ? "bg-blue-600 text-white" : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"}`}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${view === "board" ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900" : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"}`}
               >
                 Board
               </button>
               <button
                 onClick={() => setView("list")}
-                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${view === "list" ? "bg-blue-600 text-white" : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"}`}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${view === "list" ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900" : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"}`}
               >
                 List
               </button>
@@ -492,8 +477,8 @@ export default function TaskManagementPage() {
               </Button>
             )}
           </div>
-        </div>
-      </section>
+        }
+      />
 
       {/* Error banner */}
       {error && (
@@ -586,7 +571,7 @@ export default function TaskManagementPage() {
                 <Button size="sm" variant="ghost" onClick={() => setShowSheetPanel(!showSheetPanel)}>
                   <FileSpreadsheet className="size-3.5" /> Manage
                 </Button>
-                <Button size="sm" onClick={() => setShowSheetModal(true)} className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                <Button size="sm" onClick={() => setShowSheetModal(true)} className="bg-blue-600 text-white">
                   <Plus className="size-3.5" /> New Sheet
                 </Button>
                 {syncMsg && (
@@ -608,9 +593,7 @@ export default function TaskManagementPage() {
                           key={s.id}
                           className={`group flex items-center gap-3 rounded-xl border-2 p-3 transition-all ${selectedSheet === s.id ? "border-blue-400 bg-blue-50/40 dark:bg-blue-400/5" : "border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50"}`}
                         >
-                          <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400">
-                            <FileSpreadsheet className="size-4.5" />
-                          </span>
+                          <FileSpreadsheet className="size-4.5 shrink-0 text-slate-500 dark:text-slate-400" />
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-xs font-bold text-slate-900 dark:text-white">{s.name}</p>
                             <p className="text-[10px] text-slate-400">
@@ -653,9 +636,7 @@ export default function TaskManagementPage() {
               >
                 <div className="mb-5 flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <span className="grid size-9 place-items-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400">
-                      <FileSpreadsheet className="size-5" />
-                    </span>
+                    <FileSpreadsheet className="size-5 shrink-0 text-slate-500 dark:text-slate-400" />
                     <div>
                       <h3 className="text-sm font-bold text-slate-900 dark:text-white">Create New Google Sheet</h3>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400">Configure your new spreadsheet</p>
@@ -914,7 +895,7 @@ export default function TaskManagementPage() {
                                   {t.progress > 0 && (
                                     <div className="flex items-center gap-1.5">
                                       <div className="h-1 w-12 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                                        <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-purple-600" style={{ width: `${t.progress}%` }} />
+                                        <div className="h-full rounded-full bg-blue-600" style={{ width: `${t.progress}%` }} />
                                       </div>
                                       <span className="text-[9px] font-bold text-slate-400">{t.progress}%</span>
                                     </div>
@@ -996,7 +977,7 @@ export default function TaskManagementPage() {
                             <td className="px-5 py-3">
                               <div className="flex items-center gap-2">
                                 <div className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                                  <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-purple-600" style={{ width: `${t.progress}%` }} />
+                                  <div className="h-full rounded-full bg-blue-600" style={{ width: `${t.progress}%` }} />
                                 </div>
                                 <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{t.progress}%</span>
                               </div>
@@ -1015,9 +996,7 @@ export default function TaskManagementPage() {
               {/* Empty state */}
               {filteredTasks.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <span className="grid size-16 place-items-center rounded-2xl bg-slate-100 dark:bg-slate-800">
-                    <ClipboardList className="size-7 text-slate-400" />
-                  </span>
+                  <ClipboardList className="size-7 shrink-0 text-slate-500 dark:text-slate-400" />
                   <p className="mt-4 text-sm font-semibold text-slate-500 dark:text-slate-400">No tasks found</p>
                   <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">Create a new task to get started</p>
                 </div>
@@ -1037,7 +1016,7 @@ export default function TaskManagementPage() {
           >
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/95 px-5 py-4 backdrop-blur dark:border-white/5 dark:bg-slate-950/95">
               <div className="flex items-center gap-2">
-                <span className="grid size-8 place-items-center rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400"><ClipboardList className="size-4" /></span>
+                <ClipboardList className="size-4 shrink-0 text-slate-500 dark:text-slate-400" />
                 <div>
                   <h3 className="m-0 text-sm font-bold text-slate-900 dark:text-white">Task Details</h3>
                   <p className="mt-0.5 text-[10px] text-slate-400">{selectedTask.id.slice(0, 8)}</p>

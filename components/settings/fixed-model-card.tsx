@@ -45,9 +45,7 @@ export function FixedModelCard({
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
       <div className="flex items-start gap-3">
-        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-300">
-          <Lock className="size-4" />
-        </span>
+        <Lock className="size-4 shrink-0 text-slate-500 dark:text-slate-400" />
         <div className="min-w-0 flex-1">
           <h4 className="text-[14px] font-bold text-slate-900 dark:text-white">Fixed model for all users</h4>
           <p className="mt-0.5 text-[12px] text-slate-600 dark:text-slate-400">

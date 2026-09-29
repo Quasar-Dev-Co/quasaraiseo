@@ -114,9 +114,7 @@ export function AccountSecurity() {
       <article className={card}>
         <header className={hdr}>
           <div className="flex gap-2.75">
-            <span className="grid size-9 place-items-center rounded-[12px] bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400">
-              <UserRound className="size-[18px]" />
-            </span>
+            <UserRound className="size-[18px] shrink-0 text-slate-500 dark:text-slate-400" />
             <div>
               <h3 className="m-0 text-base text-slate-900 dark:text-white">Account</h3>
               <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Name, email, and company on this account</p>
@@ -153,9 +151,7 @@ export function AccountSecurity() {
       <article className={card}>
         <header className={hdr}>
           <div className="flex gap-2.75">
-            <span className="grid size-9 place-items-center rounded-[12px] bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400">
-              <KeyRound className="size-[18px]" />
-            </span>
+            <KeyRound className="size-[18px] shrink-0 text-slate-500 dark:text-slate-400" />
             <div>
               <h3 className="m-0 text-base text-slate-900 dark:text-white">Password</h3>
               <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Change the password you use to sign in</p>
@@ -190,9 +186,7 @@ export function AccountSecurity() {
       <article className={card}>
         <header className={hdr}>
           <div className="flex gap-2.75">
-            <span className="grid size-9 place-items-center rounded-[12px] bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400">
-              <Shield className="size-[18px]" />
-            </span>
+            <Shield className="size-[18px] shrink-0 text-slate-500 dark:text-slate-400" />
             <div>
               <h3 className="m-0 text-base text-slate-900 dark:text-white">Account details</h3>
               <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Role and when this account was created</p>

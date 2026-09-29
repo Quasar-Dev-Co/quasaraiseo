@@ -8,6 +8,7 @@ import {
   RotateCw, X,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -307,22 +308,7 @@ export default function AuditMcpPage() {
   return (
     <RequireAuth>
       <DashboardLayout>
-        {/* Hero */}
-        <section className="mb-8">
-          <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/60 bg-blue-50/80 px-3 py-2 text-xs font-bold uppercase tracking-[0.19em] text-blue-700 dark:border-blue-400/20 dark:bg-blue-400/10 dark:text-blue-400">
-            <span className="size-2 rounded-full bg-blue-500" />
-            AI Agent Workspace
-          </div>
-          <h1 className="mt-5 text-[clamp(34px,5vw,52px)] font-black leading-[1.02] tracking-[-0.052em] text-slate-900 dark:text-white">
-            Upload, Analyze{" "}
-            <em className="not-italic bg-gradient-to-r from-blue-600 via-purple-500 to-amber-500 bg-clip-text text-transparent">
-              & Generate
-            </em>
-          </h1>
-          <p className="mt-4 max-w-[700px] text-[15px] leading-relaxed text-slate-600 dark:text-slate-400">
-            Upload a skill zip, describe what you need, and let the AI agent process it through your configured AI provider. Get PDFs, spreadsheets, and reports delivered straight to you.
-          </p>
-        </section>
+        <PageHeader />
 
         {/* Stats */}
         <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -363,7 +349,7 @@ export default function AuditMcpPage() {
             <article className="rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
               <header className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5 dark:border-white/5">
                 <div className="flex gap-2.75">
-                  <span className="grid size-9 place-items-center rounded-[12px] bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400"><Brain className="size-[18px]" /></span>
+                  <Brain className="size-[18px] shrink-0 text-slate-500 dark:text-slate-400" />
                   <div>
                     <h3 className="m-0 text-base text-slate-900 dark:text-white">Create AI Task</h3>
                     <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Describe what you want the AI to do</p>
@@ -462,7 +448,7 @@ export default function AuditMcpPage() {
                         </div>
                         <button
                           onClick={() => handleDeleteJob(job.id)}
-                          className="shrink-0 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-400/10"
+                          className="shrink-0 rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-400/10"
                           title="Cancel & delete"
                         >
                           <X className="size-4" />
@@ -512,7 +498,7 @@ export default function AuditMcpPage() {
                               </button>
                               <button
                                 onClick={() => handleDeleteJob(job.id)}
-                                className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-400/10"
+                                className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-400/10"
                                 title="Delete"
                               >
                                 <Trash2 className="size-3.5" />
@@ -620,7 +606,7 @@ export default function AuditMcpPage() {
                             </button>
                             <button
                               onClick={() => handleDeleteJob(job.id)}
-                              className="shrink-0 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-400/10"
+                              className="shrink-0 rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-400/10"
                               title="Delete"
                             >
                               <Trash2 className="size-3.5" />
@@ -640,7 +626,7 @@ export default function AuditMcpPage() {
             <article className="rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
               <header className="border-b border-slate-100 px-5 py-4 dark:border-white/5">
                 <div className="flex gap-2.5">
-                  <span className="grid size-8 place-items-center rounded-[10px] bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400"><Package className="size-4" /></span>
+                  <Package className="size-4 shrink-0 text-slate-500 dark:text-slate-400" />
                   <div>
                     <h3 className="m-0 text-sm text-slate-900 dark:text-white">Skill Library</h3>
                     <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Upload and manage skill zips</p>
@@ -751,7 +737,7 @@ export default function AuditMcpPage() {
                             </div>
                           </div>
                           <button
-                            className="shrink-0 rounded-lg p-1.5 text-slate-400 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 dark:hover:bg-red-400/10"
+                            className="shrink-0 rounded-lg p-1.5 text-slate-500 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 dark:hover:bg-red-400/10"
                             onClick={(e) => { e.stopPropagation(); handleDeleteSkill(skill.id); }}
                           >
                             <Trash2 className="size-3.5" />
@@ -770,7 +756,7 @@ export default function AuditMcpPage() {
             </article>
 
             {/* How it works */}
-            <article className="rounded-3xl border border-slate-200 bg-gradient-to-br from-blue-50/80 to-purple-50/40 p-5 dark:border-white/10 dark:from-blue-400/5 dark:to-purple-400/5">
+            <article className="rounded-3xl border border-slate-200 bg-blue-50/80 p-5 dark:border-white/10 dark:bg-blue-400/5">
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">How it works</h3>
               <ol className="mt-3 space-y-2.5">
                 <li className="flex gap-2.5 text-xs text-slate-600 dark:text-slate-400">

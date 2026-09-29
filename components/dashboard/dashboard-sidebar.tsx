@@ -2,62 +2,54 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
-import {
-  FileSearch,
-  Plug,
-  PenLine,
-  LayoutDashboard,
-  Settings,
-  ChevronRight,
-  X,
-  Zap,
-  ClipboardList,
-  LogOut,
-  BarChart3,
-  Globe2,
-  FileSpreadsheet,
-  Network,
-  Newspaper,
-  Building2,
-  Server,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
+import { LogOut, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { setMobileSidebarOpen } from "@/lib/store/mcpSlice";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { NAV_GROUPS, SETTINGS_ITEM, type NavItem } from "@/lib/navigation";
 
-const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Audit MCP", href: "/audit-mcp", icon: Plug },
-  { label: "Post Create", href: "/post-create", icon: PenLine },
-  { label: "Quasar MCP", href: "/content-strategy", icon: Network },
-  { label: "Additional MCP", href: "/additional-mcp", icon: Server },
-  { label: "Task Management", href: "/task-management", icon: ClipboardList },
-];
+// Navigation follows the order work actually happens in: plan, create,
+// publish, measure. Each entry says in a few words what it is for.
 
-const googleItems = [
-  { label: "Search Console", href: "/google/search-console", icon: Globe2 },
-  { label: "Analytics", href: "/google/analytics", icon: BarChart3 },
-  // { label: "Sheets", href: "/google/sheets", icon: FileSpreadsheet },
-];
-
-const wordpressItems = [
-  { label: "WordPress", href: "/wordpress", icon: Newspaper },
-];
-
-const identityItems = [
-  { label: "Branding", href: "/branding", icon: Building2 },
-];
-
-const bottomItems = [
-  { label: "Settings", href: "/setting", icon: Settings },
-];
+function NavLink({ item, active, onNavigate }: { item: NavItem; active: boolean; onNavigate?: () => void }) {
+  const Icon = item.icon;
+  return (
+    <Link
+      href={item.href}
+      onClick={onNavigate}
+      aria-current={active ? "page" : undefined}
+      title={item.alias ? `${item.label} (formerly ${item.alias})` : item.label}
+      className={cn(
+        "group flex items-start gap-3 rounded-lg px-3 py-1.5 transition-colors duration-150",
+        active
+          ? "bg-brand-50 text-slate-950 dark:bg-brand-500/12 dark:text-white"
+          : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5",
+      )}
+    >
+      <Icon
+        className={cn(
+          "mt-0.5 size-[18px] shrink-0",
+          active ? "text-brand-700 dark:text-brand-300" : "text-slate-500 group-hover:text-slate-700 dark:text-slate-400 dark:group-hover:text-slate-200",
+        )}
+      />
+      <span className="min-w-0">
+        <span className="flex items-center gap-1.5 text-[13.5px] font-semibold leading-5">
+          {item.label}
+          {item.beta && (
+            <span className="rounded bg-slate-200 px-1 text-[10px] font-semibold text-slate-700 dark:bg-white/10 dark:text-slate-300">Beta</span>
+          )}
+        </span>
+        <span className={cn("block text-xs leading-4", active ? "text-slate-700 dark:text-slate-300" : "text-slate-500 dark:text-slate-400")}>
+          {item.hint}
+        </span>
+      </span>
+    </Link>
+  );
+}
 
 export function DashboardSidebar({ mobileOpen = false, onMobileClose }: { mobileOpen?: boolean; onMobileClose?: () => void }) {
   const pathname = usePathname();
@@ -65,262 +57,90 @@ export function DashboardSidebar({ mobileOpen = false, onMobileClose }: { mobile
   const router = useRouter();
   const { user, logout } = useAuth();
   const { preferences } = useWorkspace();
-  const googleNav = [
-    ...googleItems.map((item) => ({ ...item, beta: false })),
-    ...(preferences.betaFeatures
-      ? [{ label: "Sheets", href: "/google/sheets", icon: FileSpreadsheet, beta: true }]
-      : []),
-  ];
+
+  const isActive = (href: string) => (href === "/dashboard" ? pathname === "/dashboard" : !!pathname?.startsWith(href));
+
+  const close = () => {
+    onMobileClose?.();
+    dispatch(setMobileSidebarOpen(false));
+  };
 
   const handleLogout = () => {
     logout();
     router.replace("/login");
   };
 
-  const isActive = (href: string) => {
-    if (href === "/dashboard") return pathname === "/dashboard";
-    return pathname?.startsWith(href);
-  };
-
   const sidebarContent = (
-    <aside className="relative overflow-hidden flex h-full w-[260px] flex-col border-r border-slate-200/80 bg-white/80 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/80">
-      {/* Brand */}
-      <div className="flex items-center gap-3 px-5 pt-6 pb-7">
-        <span className="grid size-9.5 place-items-center overflow-hidden rounded-[13px] border border-fuchsia-500/30 bg-slate-950 p-1.5 shadow-[0_8px_20px_rgba(217,70,239,0.3)]">
-          <Image src="/mainlogos/mainlogo.png" alt="QuasarAISEO" width={24} height={24} className="h-6 w-6 object-contain" />
+    <aside className="flex h-full w-[264px] flex-col border-r border-slate-200 bg-[var(--sidebar)] dark:border-white/10">
+      <Link href="/dashboard" onClick={close} className="flex items-center gap-2.5 px-5 pb-4 pt-4">
+        <span className="grid size-9 place-items-center rounded-lg bg-slate-900 p-1.5 dark:bg-slate-800">
+          <Image src="/mainlogos/mainlogo.png" alt="" width={24} height={24} className="h-6 w-6 object-contain" />
         </span>
-        <div>
-          <div className="text-sm font-extrabold tracking-[0.08em] text-slate-950 dark:text-white uppercase leading-none">
-            Quasar<span className="bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">AISEO</span>
-          </div>
-          <div className="mt-1 text-[10px] font-bold tracking-[0.12em] text-slate-500 dark:text-slate-400 uppercase leading-none">
-            Audit Studio
-          </div>
-        </div>
-      </div>
+        <span className="leading-tight">
+          <span className="block text-[15px] font-bold text-slate-950 dark:text-white">Quasar AI SEO</span>
+          <span className="block text-xs text-slate-500 dark:text-slate-400">Plan, write, publish, measure</span>
+        </span>
+      </Link>
 
-      <div className="mx-4 h-px bg-slate-200/80 dark:bg-white/10 shrink-0" />
-
-      <div className="flex-1 overflow-y-auto min-h-0">
-        {/* Nav items */}
-        <nav className="flex flex-col gap-1 px-3 pt-4">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => onMobileClose?.()}
-                className={cn(
-                  "relative group flex min-h-[44px] items-center gap-3 rounded-xl px-3.5 text-[13px] font-semibold transition-all duration-200",
-                  active
-                    ? "bg-gradient-to-r from-fuchsia-500/15 via-purple-500/10 to-transparent text-fuchsia-950 dark:text-fuchsia-300 font-bold"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
-                )}
-              >
-                {active && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-[24px] w-1 rounded-r-full bg-gradient-to-b from-fuchsia-600 via-purple-600 to-pink-500 shadow-[0_0_12px_rgba(217,70,239,0.6)]" />
-                )}
-                <Icon className={cn("size-[18px] shrink-0", active ? "text-fuchsia-600 dark:text-fuchsia-400" : "")} />
-                <span>{item.label}</span>
-                {active && <ChevronRight className="ml-auto size-4 text-fuchsia-500" />}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="mx-4 mt-4 h-px bg-slate-200/80 dark:bg-white/10 shrink-0" />
-
-        {/* Google integrations */}
-        <div className="px-4 pt-3 pb-1">
-          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">Google</span>
-        </div>
-        <nav className="flex flex-col gap-1 px-3">
-          {googleNav.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => onMobileClose?.()}
-                className={cn(
-                  "relative group flex min-h-[40px] items-center gap-3 rounded-xl px-3.5 text-[13px] font-semibold transition-all duration-200",
-                  active
-                    ? "bg-gradient-to-r from-fuchsia-500/15 via-purple-500/10 to-transparent text-fuchsia-950 dark:text-fuchsia-300 font-bold"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
-                )}
-              >
-                {active && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-[22px] w-1 rounded-r-full bg-gradient-to-b from-fuchsia-600 via-purple-600 to-pink-500 shadow-[0_0_12px_rgba(217,70,239,0.6)]" />
-                )}
-                <Icon className={cn("size-[17px] shrink-0", active ? "text-fuchsia-600 dark:text-fuchsia-400" : "")} />
-                <span>{item.label}</span>
-                {item.beta && (
-                  <span className="rounded-md bg-fuchsia-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-300">Beta</span>
-                )}
-                {active && <ChevronRight className="ml-auto size-3.5 text-fuchsia-500" />}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="mx-4 mt-4 h-px bg-slate-200/80 dark:bg-white/10 shrink-0" />
-
-        {/* WordPress integrations */}
-        <div className="px-4 pt-3 pb-1">
-          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">WordPress</span>
-        </div>
-        <nav className="flex flex-col gap-1 px-3">
-          {wordpressItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => onMobileClose?.()}
-                className={cn(
-                  "relative group flex min-h-[40px] items-center gap-3 rounded-xl px-3.5 text-[13px] font-semibold transition-all duration-200",
-                  active
-                    ? "bg-gradient-to-r from-fuchsia-500/15 via-purple-500/10 to-transparent text-fuchsia-950 dark:text-fuchsia-300 font-bold"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
-                )}
-              >
-                {active && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-[22px] w-1 rounded-r-full bg-gradient-to-b from-fuchsia-600 via-purple-600 to-pink-500 shadow-[0_0_12px_rgba(217,70,239,0.6)]" />
-                )}
-                <Icon className={cn("size-[17px] shrink-0", active ? "text-fuchsia-600 dark:text-fuchsia-400" : "")} />
-                <span>{item.label}</span>
-                {active && <ChevronRight className="ml-auto size-3.5 text-fuchsia-500" />}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="mx-4 mt-4 h-px bg-slate-200/80 dark:bg-white/10 shrink-0" />
-
-        {/* Identity integrations */}
-        <div className="px-4 pt-3 pb-1">
-          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">Identity</span>
-        </div>
-        <nav className="flex flex-col gap-1 px-3 pb-4">
-          {identityItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => onMobileClose?.()}
-                className={cn(
-                  "relative group flex min-h-[40px] items-center gap-3 rounded-xl px-3.5 text-[13px] font-semibold transition-all duration-200",
-                  active
-                    ? "bg-gradient-to-r from-fuchsia-500/15 via-purple-500/10 to-transparent text-fuchsia-950 dark:text-fuchsia-300 font-bold"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
-                )}
-              >
-                {active && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-[22px] w-1 rounded-r-full bg-gradient-to-b from-fuchsia-600 via-purple-600 to-pink-500 shadow-[0_0_12px_rgba(217,70,239,0.6)]" />
-                )}
-                <Icon className={cn("size-[17px] shrink-0", active ? "text-fuchsia-600 dark:text-fuchsia-400" : "")} />
-                <span>{item.label}</span>
-                {active && <ChevronRight className="ml-auto size-3.5 text-fuchsia-500" />}
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
-
-      <div className="mt-auto shrink-0">
-        <div className="mx-4 mb-4 h-px bg-slate-200/80 dark:bg-white/10 shrink-0" />
-
-        {/* Credits card — hidden for now, will re-enable later
-        <div className="mx-3 mb-4 rounded-2xl border border-slate-200/90 bg-white/65 p-4 dark:border-white/10 dark:bg-slate-900/50">
-          <div className="flex items-center gap-2">
-            <Zap className="size-4 text-fuchsia-500" />
-            <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200">Audit Credits</span>
-          </div>
-          <div className="mt-2 text-xs font-bold text-slate-600 dark:text-slate-400">
-            36 / 50 used
-          </div>
-          <div className="mt-2.5 h-[7px] w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-            <div className="h-full rounded-full bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-500" style={{ width: "72%" }} />
-          </div>
-          <div className="mt-2 text-[10px] font-semibold text-slate-400 dark:text-slate-500">Renews in 14 days</div>
-          <Button variant="outline" size="sm" className="mt-3 w-full text-xs font-bold hover:bg-fuchsia-50 hover:text-fuchsia-700 dark:hover:bg-fuchsia-400/10">
-            Upgrade plan
-          </Button>
-        </div>
-        */}
-
-        {/* User info + logout */}
-        <div className="mx-3 mb-3 rounded-2xl border border-slate-200/90 bg-white/65 p-3 dark:border-white/10 dark:bg-slate-900/50">
-          <div className="flex items-center gap-2.5">
-            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 via-purple-600 to-pink-500 text-xs font-bold text-white shadow-sm">
-              {user?.name?.charAt(0).toUpperCase() ?? "U"}
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-xs font-bold text-slate-800 dark:text-slate-200">{user?.name ?? "User"}</div>
-              <div className="truncate text-[10px] text-slate-500 dark:text-slate-400">{user?.email ?? ""}</div>
+      <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-4" aria-label="Main">
+        {NAV_GROUPS.map((group) => {
+          const items = group.items.filter((item) => !item.beta || preferences.betaFeatures);
+          if (items.length === 0) return null;
+          return (
+            <div key={group.id} className={group.id === "home" ? "" : "mt-4"}>
+              {group.id !== "home" && (
+                <p className="px-3 pb-1 text-xs font-semibold text-slate-500 dark:text-slate-400">{group.label}</p>
+              )}
+              <div className="space-y-0.5">
+                {items.map((item) => (
+                  <NavLink key={item.href} item={item} active={isActive(item.href)} onNavigate={close} />
+                ))}
+              </div>
             </div>
-            <button
-              onClick={handleLogout}
-              title="Sign out"
-              className="grid size-8 shrink-0 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-400/10"
-            >
-              <LogOut className="size-4" />
-            </button>
-          </div>
-        </div>
+          );
+        })}
+      </nav>
 
-        {/* Bottom nav */}
-        <nav className="flex flex-col gap-1 px-3 pb-5">
-          {bottomItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.label}
-                href={item.href}
-                onClick={() => onMobileClose?.()}
-                className="flex min-h-[40px] items-center gap-3 rounded-xl px-3.5 text-[13px] font-semibold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
-              >
-                <Icon className="size-[18px] shrink-0" />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+      <div className="shrink-0 border-t border-slate-200 p-3 dark:border-white/10">
+        <NavLink item={SETTINGS_ITEM} active={isActive(SETTINGS_ITEM.href)} onNavigate={close} />
+        <div className="mt-1 flex items-center gap-2.5 rounded-lg px-3 py-1.5">
+          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-slate-900 text-xs font-bold text-white dark:bg-slate-700">
+            {user?.name?.charAt(0).toUpperCase() ?? "U"}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[13px] font-semibold text-slate-900 dark:text-slate-100">{user?.name ?? "User"}</div>
+            <div className="truncate text-xs text-slate-500 dark:text-slate-400">{user?.email ?? ""}</div>
+          </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            title="Sign out"
+            aria-label="Sign out"
+            className="grid size-9 shrink-0 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-400/10 dark:hover:text-red-300"
+          >
+            <LogOut className="size-4" />
+          </button>
+        </div>
       </div>
     </aside>
   );
 
   return (
     <>
-      {/* Desktop sidebar */}
-      <div className="hidden lg:flex lg:h-screen lg:w-[260px] lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:z-30">
+      <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex lg:h-screen lg:w-[264px] lg:flex-col">
         {sidebarContent}
       </div>
 
-      {/* Mobile drawer */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm"
-            onClick={() => {
-              onMobileClose?.();
-              dispatch(setMobileSidebarOpen(false));
-            }}
-          />
-          <div className="absolute inset-y-0 left-0 animate-in slide-in-from-left duration-300">
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Navigation">
+          <div className="absolute inset-0 bg-slate-950/50" onClick={close} />
+          <div className="absolute inset-y-0 left-0 animate-in slide-in-from-left duration-200">
             {sidebarContent}
             <button
-              onClick={() => {
-                onMobileClose?.();
-                dispatch(setMobileSidebarOpen(false));
-              }}
-              className="absolute top-4 right-[-44px] grid size-9 place-items-center rounded-xl border border-white/10 bg-slate-950/80 text-white backdrop-blur"
+              type="button"
+              onClick={close}
+              aria-label="Close navigation"
+              className="absolute right-[-48px] top-4 grid size-10 place-items-center rounded-lg bg-slate-900 text-white"
             >
               <X className="size-4" />
             </button>

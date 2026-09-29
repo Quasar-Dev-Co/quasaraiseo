@@ -21,7 +21,7 @@ function ResetPasswordLoading() {
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[1fr_1fr]">
       <AuthBrandPanel />
-      <div className="relative flex flex-col items-center justify-center bg-[radial-gradient(circle_at_50%_0%,rgba(217,70,239,0.08),transparent_40%),linear-gradient(180deg,#fdf4ff_0%,#f8fafc_50%,#fff_100%)] px-4 sm:px-8 py-10 sm:py-16">
+      <div className="relative flex flex-col items-center justify-center bg-slate-50 px-4 sm:px-8 py-10 sm:py-16">
         <div className="flex items-center gap-2.5 text-slate-400">
           <Loader2 className="size-5 animate-spin" /> Loading...
         </div>
@@ -49,13 +49,13 @@ function ResetPasswordContent() {
     return (
       <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[1fr_1fr]">
         <AuthBrandPanel />
-        <div className="relative flex flex-col items-center justify-center bg-[radial-gradient(circle_at_50%_0%,rgba(217,70,239,0.08),transparent_40%),linear-gradient(180deg,#fdf4ff_0%,#f8fafc_50%,#fff_100%)] px-4 sm:px-8 py-10 sm:py-16">
+        <div className="relative flex flex-col items-center justify-center bg-slate-50 px-4 sm:px-8 py-10 sm:py-16">
           <Link href="/" className="mb-8 flex items-center gap-2.5 text-[19px] font-black tracking-[-0.035em] lg:hidden">
-            <span className="grid size-9.5 place-items-center rounded-[13px] border border-blue-500/30 bg-slate-950 p-1.5 shadow-[0_8px_20px_rgba(217,70,239,0.35)]">
+            <span className="grid size-9.5 place-items-center rounded-[13px] border border-brand-500/30 bg-slate-950 p-1.5 shadow-sm">
               <Image src="/mainlogos/mainlogo.png" alt="QuasarAISEO" width={26} height={26} className="size-full object-contain" priority />
             </span>
             <span className="text-slate-950 font-black">
-              Quasar<span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">AISEO</span>
+              Quasar<span className="text-brand-600">AISEO</span>
             </span>
           </Link>
           <div className="w-full max-w-[420px]">
@@ -63,7 +63,7 @@ function ResetPasswordContent() {
               <TriangleAlert className="size-4.5 shrink-0" /> Invalid reset link. No token was provided.
             </div>
             <p className="text-[14px] text-slate-500">
-              <Link href="/forgot-password" className="font-bold text-blue-600 hover:text-blue-700">
+              <Link href="/forgot-password" className="font-bold text-brand-600 hover:text-brand-700">
                 Request a new password reset link
               </Link>
             </p>
@@ -124,13 +124,13 @@ function ResetPasswordContent() {
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[1fr_1fr]">
       <AuthBrandPanel />
-      <div className="relative flex flex-col items-center justify-center bg-[radial-gradient(circle_at_50%_0%,rgba(217,70,239,0.08),transparent_40%),linear-gradient(180deg,#fdf4ff_0%,#f8fafc_50%,#fff_100%)] px-4 sm:px-8 py-10 sm:py-16">
+      <div className="relative flex flex-col items-center justify-center bg-slate-50 px-4 sm:px-8 py-10 sm:py-16">
         <Link href="/" className="mb-8 flex items-center gap-2.5 text-[19px] font-black tracking-[-0.035em] lg:hidden">
-          <span className="grid size-9.5 place-items-center rounded-[13px] border border-blue-500/30 bg-slate-950 p-1.5 shadow-[0_8px_20px_rgba(217,70,239,0.35)]">
+          <span className="grid size-9.5 place-items-center rounded-[13px] border border-brand-500/30 bg-slate-950 p-1.5 shadow-sm">
             <Image src="/mainlogos/mainlogo.png" alt="QuasarAISEO" width={26} height={26} className="size-full object-contain" priority />
           </span>
           <span className="text-slate-950 font-black">
-            Quasar<span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">AISEO</span>
+            Quasar<span className="text-brand-600">AISEO</span>
           </span>
         </Link>
 
@@ -151,7 +151,7 @@ function ResetPasswordContent() {
               </div>
               <Link
                 href="/login"
-                className="flex h-13 items-center justify-center gap-2.5 rounded-[15px] bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 text-sm font-bold text-white shadow-[0_14px_32px_rgba(217,70,239,0.25)] transition-transform hover:-translate-y-px"
+                className="flex h-13 items-center justify-center gap-2.5 rounded-[15px] bg-brand-700 text-sm font-bold text-white shadow-sm transition-transform hover:-translate-y-px"
               >
                 Sign in now <ArrowRight className="size-4.5" />
               </Link>
@@ -191,7 +191,7 @@ function ResetPasswordContent() {
                       className={`h-13 w-full rounded-[14px] border bg-white px-11 pr-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:ring-4 ${
                         fieldErrors.password
                           ? "border-red-400 focus:border-red-400 focus:ring-red-500/10"
-                          : "border-slate-200 focus:border-blue-400/65 focus:ring-blue-500/10"
+                          : "border-slate-200 focus:border-brand-400/65 focus:ring-brand-500/10"
                       }`}
                     />
                     <button
@@ -223,7 +223,7 @@ function ResetPasswordContent() {
                       className={`h-13 w-full rounded-[14px] border bg-white px-11 pr-11 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:ring-4 ${
                         fieldErrors.confirm
                           ? "border-red-400 focus:border-red-400 focus:ring-red-500/10"
-                          : "border-slate-200 focus:border-blue-400/65 focus:ring-blue-500/10"
+                          : "border-slate-200 focus:border-brand-400/65 focus:ring-brand-500/10"
                       }`}
                     />
                     <button
@@ -246,7 +246,7 @@ function ResetPasswordContent() {
                   <div className="flex items-center gap-2">
                     {[...Array(4)].map((_, i) => {
                       const strength = Math.min(4, Math.floor(password.length / 2))
-                      const colors = ["bg-red-400", "bg-amber-400", "bg-blue-400", "bg-green-500"]
+                      const colors = ["bg-red-400", "bg-amber-400", "bg-brand-400", "bg-green-500"]
                       const labels = ["Weak", "Fair", "Good", "Strong"]
                       return (
                         <div
@@ -263,7 +263,7 @@ function ResetPasswordContent() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="mt-1.5 flex h-13 items-center justify-center gap-2.5 rounded-[15px] bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 text-sm font-bold text-white shadow-[0_14px_32px_rgba(217,70,239,0.25)] transition-transform hover:-translate-y-px disabled:opacity-70"
+                  className="mt-1.5 flex h-13 items-center justify-center gap-2.5 rounded-[15px] bg-brand-700 text-sm font-bold text-white shadow-sm transition-transform hover:-translate-y-px disabled:opacity-70"
                 >
                   {loading ? (
                     <><Loader2 className="size-4.5 animate-spin" /> Resetting password...</>
@@ -274,7 +274,7 @@ function ResetPasswordContent() {
               </form>
 
               <p className="mt-7 text-center text-[14px] text-slate-500">
-                <Link href="/login" className="font-bold text-blue-600 transition-colors hover:text-blue-700">
+                <Link href="/login" className="font-bold text-brand-600 transition-colors hover:text-brand-700">
                   Back to sign in
                 </Link>
               </p>

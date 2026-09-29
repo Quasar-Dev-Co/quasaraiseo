@@ -14,6 +14,7 @@ import {
   PieChart, Pie, Cell, LineChart, Line,
 } from "recharts";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -396,7 +397,7 @@ export default function AnalyticsPage() {
     return (
       <RequireAuth>
         <DashboardLayout>
-          <div className="px-6 py-8 lg:px-8">
+          <div>
             <Skeleton className="h-8 w-48" />
             <Skeleton className="mt-2 h-4 w-72" />
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -446,7 +447,7 @@ export default function AnalyticsPage() {
     // For bounce rate, lower is better → invert
     const isGood = invert ? !positive : positive;
     return (
-      <span className={`flex items-center gap-0.5 text-[10px] font-bold ${isGood ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-red-500"}`}>
+      <span className={`flex items-center gap-0.5 text-[10px] font-bold ${isGood ? "text-brand-600 dark:text-brand-400" : "text-red-500"}`}>
         {positive ? <ArrowUpRight className="size-3" /> : <ArrowDownRight className="size-3" />}
         {text}
       </span>
@@ -474,33 +475,30 @@ export default function AnalyticsPage() {
   return (
     <RequireAuth>
       <DashboardLayout>
-        <div className="px-6 py-8 lg:px-8">
-          {/* Header */}
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
-                Google Analytics
-              </h1>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                {startDate} to {endDate}
-                {comparisonLabel ? ` · ${comparisonLabel}` : ""}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
+        <div>
+          <PageHeader
+            actions={
+              <>
+<div className="flex items-center gap-2">
               {/* Realtime badge */}
-              <div className="flex items-center gap-2 rounded-xl border border-fuchsia-200 bg-fuchsia-50/80 px-3 py-2 dark:border-fuchsia-400/20 dark:bg-fuchsia-400/10">
-                <Radio className={`size-4 text-fuchsia-500 ${realtimeLoading ? "animate-pulse" : ""}`} />
-                <span className="text-sm font-black text-fuchsia-700 dark:text-fuchsia-400">
+              <div className="flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50/80 px-3 py-2 dark:border-brand-400/20 dark:bg-brand-400/10">
+                <Radio className={`size-4 text-brand-500 ${realtimeLoading ? "animate-pulse" : ""}`} />
+                <span className="text-sm font-black text-brand-700 dark:text-brand-400">
                   {realtime?.totalActiveUsers ?? 0}
                 </span>
-                <span className="text-[10px] font-bold text-fuchsia-600 dark:text-fuchsia-400">live now</span>
+                <span className="text-[10px] font-bold text-brand-600 dark:text-brand-400">live now</span>
               </div>
               <Button variant="outline" size="sm" onClick={fetchAnalytics} disabled={fetching}>
                 <RefreshCw className={`size-4 ${fetching ? "animate-spin" : ""}`} />
                 Refresh
               </Button>
             </div>
-          </div>
+              </>
+            }
+          >
+            <p className="mt-1 text-sm tabular-nums text-slate-600 dark:text-slate-400">{startDate} to {endDate}
+                {comparisonLabel ? ` · ${comparisonLabel}` : ""}</p>
+          </PageHeader>
 
           {error && (
             <div className="mb-6 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-400">
@@ -518,7 +516,7 @@ export default function AnalyticsPage() {
               <select
                 value={selectedProperty}
                 onChange={(e) => setSelectedProperty(e.target.value)}
-                className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
               >
                 {properties.length > 0 && (
                   <optgroup label="Google Analytics">
@@ -555,7 +553,7 @@ export default function AnalyticsPage() {
                 onClick={() => setRangeDays(r.days)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
                   rangeDays === r.days
-                    ? "bg-fuchsia-600 text-white"
+                    ? "bg-brand-700 text-white"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
                 }`}
               >
@@ -573,7 +571,7 @@ export default function AnalyticsPage() {
               <select
                 value={compareMode}
                 onChange={(e) => setCompareMode(e.target.value as CompareMode)}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
               >
                 {COMPARE_MODES.map((m) => (
                   <option key={m.value} value={m.value}>{m.label}</option>
@@ -590,7 +588,7 @@ export default function AnalyticsPage() {
                     type="date"
                     value={customPrevStart}
                     onChange={(e) => setCustomPrevStart(e.target.value)}
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
                   />
                 </div>
                 <div>
@@ -601,7 +599,7 @@ export default function AnalyticsPage() {
                     type="date"
                     value={customPrevEnd}
                     onChange={(e) => setCustomPrevEnd(e.target.value)}
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
                   />
                 </div>
               </>
@@ -609,7 +607,7 @@ export default function AnalyticsPage() {
             {hasComparison && (
               <div className="ml-auto flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 dark:bg-slate-800">
                 <span className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
-                  <span className="inline-block h-2.5 w-2.5 rounded-full bg-fuchsia-500" />
+                  <span className="inline-block h-2.5 w-2.5 rounded-full bg-brand-500" />
                   Current
                 </span>
                 <span className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
@@ -622,16 +620,16 @@ export default function AnalyticsPage() {
 
           {/* Stats cards with comparison */}
           <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCard label="Sessions" value={stats.sessions.toLocaleString()} icon={Activity} color="text-fuchsia-600 dark:text-fuchsia-400" current={stats.sessions} previous={stats.prevSessions} />
+            <StatCard label="Sessions" value={stats.sessions.toLocaleString()} icon={Activity} color="text-brand-600 dark:text-brand-400" current={stats.sessions} previous={stats.prevSessions} />
             <StatCard label="Users" value={stats.users.toLocaleString()} icon={Users} color="text-blue-600 dark:text-blue-400" current={stats.users} previous={stats.prevUsers} />
-            <StatCard label="Page Views" value={stats.pageViews.toLocaleString()} icon={Eye} color="text-purple-600 dark:text-purple-400" current={stats.pageViews} previous={stats.prevPageViews} />
+            <StatCard label="Page Views" value={stats.pageViews.toLocaleString()} icon={Eye} color="text-brand-600 dark:text-brand-400" current={stats.pageViews} previous={stats.prevPageViews} />
             <StatCard label="Avg Duration" value={formatDuration(stats.avgDuration)} icon={Clock} color="text-orange-600 dark:text-orange-400" current={stats.avgDuration} previous={stats.prevAvgDuration} />
           </div>
 
           {/* Second row: engagement stats */}
           <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard label="Bounce Rate" value={`${(stats.bounceRate * 100).toFixed(1)}%`} icon={TrendingDown} color="text-red-500" current={stats.bounceRate * 100} previous={stats.prevBounceRate * 100} invert />
-            <StatCard label="Engagement Rate" value={`${(stats.engagementRate * 100).toFixed(1)}%`} icon={Target} color="text-fuchsia-600 dark:text-fuchsia-400" current={stats.engagementRate * 100} previous={stats.prevEngagementRate * 100} />
+            <StatCard label="Engagement Rate" value={`${(stats.engagementRate * 100).toFixed(1)}%`} icon={Target} color="text-brand-600 dark:text-brand-400" current={stats.engagementRate * 100} previous={stats.prevEngagementRate * 100} />
             <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900/50">
               <div className="flex items-center gap-2">
                 <MousePointerClick className="size-4 text-blue-600 dark:text-blue-400" />
@@ -643,7 +641,7 @@ export default function AnalyticsPage() {
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900/50">
               <div className="flex items-center gap-2">
-                <Radio className="size-4 text-fuchsia-500" />
+                <Radio className="size-4 text-brand-500" />
                 <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Active Now</span>
               </div>
               <div className="mt-2 text-2xl font-extrabold text-slate-900 dark:text-white">
@@ -667,8 +665,8 @@ export default function AnalyticsPage() {
                 <div className="flex items-center gap-3">
                   {hasComparison && (
                     <div className="flex items-center gap-3 text-[10px] font-bold">
-                      <span className="flex items-center gap-1 text-fuchsia-600 dark:text-fuchsia-400">
-                        <span className="inline-block h-2.5 w-2.5 rounded-full bg-fuchsia-500" /> Current
+                      <span className="flex items-center gap-1 text-brand-600 dark:text-brand-400">
+                        <span className="inline-block h-2.5 w-2.5 rounded-full bg-brand-500" /> Current
                       </span>
                       <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
                         <span className="inline-block h-2.5 w-2.5 rounded-full bg-slate-400" /> Comparison
@@ -682,7 +680,7 @@ export default function AnalyticsPage() {
               </div>
               {fetching ? (
                 <div className="flex h-40 items-center justify-center">
-                  <Loader2 className="size-6 animate-spin text-fuchsia-500" />
+                  <Loader2 className="size-6 animate-spin text-brand-500" />
                 </div>
               ) : chartData.length > 0 ? (
                 <div className="px-6 py-6">
@@ -732,7 +730,7 @@ export default function AnalyticsPage() {
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
               <div className="border-b border-slate-100 px-6 py-4 dark:border-white/5">
                 <div className="flex items-center gap-2">
-                  <Layers className="size-4 text-fuchsia-500" />
+                  <Layers className="size-4 text-brand-500" />
                   <h2 className="text-sm font-bold text-slate-900 dark:text-white">Traffic Channels</h2>
                 </div>
               </div>
@@ -802,7 +800,7 @@ export default function AnalyticsPage() {
                             </div>
                           </div>
                           <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                            <div className="h-full rounded-full bg-gradient-to-r from-fuchsia-600 to-purple-600" style={{ width: `${pct}%` }} />
+                            <div className="h-full rounded-full bg-brand-600" style={{ width: `${pct}%` }} />
                           </div>
                           <div className="mt-1 flex items-center gap-3 text-[10px] text-slate-400">
                             <span>Engagement: {(engagement * 100).toFixed(0)}%</span>
@@ -822,7 +820,7 @@ export default function AnalyticsPage() {
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
               <div className="border-b border-slate-100 px-6 py-4 dark:border-white/5">
                 <div className="flex items-center gap-2">
-                  <Target className="size-4 text-fuchsia-500" />
+                  <Target className="size-4 text-brand-500" />
                   <h2 className="text-sm font-bold text-slate-900 dark:text-white">Engagement Rate Trend</h2>
                 </div>
               </div>
@@ -880,7 +878,7 @@ export default function AnalyticsPage() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
                       activeTab === tab.id
-                        ? "bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"
+                        ? "bg-brand-50 text-brand-700 dark:bg-brand-400/10 dark:text-brand-400"
                         : "text-slate-500 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-white/5"
                     }`}
                   >
@@ -893,7 +891,7 @@ export default function AnalyticsPage() {
 
             {reportLoading ? (
               <div className="flex h-40 items-center justify-center">
-                <Loader2 className="size-6 animate-spin text-fuchsia-500" />
+                <Loader2 className="size-6 animate-spin text-brand-500" />
               </div>
             ) : reportData && reportData.rows.length > 0 ? (
               <div className="overflow-x-auto">
@@ -931,14 +929,14 @@ export default function AnalyticsPage() {
                       const usersDelta = prevUsers > 0 ? formatPctChange(curUsers, prevUsers) : null;
                       const pvDelta = prevPageViews > 0 ? formatPctChange(curPageViews, prevPageViews) : null;
                       return (
-                        <tr key={i} className="transition-colors hover:bg-fuchsia-50/50 dark:hover:bg-fuchsia-900/10">
+                        <tr key={i} className="transition-colors hover:bg-brand-50/50 dark:hover:bg-brand-900/10">
                           <td className="max-w-[300px] truncate px-6 py-3 font-semibold text-slate-900 dark:text-white">{dimVal}</td>
-                          <td className="px-6 py-3 text-right font-bold text-fuchsia-600 dark:text-fuchsia-400">{curSessions.toLocaleString()}</td>
+                          <td className="px-6 py-3 text-right font-bold text-brand-600 dark:text-brand-400">{curSessions.toLocaleString()}</td>
                           {hasComparison && <td className="px-3 py-3 text-right text-slate-400 dark:text-slate-500">{prevRow ? prevSessions.toLocaleString() : "—"}</td>}
                           {hasComparison && (
                             <td className="px-3 py-3 text-right">
                               {sessionsDelta ? (
-                                <span className={`text-[10px] font-bold ${sessionsDelta.positive ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-red-500"}`}>{sessionsDelta.text}</span>
+                                <span className={`text-[10px] font-bold ${sessionsDelta.positive ? "text-brand-600 dark:text-brand-400" : "text-red-500"}`}>{sessionsDelta.text}</span>
                               ) : <span className="text-[10px] text-slate-400">—</span>}
                             </td>
                           )}
@@ -947,7 +945,7 @@ export default function AnalyticsPage() {
                           {hasComparison && (
                             <td className="px-3 py-3 text-right">
                               {usersDelta ? (
-                                <span className={`text-[10px] font-bold ${usersDelta.positive ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-red-500"}`}>{usersDelta.text}</span>
+                                <span className={`text-[10px] font-bold ${usersDelta.positive ? "text-brand-600 dark:text-brand-400" : "text-red-500"}`}>{usersDelta.text}</span>
                               ) : <span className="text-[10px] text-slate-400">—</span>}
                             </td>
                           )}
@@ -956,7 +954,7 @@ export default function AnalyticsPage() {
                           {hasComparison && (
                             <td className="px-3 py-3 text-right">
                               {pvDelta ? (
-                                <span className={`text-[10px] font-bold ${pvDelta.positive ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-red-500"}`}>{pvDelta.text}</span>
+                                <span className={`text-[10px] font-bold ${pvDelta.positive ? "text-brand-600 dark:text-brand-400" : "text-red-500"}`}>{pvDelta.text}</span>
                               ) : <span className="text-[10px] text-slate-400">—</span>}
                             </td>
                           )}
@@ -978,12 +976,12 @@ export default function AnalyticsPage() {
 
           {/* Realtime details */}
           {realtime && realtime.totalActiveUsers > 0 && (
-            <div className="mb-8 overflow-hidden rounded-2xl border border-fuchsia-200 bg-fuchsia-50/30 dark:border-fuchsia-400/20 dark:bg-fuchsia-400/5">
-              <div className="border-b border-fuchsia-100 px-6 py-4 dark:border-fuchsia-400/10">
+            <div className="mb-8 overflow-hidden rounded-2xl border border-brand-200 bg-brand-50/30 dark:border-brand-400/20 dark:bg-brand-400/5">
+              <div className="border-b border-brand-100 px-6 py-4 dark:border-brand-400/10">
                 <div className="flex items-center gap-2">
-                  <Radio className="size-4 text-fuchsia-500 animate-pulse" />
+                  <Radio className="size-4 text-brand-500 animate-pulse" />
                   <h2 className="text-sm font-bold text-slate-900 dark:text-white">Realtime — Active Users Right Now</h2>
-                  <Badge className="bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-400">{realtime.totalActiveUsers} active</Badge>
+                  <Badge className="bg-brand-100 text-brand-700 dark:bg-brand-400/15 dark:text-brand-400">{realtime.totalActiveUsers} active</Badge>
                 </div>
               </div>
               <div className="p-5">
@@ -995,7 +993,7 @@ export default function AnalyticsPage() {
                         <span className="text-xs font-bold text-slate-900 dark:text-white">{c.country}</span>
                       </div>
                       <div className="text-right">
-                        <span className="block text-sm font-black text-fuchsia-600 dark:text-fuchsia-400">{c.activeUsers}</span>
+                        <span className="block text-sm font-black text-brand-600 dark:text-brand-400">{c.activeUsers}</span>
                         <span className="text-[9px] text-slate-400">{c.pageViews} views</span>
                       </div>
                     </div>
@@ -1012,7 +1010,7 @@ export default function AnalyticsPage() {
             </div>
             {fetching ? (
               <div className="flex h-40 items-center justify-center">
-                <Loader2 className="size-6 animate-spin text-fuchsia-500" />
+                <Loader2 className="size-6 animate-spin text-brand-500" />
               </div>
             ) : data && data.rows.length > 0 ? (
               <div className="overflow-x-auto">
@@ -1031,7 +1029,7 @@ export default function AnalyticsPage() {
                     {[...data.rows].reverse().map((row, i) => (
                       <tr key={i} className="transition-colors hover:bg-slate-50 dark:hover:bg-white/5">
                         <td className="px-6 py-3 font-semibold text-slate-900 dark:text-white">{formatGaDate(row.date)}</td>
-                        <td className="px-6 py-3 text-right font-bold text-fuchsia-600 dark:text-fuchsia-400">{row.sessions.toLocaleString()}</td>
+                        <td className="px-6 py-3 text-right font-bold text-brand-600 dark:text-brand-400">{row.sessions.toLocaleString()}</td>
                         <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{row.users.toLocaleString()}</td>
                         <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{row.pageViews.toLocaleString()}</td>
                         <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-400">{formatDuration(row.avgSessionDuration)}</td>

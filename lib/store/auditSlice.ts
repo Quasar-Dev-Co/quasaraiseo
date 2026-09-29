@@ -112,10 +112,14 @@ const auditSlice = createSlice({
     toggleTheme(state) {
       state.theme = state.theme === "light" ? "dark" : "light";
     },
+    setTheme(state, action: PayloadAction<"light" | "dark">) {
+      state.theme = action.payload;
+    },
   },
 });
 
 export const {
+  setTheme,
   setActiveTab,
   updateForm,
   updateOptions,

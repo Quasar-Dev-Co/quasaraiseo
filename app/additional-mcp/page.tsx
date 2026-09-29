@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -167,23 +168,17 @@ export default function AdditionalMcpPage() {
   return (
     <RequireAuth>
       <DashboardLayout>
-        <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="flex items-center gap-3 text-2xl font-bold text-slate-900 dark:text-white">
-                <Plug className="h-7 w-7 text-fuchsia-500" />
-                Additional MCP
-              </h1>
-              <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
-                Connect external Streamable HTTP MCP servers — the same way Cursor, Claude Desktop, Windsurf, and Codex connect to them.
-              </p>
-            </div>
-            <Button onClick={() => setShowForm(!showForm)} className="gap-2">
+        <div>
+          <PageHeader
+            actions={
+              <>
+<Button onClick={() => setShowForm(!showForm)} className="gap-2">
               {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
               {showForm ? "Cancel" : "Add MCP Server"}
             </Button>
-          </div>
+              </>
+            }
+          />
 
           {/* Status banner */}
           {error && (
@@ -220,7 +215,7 @@ export default function AdditionalMcpPage() {
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     placeholder="e.g. CodeMyPixel WordPress"
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                   />
                 </div>
                 <div>
@@ -232,7 +227,7 @@ export default function AdditionalMcpPage() {
                     value={form.url}
                     onChange={(e) => setForm({ ...form, url: e.target.value })}
                     placeholder="https://yoursite.com/wp-json/custom-web-render/v1/mcp"
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                   />
                   <p className="mt-1.5 text-xs text-slate-400">
                     WordPress admin → Custom Web Render → MCP Server shows the exact endpoint URL.
@@ -247,7 +242,7 @@ export default function AdditionalMcpPage() {
                     value={form.token}
                     onChange={(e) => setForm({ ...form, token: e.target.value })}
                     placeholder="cwr_..."
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                   />
                   <p className="mt-1.5 text-xs text-slate-400">
                     Generate a token on the plugin's MCP Server page (shown once — copy it immediately).
@@ -272,8 +267,8 @@ export default function AdditionalMcpPage() {
             </div>
           ) : connections.length === 0 ? (
             <div className={`${card} flex flex-col items-center justify-center px-6 py-16 text-center`}>
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-fuchsia-500/10">
-                <Server className="h-8 w-8 text-fuchsia-500" />
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500/10">
+                <Server className="h-8 w-8 text-brand-500" />
               </div>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">No MCP servers connected</h3>
               <p className="mt-1.5 max-w-md text-sm text-slate-500 dark:text-slate-400">
@@ -290,8 +285,8 @@ export default function AdditionalMcpPage() {
                 <div key={connection.id} className={card}>
                   <div className={hdr}>
                     <div className="flex items-center gap-4">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-fuchsia-500/10">
-                        <Globe className="h-5 w-5 text-fuchsia-500" />
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-500/10">
+                        <Globe className="h-5 w-5 text-brand-500" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2.5">
@@ -395,19 +390,19 @@ export default function AdditionalMcpPage() {
             <div className="space-y-5 px-6 py-5">
               <ol className="space-y-3 text-sm text-slate-600 dark:text-slate-300">
                 <li className="flex gap-3">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-500 text-xs font-bold text-white">1</span>
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-700 text-xs font-bold text-white">1</span>
                   <span>
                     In your WordPress admin, open <strong>Custom Web Render → MCP Server</strong>. Create a token with the permissions you need (read, write, settings).
                   </span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-500 text-xs font-bold text-white">2</span>
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-700 text-xs font-bold text-white">2</span>
                   <span>
                     Copy the <strong>endpoint URL</strong> (e.g. <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs dark:bg-white/10">https://yoursite.com/wp-json/custom-web-render/v1/mcp</code>) and the <strong>token</strong> (shown once).
                   </span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-500 text-xs font-bold text-white">3</span>
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-700 text-xs font-bold text-white">3</span>
                   <span>
                     Add them above. When enabled, WordPress tool calls from <strong>/content-strategy</strong> route through this MCP server — the exact same protocol Cursor and Codex use.
                   </span>

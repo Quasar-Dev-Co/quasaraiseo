@@ -13,6 +13,7 @@ import {
   Heading2, Heading3, Pencil, Save, Undo2, Redo2, Building2,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -111,7 +112,7 @@ function postStatusPresentation(status: string): { label: string; className: str
     return { label: "Published", className: "bg-emerald-100 text-emerald-700 border-emerald-200" };
   }
   if (status === "future") {
-    return { label: "Scheduled", className: "bg-violet-100 text-violet-700 border-violet-200" };
+    return { label: "Scheduled", className: "bg-brand-100 text-brand-700 border-brand-200" };
   }
   return {
     label: status === "draft" ? "Draft" : status,
@@ -696,34 +697,19 @@ This post should support and link UP to the ${refTitle} reference page. It must 
             </button>
           </div>
         )}
-        {/* Hero */}
-        <section className="mb-8">
-          <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200/60 bg-fuchsia-50/80 px-3 py-2 text-xs font-bold uppercase tracking-[0.19em] text-fuchsia-700 dark:border-fuchsia-400/20 dark:bg-fuchsia-400/10 dark:text-fuchsia-400">
-            <span className="size-2 rounded-full bg-fuchsia-500" />
-            AI Post Generator
-          </div>
-          <h1 className="mt-5 text-[clamp(34px,5vw,52px)] font-black leading-[1.02] tracking-[-0.052em] text-slate-900 dark:text-white">
-            Upload Skills{" "}
-            <em className="not-italic bg-gradient-to-r from-fuchsia-600 via-purple-500 to-blue-500 bg-clip-text text-transparent">
-              & Generate Posts
-            </em>
-          </h1>
-          <p className="mt-4 max-w-[700px] text-[15px] leading-relaxed text-slate-600 dark:text-slate-400">
-            Upload SEO skill files, connect your WordPress site, give a prompt, and let AI generate optimized content. Review, then publish directly to WordPress.
-          </p>
-        </section>
+        <PageHeader />
 
         {/* Stats */}
         <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
           <article className="rounded-[18px] border border-slate-200 bg-white/80 p-5 shadow-[0_14px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-slate-900/60">
             <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400"><Package className="size-4" /> Skills</div>
             <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{skills.length}</div>
-            <div className="mt-1 text-xs text-fuchsia-600 dark:text-fuchsia-400">{skills.filter((s) => s.fileCount > 1).length} multi-file</div>
+            <div className="mt-1 text-xs text-brand-600 dark:text-brand-400">{skills.filter((s) => s.fileCount > 1).length} multi-file</div>
           </article>
           <article className="rounded-[18px] border border-slate-200 bg-white/80 p-5 shadow-[0_14px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-slate-900/60">
             <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400"><Globe className="size-4" /> WP Sites</div>
             <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{wpSites.length}</div>
-            <div className="mt-1 text-xs text-fuchsia-600 dark:text-fuchsia-400">{wpSites.filter((s) => s.connected).length} connected</div>
+            <div className="mt-1 text-xs text-brand-600 dark:text-brand-400">{wpSites.filter((s) => s.connected).length} connected</div>
           </article>
           <article className="rounded-[18px] border border-slate-200 bg-white/80 p-5 shadow-[0_14px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-slate-900/60">
             <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400"><Zap className="size-4" /> Posts Generated</div>
@@ -752,7 +738,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
             <article className="rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
               <header className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5 dark:border-white/5">
                 <div className="flex gap-2.75">
-                  <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Brain className="size-[18px]" /></span>
+                  <Brain className="size-[18px] shrink-0 text-slate-500 dark:text-slate-400" />
                   <div>
                     <h3 className="m-0 text-base text-slate-900 dark:text-white">Generate Post</h3>
                     <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Describe what you want the AI to write</p>
@@ -760,7 +746,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                 </div>
                 <div className="flex items-center gap-2">
                   {selectedSkill && (
-                    <Badge className="bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200">
+                    <Badge className="bg-brand-100 text-brand-700 border-brand-200">
                       <Package className="size-3" /> {selectedSkill.name}
                     </Badge>
                   )}
@@ -779,7 +765,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                     <select
                       value={selectedSiteId}
                       onChange={(e) => setSelectedSiteId(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus-visible:border-fuchsia-500 dark:border-white/15 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus-visible:border-brand-500 dark:border-white/15 dark:bg-slate-800 dark:text-white"
                     >
                       {wpSites.map((s) => (
                         <option key={s.id} value={s.id}>{s.siteName} — {s.siteUrl}</option>
@@ -883,7 +869,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                             className={`group flex items-center gap-3 rounded-lg border p-3 transition-all cursor-pointer ${
                               isSelected
                                 ? isPillar
-                                  ? "border-purple-300 bg-purple-50 dark:border-purple-400/40 dark:bg-purple-400/10"
+                                  ? "border-brand-300 bg-brand-50 dark:border-brand-400/40 dark:bg-brand-400/10"
                                   : isCluster
                                   ? "border-teal-300 bg-teal-50 dark:border-teal-400/40 dark:bg-teal-400/10"
                                   : "border-blue-300 bg-blue-50 dark:border-blue-400/40 dark:bg-blue-400/10"
@@ -897,10 +883,10 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                             {/* Icon */}
                             <div className={`grid size-9 shrink-0 place-items-center rounded-lg ${
                               isPillar
-                                ? "bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white"
+                                ? "bg-brand-700 text-white"
                                 : isCluster
-                                ? "bg-gradient-to-br from-teal-500 to-cyan-600 text-white"
-                                : "bg-gradient-to-br from-slate-400 to-slate-600 text-white"
+                                ? "bg-teal-500 text-white"
+                                : "bg-slate-400 text-white"
                             }`}>
                               {isPillar ? <Building2 className="size-4" /> : isCluster ? <Layers className="size-4" /> : <FileText className="size-4" />}
                             </div>
@@ -911,7 +897,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                                 <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">{displayName}</p>
                                 <Badge variant="outline" className={`shrink-0 text-[9px] uppercase ${
                                   isPillar
-                                    ? "border-purple-200 text-purple-600 dark:border-purple-400/30 dark:text-purple-400"
+                                    ? "border-brand-200 text-brand-600 dark:border-brand-400/30 dark:text-brand-400"
                                     : isCluster
                                     ? "border-teal-200 text-teal-600 dark:border-teal-400/30 dark:text-teal-400"
                                     : "border-slate-200 text-slate-500 dark:border-slate-600 dark:text-slate-400"
@@ -935,7 +921,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                                   handleDeleteContentFile(f.id);
                                 }
                               }}
-                              className="shrink-0 rounded-md p-1.5 text-slate-400 opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 dark:hover:bg-red-400/10"
+                              className="shrink-0 rounded-md p-1.5 text-slate-500 opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 dark:hover:bg-red-400/10"
                               title="Delete"
                             >
                               <Trash2 className="size-3.5" />
@@ -1010,7 +996,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                     {selectedSkillId ? (
                       <span className="inline-flex items-center gap-1.5">
                         <Package className="size-3.5" /> Using skill: <strong className="text-slate-700 dark:text-slate-300">{selectedSkill?.name}</strong>
-                        <button className="ml-1 text-fuchsia-600 hover:underline" onClick={() => setSelectedSkillId(null)}>remove</button>
+                        <button className="ml-1 text-brand-600 hover:underline" onClick={() => setSelectedSkillId(null)}>remove</button>
                       </span>
                     ) : (
                       <span className="text-amber-600 dark:text-amber-400">Select a skill from the sidebar →</span>
@@ -1021,7 +1007,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                       const isCluster = sf?.pageType === "cluster";
                       return (
                         <span className={`ml-2 inline-flex items-center gap-1.5 ${
-                          isPillar ? "text-purple-600 dark:text-purple-400"
+                          isPillar ? "text-brand-600 dark:text-brand-400"
                           : isCluster ? "text-teal-600 dark:text-teal-400"
                           : "text-blue-600 dark:text-blue-400"
                         }`}>
@@ -1035,7 +1021,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                     size="lg"
                     onClick={handleGenerate}
                     disabled={!prompt.trim() || generating || (!selectedSkillId && !selectedContentFileId)}
-                    className="bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white hover:from-fuchsia-700 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="bg-brand-700 text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {generating ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
                     {generating ? "Generating..." : "Generate Post"}
@@ -1050,11 +1036,11 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -8, scale: 0.98 }}
                       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                      className={`relative overflow-hidden rounded-2xl border p-6 ${generatingImages ? "border-blue-200/60 bg-gradient-to-br from-blue-50/80 via-cyan-50/40 to-teal-50/30 dark:border-blue-400/20 dark:from-blue-400/5 dark:via-cyan-400/5 dark:to-teal-400/5" : "border-fuchsia-200/60 bg-gradient-to-br from-fuchsia-50/80 via-purple-50/40 to-blue-50/30 dark:border-fuchsia-400/20 dark:from-fuchsia-400/5 dark:via-purple-400/5 dark:to-blue-400/5"}`}
+                      className={`relative overflow-hidden rounded-2xl border p-6 ${generatingImages ? "border-blue-200/60 bg-blue-50/80 dark:border-blue-400/20 dark:bg-blue-400/5" : "border-brand-200/60 bg-brand-50/80 dark:border-brand-400/20 dark:bg-brand-400/5"}`}
                     >
                       {/* Animated shimmer bar at top */}
                       <motion.div
-                        className={`absolute inset-x-0 top-0 h-1 ${generatingImages ? "bg-gradient-to-r from-blue-500 via-cyan-500 to-teal-500" : "bg-gradient-to-r from-fuchsia-500 via-purple-500 to-blue-500"}`}
+                        className={`absolute inset-x-0 top-0 h-1 ${generatingImages ? "bg-blue-500" : "bg-brand-500"}`}
                         initial={{ scaleX: 0, originX: 0 }}
                         animate={{ scaleX: [0, 0.3, 0.6, 0.85, 1] }}
                         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
@@ -1064,17 +1050,17 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                         {/* Animated AI brain icon with pulsing rings */}
                         <div className="relative grid size-16 shrink-0 place-items-center">
                           <motion.div
-                            className={`absolute inset-0 rounded-2xl ${generatingImages ? "bg-blue-500/20" : "bg-fuchsia-500/20"}`}
+                            className={`absolute inset-0 rounded-2xl ${generatingImages ? "bg-blue-500/20" : "bg-brand-500/20"}`}
                             animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
                             transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
                           />
                           <motion.div
-                            className={`absolute inset-0 rounded-2xl ${generatingImages ? "bg-cyan-500/20" : "bg-purple-500/20"}`}
+                            className={`absolute inset-0 rounded-2xl ${generatingImages ? "bg-cyan-500/20" : "bg-brand-500/20"}`}
                             animate={{ scale: [1, 1.5, 1], opacity: [0.4, 0, 0.4] }}
                             transition={{ duration: 2.5, repeat: Infinity, ease: "easeOut", delay: 0.3 }}
                           />
                           <motion.div
-                            className={`relative grid size-14 place-items-center rounded-2xl shadow-lg ${generatingImages ? "bg-gradient-to-br from-blue-600 to-cyan-600 shadow-blue-500/30" : "bg-gradient-to-br from-fuchsia-600 to-purple-600 shadow-fuchsia-500/30"}`}
+                            className={`relative grid size-14 place-items-center rounded-2xl shadow-lg ${generatingImages ? "bg-blue-600 shadow-blue-500/30" : "bg-brand-600 shadow-brand-500/30"}`}
                             animate={{ rotate: [0, 5, -5, 0] }}
                             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                           >
@@ -1092,7 +1078,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                               {[0, 1, 2].map((i) => (
                                 <motion.span
                                   key={i}
-                                  className={`size-1.5 rounded-full ${generatingImages ? "bg-blue-500" : "bg-fuchsia-500"}`}
+                                  className={`size-1.5 rounded-full ${generatingImages ? "bg-blue-500" : "bg-brand-500"}`}
                                   animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
                                   transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
                                 />
@@ -1124,7 +1110,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                                       isActive
                                         ? generatingImages && i === 3
                                           ? "bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300"
-                                          : "bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-300"
+                                          : "bg-brand-100 text-brand-700 dark:bg-brand-400/15 dark:text-brand-300"
                                         : isDone
                                         ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300"
                                         : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
@@ -1175,7 +1161,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
               <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
                 <header className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5 dark:border-white/5">
                   <div className="flex gap-2.75">
-                    <span className="grid size-9 place-items-center rounded-[12px] bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400"><CheckCircle2 className="size-[18px]" /></span>
+                    <CheckCircle2 className="size-[18px] shrink-0 text-slate-500 dark:text-slate-400" />
                     <div>
                       <h3 className="m-0 text-base text-slate-900 dark:text-white">Generation Complete</h3>
                       <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">AI-generated content ready to review</p>
@@ -1185,7 +1171,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                     <Button size="sm" variant="outline" onClick={handleCopyContent}><Copy className="size-3.5" /> Copy</Button>
                     <Button type="button" size="sm" variant="outline" onClick={() => openPreview(generatedContent)}><Eye className="size-3.5" /> View Content</Button>
                     {wpSites.length > 0 && (
-                      <Button type="button" size="sm" className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700" onClick={() => openPublishModal(generatedContent)}><Send className="size-3.5" /> Use for Publishing</Button>
+                      <Button type="button" size="sm" className="bg-brand-600 hover:bg-brand-700" onClick={() => openPublishModal(generatedContent)}><Send className="size-3.5" /> Use for Publishing</Button>
                     )}
                   </div>
                 </header>
@@ -1211,7 +1197,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
               <article className="overflow-hidden rounded-3xl border border-blue-200 bg-white dark:border-blue-400/20 dark:bg-slate-900/50">
                 <header className="flex items-center justify-between gap-4 border-b border-blue-100 px-6 py-5 dark:border-blue-400/10">
                   <div className="flex gap-2.75">
-                    <span className="grid size-9 place-items-center rounded-[12px] bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400"><ImageIcon className="size-[18px]" /></span>
+                    <ImageIcon className="size-[18px] shrink-0 text-slate-500 dark:text-slate-400" />
                     <div>
                       <h3 className="m-0 text-base text-slate-900 dark:text-white">AI Generated Images</h3>
                       <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{generatedImages.length} image{generatedImages.length > 1 ? "s" : ""} auto-generated and inserted into content</p>
@@ -1322,7 +1308,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                               <span className="text-xs text-slate-400">{formatDate(job.completedAt || job.createdAt)}</span>
                               <button
                                 onClick={() => handleDeleteJob(job.id)}
-                                className="grid size-7 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-400/10 dark:hover:text-red-400"
+                                className="grid size-7 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-400/10 dark:hover:text-red-400"
                                 title="Delete"
                               >
                                 <Trash2 className="size-3.5" />
@@ -1352,7 +1338,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                                 <Button
                                   type="button"
                                   size="sm"
-                                  className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700"
+                                  className="bg-brand-600 hover:bg-brand-700"
                                   onClick={() => {
                                     if (job.result) openPublishModal(job.result);
                                   }}
@@ -1410,7 +1396,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                             {job.status === "completed" && job.result && wpSites.length > 0 && (
                               <Button
                                 size="xs"
-                                className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700"
+                                className="bg-brand-600 hover:bg-brand-700"
                                 onClick={() => openPublishModal(job.result as GeneratedContent)}
                               >
                                 <Send className="size-3" /> Use for Publishing
@@ -1418,7 +1404,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                             )}
                             <button
                               onClick={() => handleDeleteJob(job.id)}
-                              className="grid size-7 shrink-0 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-400/10 dark:hover:text-red-400"
+                              className="grid size-7 shrink-0 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-400/10 dark:hover:text-red-400"
                               title="Delete"
                             >
                               <Trash2 className="size-3.5" />
@@ -1472,7 +1458,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                         )}
                         <button
                           onClick={() => handleDeletePost(post.id)}
-                          className="grid size-7 shrink-0 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-400/10 dark:hover:text-red-400"
+                          className="grid size-7 shrink-0 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-400/10 dark:hover:text-red-400"
                           title="Delete"
                         >
                           <Trash2 className="size-3.5" />
@@ -1493,7 +1479,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
             <article className="rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
               <header className="border-b border-slate-100 px-5 py-4 dark:border-white/5">
                 <div className="flex gap-2.5">
-                  <span className="grid size-8 place-items-center rounded-[10px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Package className="size-4" /></span>
+                  <Package className="size-4 shrink-0 text-slate-500 dark:text-slate-400" />
                   <div>
                     <h3 className="m-0 text-sm text-slate-900 dark:text-white">Skill Library</h3>
                     <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Upload .md or .zip skill files</p>
@@ -1503,12 +1489,12 @@ This post should support and link UP to the ${refTitle} reference page. It must 
               <div className="p-4">
                 {/* Upload zone */}
                 <div
-                  className="relative rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/50 px-4 py-6 text-center transition-colors hover:border-fuchsia-400 hover:bg-fuchsia-50/30 dark:border-white/15 dark:bg-slate-800/30 dark:hover:border-fuchsia-400/40 dark:hover:bg-fuchsia-400/5"
-                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-fuchsia-400"); }}
-                  onDragLeave={(e) => { e.currentTarget.classList.remove("border-fuchsia-400"); }}
+                  className="relative rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/50 px-4 py-6 text-center transition-colors hover:border-brand-400 hover:bg-brand-50/30 dark:border-white/15 dark:bg-slate-800/30 dark:hover:border-brand-400/40 dark:hover:bg-brand-400/5"
+                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-brand-400"); }}
+                  onDragLeave={(e) => { e.currentTarget.classList.remove("border-brand-400"); }}
                   onDrop={(e) => {
                     e.preventDefault();
-                    e.currentTarget.classList.remove("border-fuchsia-400");
+                    e.currentTarget.classList.remove("border-brand-400");
                     const file = e.dataTransfer.files?.[0];
                     if (file && (file.name.endsWith(".zip") || file.name.endsWith(".md"))) {
                       const input = fileInputRef.current;
@@ -1530,7 +1516,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                   />
                   {uploading ? (
                     <div className="flex flex-col items-center gap-2">
-                      <Loader2 className="size-6 animate-spin text-fuchsia-500" />
+                      <Loader2 className="size-6 animate-spin text-brand-500" />
                       <p className="text-xs text-slate-500">Uploading & extracting...</p>
                     </div>
                   ) : (
@@ -1585,7 +1571,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                         key={skill.id}
                         className={`group rounded-xl border p-3 transition-all cursor-pointer ${
                           selectedSkillId === skill.id
-                            ? "border-fuchsia-300 bg-fuchsia-50/50 dark:border-fuchsia-400/30 dark:bg-fuchsia-400/10"
+                            ? "border-brand-300 bg-brand-50/50 dark:border-brand-400/30 dark:bg-brand-400/10"
                             : "border-slate-200 bg-white hover:border-slate-300 dark:border-white/10 dark:bg-slate-900/40 dark:hover:border-white/20"
                         }`}
                         onClick={() => setSelectedSkillId(selectedSkillId === skill.id ? null : skill.id)}
@@ -1593,7 +1579,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <Package className="size-3.5 shrink-0 text-fuchsia-500" />
+                              <Package className="size-3.5 shrink-0 text-brand-500" />
                               <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">{skill.name}</p>
                             </div>
                             {skill.description && (
@@ -1605,14 +1591,14 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                             </div>
                           </div>
                           <button
-                            className="shrink-0 rounded-lg p-1.5 text-slate-400 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 dark:hover:bg-red-400/10"
+                            className="shrink-0 rounded-lg p-1.5 text-slate-500 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 dark:hover:bg-red-400/10"
                             onClick={(e) => { e.stopPropagation(); handleDeleteSkill(skill.id); }}
                           >
                             <Trash2 className="size-3.5" />
                           </button>
                         </div>
                         {selectedSkillId === skill.id && (
-                          <div className="mt-2 flex items-center gap-1 text-xs font-medium text-fuchsia-600 dark:text-fuchsia-400">
+                          <div className="mt-2 flex items-center gap-1 text-xs font-medium text-brand-600 dark:text-brand-400">
                             <ArrowRight className="size-3" /> Selected for generation
                           </div>
                         )}
@@ -1627,7 +1613,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
             <article className="rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/50">
               <header className="border-b border-slate-100 px-5 py-4 dark:border-white/5">
                 <div className="flex gap-2.5">
-                  <span className="grid size-8 place-items-center rounded-[10px] bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400"><Building2 className="size-4" /></span>
+                  <Building2 className="size-4 shrink-0 text-slate-500 dark:text-slate-400" />
                   <div>
                     <h3 className="m-0 text-sm text-slate-900 dark:text-white">Brand Profile</h3>
                     <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Select brand for content generation</p>
@@ -1709,27 +1695,27 @@ This post should support and link UP to the ${refTitle} reference page. It must 
             </article>
 
             {/* How it works */}
-            <article className="rounded-3xl border border-slate-200 bg-gradient-to-br from-fuchsia-50/80 to-purple-50/40 p-5 dark:border-white/10 dark:from-fuchsia-400/5 dark:to-purple-400/5">
+            <article className="rounded-3xl border border-slate-200 bg-brand-50/80 p-5 dark:border-white/10 dark:bg-brand-400/5">
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">How it works</h3>
               <ol className="mt-3 space-y-2.5">
                 <li className="flex gap-2.5 text-xs text-slate-600 dark:text-slate-400">
-                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-fuchsia-100 text-[10px] font-bold text-fuchsia-700 dark:bg-fuchsia-400/20 dark:text-fuchsia-400">1</span>
+                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-brand-100 text-[10px] font-bold text-brand-700 dark:bg-brand-400/20 dark:text-brand-400">1</span>
                   Connect your WordPress site & sync data
                 </li>
                 <li className="flex gap-2.5 text-xs text-slate-600 dark:text-slate-400">
-                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-fuchsia-100 text-[10px] font-bold text-fuchsia-700 dark:bg-fuchsia-400/20 dark:text-fuchsia-400">2</span>
+                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-brand-100 text-[10px] font-bold text-brand-700 dark:bg-brand-400/20 dark:text-brand-400">2</span>
                   Upload skill files (.md or .zip)
                 </li>
                 <li className="flex gap-2.5 text-xs text-slate-600 dark:text-slate-400">
-                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-fuchsia-100 text-[10px] font-bold text-fuchsia-700 dark:bg-fuchsia-400/20 dark:text-fuchsia-400">3</span>
+                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-brand-100 text-[10px] font-bold text-brand-700 dark:bg-brand-400/20 dark:text-brand-400">3</span>
                   Select a skill & write your prompt
                 </li>
                 <li className="flex gap-2.5 text-xs text-slate-600 dark:text-slate-400">
-                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-fuchsia-100 text-[10px] font-bold text-fuchsia-700 dark:bg-fuchsia-400/20 dark:text-fuchsia-400">4</span>
+                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-brand-100 text-[10px] font-bold text-brand-700 dark:bg-brand-400/20 dark:text-brand-400">4</span>
                   AI generates content via your configured provider
                 </li>
                 <li className="flex gap-2.5 text-xs text-slate-600 dark:text-slate-400">
-                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-fuchsia-100 text-[10px] font-bold text-fuchsia-700 dark:bg-fuchsia-400/20 dark:text-fuchsia-400">5</span>
+                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-brand-100 text-[10px] font-bold text-brand-700 dark:bg-brand-400/20 dark:text-brand-400">5</span>
                   Review & publish to WordPress
                 </li>
               </ol>
@@ -1744,7 +1730,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
           {/* Top bar */}
           <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-300 bg-[#1d2327] px-4 text-white md:px-6">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="flex size-7 shrink-0 items-center justify-center rounded bg-fuchsia-600">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded bg-brand-600">
                 <FileText className="size-3.5" />
               </div>
               <div className="min-w-0">
@@ -1774,7 +1760,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                   <Button size="sm" variant="outline" className="border-slate-600 text-white hover:bg-slate-700 hover:text-white" onClick={() => navigator.clipboard.writeText(`${previewContent.title}\n\n${previewContent.metaDescription}\n\n${previewContent.body}`)}>
                     <Copy className="size-3.5" /> Copy
                   </Button>
-                  <Button type="button" size="sm" className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700" onClick={() => { if (previewContent) openPublishModal(previewContent); setPreviewOpen(false); }}>
+                  <Button type="button" size="sm" className="bg-brand-600 hover:bg-brand-700" onClick={() => { if (previewContent) openPublishModal(previewContent); setPreviewOpen(false); }}>
                     <Send className="size-3.5" /> Publish
                   </Button>
                 </>
@@ -1789,55 +1775,55 @@ This post should support and link UP to the ${refTitle} reference page. It must 
           {editMode && (
             <div className="flex flex-wrap items-center gap-3 border-b border-slate-300 bg-[#f6f7f7] px-4 py-3">
               <div className="flex items-center gap-1 rounded-lg border border-slate-300 bg-white p-1 shadow-sm">
-                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Bold" onClick={() => execCmd("bold")}>
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700" title="Bold" onClick={() => execCmd("bold")}>
                   <Bold className="size-4" /> <span className="hidden md:inline">Bold</span>
                 </button>
-                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Italic" onClick={() => execCmd("italic")}>
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700" title="Italic" onClick={() => execCmd("italic")}>
                   <Italic className="size-4" /> <span className="hidden md:inline">Italic</span>
                 </button>
-                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Underline" onClick={() => execCmd("underline")}>
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700" title="Underline" onClick={() => execCmd("underline")}>
                   <Underline className="size-4" /> <span className="hidden md:inline">Underline</span>
                 </button>
               </div>
 
               <div className="flex items-center gap-1 rounded-lg border border-slate-300 bg-white p-1 shadow-sm">
-                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Paragraph" onClick={() => applyHeading("p")}>
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700" title="Paragraph" onClick={() => applyHeading("p")}>
                   <span className="text-xs font-bold">P</span> <span className="hidden md:inline">P</span>
                 </button>
-                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Heading 2" onClick={() => applyHeading("h2")}>
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700" title="Heading 2" onClick={() => applyHeading("h2")}>
                   <Heading2 className="size-4" /> <span className="hidden md:inline">H2</span>
                 </button>
-                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Heading 3" onClick={() => applyHeading("h3")}>
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700" title="Heading 3" onClick={() => applyHeading("h3")}>
                   <Heading3 className="size-4" /> <span className="hidden md:inline">H3</span>
                 </button>
-                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Blockquote" onClick={() => applyHeading("blockquote")}>
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700" title="Blockquote" onClick={() => applyHeading("blockquote")}>
                   <Quote className="size-4" /> <span className="hidden md:inline">Quote</span>
                 </button>
               </div>
 
               <div className="flex items-center gap-1 rounded-lg border border-slate-300 bg-white p-1 shadow-sm">
-                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Bulleted List" onClick={() => execCmd("insertUnorderedList")}>
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700" title="Bulleted List" onClick={() => execCmd("insertUnorderedList")}>
                   <List className="size-4" /> <span className="hidden md:inline">List</span>
                 </button>
-                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Numbered List" onClick={() => execCmd("insertOrderedList")}>
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700" title="Numbered List" onClick={() => execCmd("insertOrderedList")}>
                   <ListOrdered className="size-4" /> <span className="hidden md:inline">1,2</span>
                 </button>
               </div>
 
               <div className="flex items-center gap-1 rounded-lg border border-slate-300 bg-white p-1 shadow-sm">
-                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Insert Link" onClick={insertLink}>
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700" title="Insert Link" onClick={insertLink}>
                   <Link2 className="size-4" /> <span className="hidden md:inline">Link</span>
                 </button>
-                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Insert Image" onClick={insertImage}>
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700" title="Insert Image" onClick={insertImage}>
                   <ImageIcon className="size-4" /> <span className="hidden md:inline">Image</span>
                 </button>
               </div>
 
               <div className="flex items-center gap-1 rounded-lg border border-slate-300 bg-white p-1 shadow-sm">
-                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Undo" onClick={() => execCmd("undo")}>
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700" title="Undo" onClick={() => execCmd("undo")}>
                   <Undo2 className="size-4" /> <span className="hidden md:inline">Undo</span>
                 </button>
-                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:text-fuchsia-700" title="Redo" onClick={() => execCmd("redo")}>
+                <button className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700" title="Redo" onClick={() => execCmd("redo")}>
                   <Redo2 className="size-4" /> <span className="hidden md:inline">Redo</span>
                 </button>
                 <button className="flex items-center gap-1.5 rounded-md border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50" title="Clear Formatting" onClick={() => execCmd("removeFormat")}>
@@ -1857,7 +1843,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                   <h4 className="text-xs font-bold uppercase text-slate-500">Slug</h4>
                   {editMode ? (
                     <input
-                      className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:border-fuchsia-400 focus:outline-none"
+                      className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:border-brand-400 focus:outline-none"
                       value={editSlug}
                       onChange={(e) => setEditSlug(e.target.value)}
                     />
@@ -1886,7 +1872,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                     <ul className="mt-3 space-y-2">
                       {previewContent.headings.map((h, i) => (
                         <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
-                          <span className="mt-1 block h-1.5 w-1.5 shrink-0 rounded-full bg-fuchsia-500" />
+                          <span className="mt-1 block h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
                           <span className="line-clamp-2">{h}</span>
                         </li>
                       ))}
@@ -1899,10 +1885,10 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                     <h4 className="text-xs font-bold uppercase text-slate-500">Image Prompts ({previewContent.imagePrompts.length})</h4>
                     <div className="mt-3 space-y-3">
                       {previewContent.imagePrompts.map((img, i) => (
-                        <div key={i} className="rounded-md border border-fuchsia-200 bg-fuchsia-50/50 p-3">
-                          <p className="text-xs font-bold text-fuchsia-700">{img.placement}</p>
+                        <div key={i} className="rounded-md border border-brand-200 bg-brand-50/50 p-3">
+                          <p className="text-xs font-bold text-brand-700">{img.placement}</p>
                           <p className="mt-1 text-xs text-slate-600 line-clamp-4">{img.prompt}</p>
-                          <button className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-fuchsia-600 hover:underline" onClick={() => navigator.clipboard.writeText(img.prompt)}>
+                          <button className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-brand-600 hover:underline" onClick={() => navigator.clipboard.writeText(img.prompt)}>
                             <Copy className="size-3" /> Copy
                           </button>
                         </div>
@@ -1958,7 +1944,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
                         <Clock className="size-3.5" /> {previewContent.readingTime} min read
                       </span>
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-fuchsia-50 px-3 py-1 text-fuchsia-700">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-brand-700">
                         <CheckCircle2 className="size-3.5" /> SEO optimized
                       </span>
                     </div>
@@ -1969,12 +1955,12 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                         ref={bodyEditRef}
                         contentEditable
                         suppressContentEditableWarning
-                        className="prose prose-lg max-w-none space-y-6 pt-8 text-slate-800 outline-none [&>*]:mb-6 [&_h2]:mt-10 [&_h2]:mb-5 [&_h2]:border-b [&_h2]:border-fuchsia-100 [&_h2]:pb-2 [&_h2]:text-2xl [&_h2]:font-extrabold [&_h2]:text-slate-900 [&_h3]:mt-8 [&_h3]:mb-4 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-slate-800 [&_p]:mb-5 [&_p]:leading-[1.85] [&_a]:font-semibold [&_a]:text-fuchsia-600 [&_a]:underline [&_ul]:my-5 [&_ul]:space-y-2 [&_ul]:pl-6 [&_ol]:my-5 [&_ol]:space-y-2 [&_ol]:pl-6 [&_li]:my-1 [&_blockquote]:my-6 [&_blockquote]:rounded-md [&_blockquote]:border-l-4 [&_blockquote]:border-fuchsia-500 [&_blockquote]:bg-fuchsia-50/40 [&_blockquote]:p-5 [&_blockquote]:italic [&_strong]:font-bold [&_table]:my-6 [&_table]:w-full [&_table]:overflow-x-auto [&_table]:border-collapse [&_table]:border [&_table]:border-slate-300 [&_thead]:bg-slate-100 [&_th]:border [&_th]:border-slate-300 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-sm [&_th]:font-bold [&_td]:border [&_td]:border-slate-300 [&_td]:px-4 [&_td]:py-3 [&_td]:text-sm [&_tr:nth-child(even)]:bg-slate-50/60 [&_figure]:relative [&_figure]:my-8 [&_figure]:cursor-grab [&_figure]:overflow-hidden [&_figure]:rounded-xl [&_figure]:border [&_figure]:border-slate-200 [&_figure:hover]:ring-2 [&_figure:hover]:ring-fuchsia-400 [&_img]:h-auto [&_img]:w-full [&_img]:rounded-xl focus:outline-none"
+                        className="prose prose-lg max-w-none space-y-6 pt-8 text-slate-800 outline-none [&>*]:mb-6 [&_h2]:mt-10 [&_h2]:mb-5 [&_h2]:border-b [&_h2]:border-brand-100 [&_h2]:pb-2 [&_h2]:text-2xl [&_h2]:font-extrabold [&_h2]:text-slate-900 [&_h3]:mt-8 [&_h3]:mb-4 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-slate-800 [&_p]:mb-5 [&_p]:leading-[1.85] [&_a]:font-semibold [&_a]:text-brand-600 [&_a]:underline [&_ul]:my-5 [&_ul]:space-y-2 [&_ul]:pl-6 [&_ol]:my-5 [&_ol]:space-y-2 [&_ol]:pl-6 [&_li]:my-1 [&_blockquote]:my-6 [&_blockquote]:rounded-md [&_blockquote]:border-l-4 [&_blockquote]:border-brand-500 [&_blockquote]:bg-brand-50/40 [&_blockquote]:p-5 [&_blockquote]:italic [&_strong]:font-bold [&_table]:my-6 [&_table]:w-full [&_table]:overflow-x-auto [&_table]:border-collapse [&_table]:border [&_table]:border-slate-300 [&_thead]:bg-slate-100 [&_th]:border [&_th]:border-slate-300 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-sm [&_th]:font-bold [&_td]:border [&_td]:border-slate-300 [&_td]:px-4 [&_td]:py-3 [&_td]:text-sm [&_tr:nth-child(even)]:bg-slate-50/60 [&_figure]:relative [&_figure]:my-8 [&_figure]:cursor-grab [&_figure]:overflow-hidden [&_figure]:rounded-xl [&_figure]:border [&_figure]:border-slate-200 [&_figure:hover]:ring-2 [&_figure:hover]:ring-brand-400 [&_img]:h-auto [&_img]:w-full [&_img]:rounded-xl focus:outline-none"
                         dangerouslySetInnerHTML={{ __html: cleanBodyForPreview(previewContent.body) }}
                       />
                     ) : (
                       <div
-                        className="prose prose-lg max-w-none space-y-6 pt-8 text-slate-800 [&>*]:mb-6 [&_h2]:mt-10 [&_h2]:mb-5 [&_h2]:border-b [&_h2]:border-fuchsia-100 [&_h2]:pb-2 [&_h2]:text-2xl [&_h2]:font-extrabold [&_h2]:text-slate-900 [&_h3]:mt-8 [&_h3]:mb-4 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-slate-800 [&_p]:mb-5 [&_p]:leading-[1.85] [&_a]:font-semibold [&_a]:text-fuchsia-600 [&_a]:underline [&_ul]:my-5 [&_ul]:space-y-2 [&_ul]:pl-6 [&_ol]:my-5 [&_ol]:space-y-2 [&_ol]:pl-6 [&_li]:my-1 [&_blockquote]:my-6 [&_blockquote]:rounded-md [&_blockquote]:border-l-4 [&_blockquote]:border-fuchsia-500 [&_blockquote]:bg-fuchsia-50/40 [&_blockquote]:p-5 [&_blockquote]:italic [&_strong]:font-bold [&_table]:my-6 [&_table]:w-full [&_table]:overflow-x-auto [&_table]:border-collapse [&_table]:border [&_table]:border-slate-300 [&_thead]:bg-slate-100 [&_th]:border [&_th]:border-slate-300 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-sm [&_th]:font-bold [&_td]:border [&_td]:border-slate-300 [&_td]:px-4 [&_td]:py-3 [&_td]:text-sm [&_tr:nth-child(even)]:bg-slate-50/60 [&_figure]:my-8 [&_figure]:rounded-xl [&_figure]:overflow-hidden [&_figure]:border [&_figure]:border-slate-200 [&_img]:w-full [&_img]:h-auto [&_img]:rounded-xl [&_figcaption]:mt-2 [&_figcaption]:text-center [&_figcaption]:text-xs [&_figcaption]:text-slate-500 [&_figcaption]:italic"
+                        className="prose prose-lg max-w-none space-y-6 pt-8 text-slate-800 [&>*]:mb-6 [&_h2]:mt-10 [&_h2]:mb-5 [&_h2]:border-b [&_h2]:border-brand-100 [&_h2]:pb-2 [&_h2]:text-2xl [&_h2]:font-extrabold [&_h2]:text-slate-900 [&_h3]:mt-8 [&_h3]:mb-4 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-slate-800 [&_p]:mb-5 [&_p]:leading-[1.85] [&_a]:font-semibold [&_a]:text-brand-600 [&_a]:underline [&_ul]:my-5 [&_ul]:space-y-2 [&_ul]:pl-6 [&_ol]:my-5 [&_ol]:space-y-2 [&_ol]:pl-6 [&_li]:my-1 [&_blockquote]:my-6 [&_blockquote]:rounded-md [&_blockquote]:border-l-4 [&_blockquote]:border-brand-500 [&_blockquote]:bg-brand-50/40 [&_blockquote]:p-5 [&_blockquote]:italic [&_strong]:font-bold [&_table]:my-6 [&_table]:w-full [&_table]:overflow-x-auto [&_table]:border-collapse [&_table]:border [&_table]:border-slate-300 [&_thead]:bg-slate-100 [&_th]:border [&_th]:border-slate-300 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-sm [&_th]:font-bold [&_td]:border [&_td]:border-slate-300 [&_td]:px-4 [&_td]:py-3 [&_td]:text-sm [&_tr:nth-child(even)]:bg-slate-50/60 [&_figure]:my-8 [&_figure]:rounded-xl [&_figure]:overflow-hidden [&_figure]:border [&_figure]:border-slate-200 [&_img]:w-full [&_img]:h-auto [&_img]:rounded-xl [&_figcaption]:mt-2 [&_figcaption]:text-center [&_figcaption]:text-xs [&_figcaption]:text-slate-500 [&_figcaption]:italic"
                         dangerouslySetInnerHTML={{ __html: cleanBodyForPreview(previewContent.body) }}
                       />
                     )}
@@ -2063,11 +2049,11 @@ function PublishModal({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: 12 }}
         transition={{ duration: 0.25 }}
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-fuchsia-200 bg-white shadow-2xl dark:border-fuchsia-400/20 dark:bg-slate-900"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-brand-200 bg-white shadow-2xl dark:border-brand-400/20 dark:bg-slate-900"
       >
-        <header className="flex items-center justify-between gap-4 border-b border-fuchsia-100 px-6 py-5 dark:border-fuchsia-400/10">
+        <header className="flex items-center justify-between gap-4 border-b border-brand-100 px-6 py-5 dark:border-brand-400/10">
           <div className="flex gap-2.75">
-            <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Newspaper className="size-[18px]" /></span>
+            <Newspaper className="size-[18px] shrink-0 text-slate-500 dark:text-slate-400" />
             <div>
               <h3 className="m-0 text-base text-slate-900 dark:text-white">Publish to WordPress</h3>
               <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{content.title}</p>
@@ -2150,7 +2136,7 @@ function PublishModal({
             <Button
               type="button"
               size="lg"
-              className="flex-1 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700"
+              className="flex-1 bg-brand-600 hover:bg-brand-700"
               onClick={onPublish}
               disabled={publishing || !selectedSiteId || (publishStatus === "future" && !scheduledDate)}
             >

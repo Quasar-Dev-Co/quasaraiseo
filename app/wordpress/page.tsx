@@ -7,6 +7,7 @@ import {
   ExternalLink, Trash2, RefreshCw, FileText, Clock,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMinLoading } from "@/lib/use-min-loading";
@@ -88,7 +89,7 @@ function WordPressContent() {
     return (
       <RequireAuth>
         <DashboardLayout>
-          <div className="px-6 py-8 lg:px-8">
+          <div>
             <div className="mb-8 flex items-center justify-between">
               <div>
                 <Skeleton className="h-8 w-48" />
@@ -126,22 +127,17 @@ function WordPressContent() {
   return (
     <RequireAuth>
       <DashboardLayout>
-        <div className="px-6 py-8 lg:px-8">
-          {/* Header */}
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
-                WordPress Sites
-              </h1>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Connect your WordPress sites to publish AI-generated content
-              </p>
-            </div>
-            <Button onClick={() => setShowConnectForm(!showConnectForm)}>
+        <div>
+          <PageHeader
+            actions={
+              <>
+<Button onClick={() => setShowConnectForm(!showConnectForm)}>
               <Plus className="size-4" />
               Connect Site
             </Button>
-          </div>
+              </>
+            }
+          />
 
           {error && (
             <div className="mb-6 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-400">
@@ -154,7 +150,7 @@ function WordPressContent() {
           {showConnectForm && (
             <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 dark:border-white/10 dark:bg-slate-900/50">
               <div className="mb-4 flex items-center gap-2">
-                <Link2 className="size-5 text-fuchsia-500" />
+                <Link2 className="size-5 text-brand-500" />
                 <h2 className="text-base font-bold text-slate-900 dark:text-white">
                   Connect WordPress Site
                 </h2>
@@ -215,7 +211,7 @@ function WordPressContent() {
                   href="https://github.com/Quasar-Dev-Co/quasaraiseo/tree/main/wordpress-plugin/quasar-ai-seo-assistant"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs font-semibold text-fuchsia-500 hover:underline"
+                  className="text-xs font-semibold text-brand-500 hover:underline"
                 >
                   Download the WordPress Plugin →
                 </a>
@@ -292,7 +288,7 @@ function WordPressContent() {
                                 href={site.siteUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-xs text-slate-400 hover:text-fuchsia-500"
+                                className="text-xs text-slate-400 hover:text-brand-500"
                               >
                                 {site.siteUrl} <ExternalLink className="inline size-3" />
                               </a>
@@ -364,7 +360,7 @@ function WordPressContent() {
                           <TableRow key={post.id}>
                             <TableCell className="font-semibold text-slate-900 dark:text-white max-w-[300px] truncate">
                               {post.permalink ? (
-                                <a href={post.permalink} target="_blank" rel="noopener noreferrer" className="hover:text-fuchsia-500">
+                                <a href={post.permalink} target="_blank" rel="noopener noreferrer" className="hover:text-brand-500">
                                   {post.title}
                                 </a>
                               ) : (
@@ -378,7 +374,7 @@ function WordPressContent() {
                                   post.status === "publish"
                                     ? "bg-green-100 text-green-700"
                                     : post.status === "future"
-                                      ? "bg-purple-100 text-purple-700"
+                                      ? "bg-brand-100 text-brand-700"
                                       : "bg-orange-100 text-orange-700"
                                 }
                               >
@@ -419,7 +415,7 @@ function WordPressContent() {
 
 export default function WordPressPage() {
   return (
-    <Suspense fallback={<RequireAuth><DashboardLayout><div className="flex h-[60vh] items-center justify-center"><Loader2 className="size-8 animate-spin text-fuchsia-500" /></div></DashboardLayout></RequireAuth>}>
+    <Suspense fallback={<RequireAuth><DashboardLayout><div className="flex h-[60vh] items-center justify-center"><Loader2 className="size-8 animate-spin text-brand-500" /></div></DashboardLayout></RequireAuth>}>
       <WordPressContent />
     </Suspense>
   );

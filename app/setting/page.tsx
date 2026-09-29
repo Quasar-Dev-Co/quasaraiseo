@@ -11,6 +11,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -84,7 +85,7 @@ function IndustryCombobox({ value, onChange }: { value: string; onChange: (value
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-left text-sm text-slate-900 transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+        className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-left text-sm text-slate-900 transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
       >
         <span className={value ? "text-slate-900 dark:text-white" : "text-slate-400"}>{value || "Select or type an industry..."}</span>
         <ChevronDown className={`size-4 shrink-0 text-slate-400 transition ${open ? "rotate-180" : ""}`} />
@@ -110,7 +111,7 @@ function IndustryCombobox({ value, onChange }: { value: string; onChange: (value
                 key={i}
                 type="button"
                 onClick={() => select(i)}
-                className={`w-full rounded-lg px-3 py-2 text-left text-sm transition hover:bg-fuchsia-50 dark:hover:bg-fuchsia-400/10 ${value === i ? "bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400" : "text-slate-700 dark:text-slate-200"}`}
+                className={`w-full rounded-lg px-3 py-2 text-left text-sm transition hover:bg-brand-50 dark:hover:bg-brand-400/10 ${value === i ? "bg-brand-50 text-brand-700 dark:bg-brand-400/10 dark:text-brand-400" : "text-slate-700 dark:text-slate-200"}`}
               >
                 {i}
               </button>
@@ -119,7 +120,7 @@ function IndustryCombobox({ value, onChange }: { value: string; onChange: (value
               <button
                 type="button"
                 onClick={() => select(search)}
-                className="w-full rounded-lg px-3 py-2 text-left text-sm text-fuchsia-700 transition hover:bg-fuchsia-50 dark:text-fuchsia-400 dark:hover:bg-fuchsia-400/10"
+                className="w-full rounded-lg px-3 py-2 text-left text-sm text-brand-700 transition hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-400/10"
               >
                 Use "{search}"
               </button>
@@ -646,15 +647,7 @@ function SettingsInner() {
   return (
     <RequireAuth>
       <DashboardLayout>
-        <section className="mb-8">
-          <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/80 bg-blue-50/86 px-3 py-2 text-xs font-bold uppercase tracking-[0.19em] text-blue-700 dark:border-blue-400/20 dark:bg-blue-400/10 dark:text-blue-300">
-            <Settings className="size-3.5" /> Configuration
-          </div>
-          <h1 className="mt-5 text-[clamp(34px,5vw,52px)] font-black leading-[1.02] tracking-[-0.052em] text-slate-900 dark:text-white">Settings</h1>
-          <p className="mt-4 max-w-[700px] text-[15px] leading-relaxed text-slate-600 dark:text-slate-400">
-            Manage Google integrations, security, and workspace settings.
-          </p>
-        </section>
+        <PageHeader />
 
         {error && (
           <div className="mb-6 flex items-center gap-2.5 rounded-[14px] border border-red-200 bg-red-50 px-4 py-3.5 text-sm font-semibold text-red-600 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-400">
@@ -687,10 +680,10 @@ function SettingsInner() {
           {/* GOOGLE TAB */}
           <TabsContent value="google">
             <div className="space-y-5">
-              <article className="overflow-hidden rounded-3xl border border-blue-200/50 bg-gradient-to-br from-blue-50/90 via-purple-50/40 to-white dark:border-blue-400/15 dark:from-blue-400/5 dark:to-slate-900/50">
+              <article className="overflow-hidden rounded-3xl border border-blue-200/50 bg-blue-50/90 dark:border-blue-400/15 dark:bg-blue-400/5">
                 <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-start gap-4">
-                    <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-white shadow-[0_8px_20px_rgba(217,70,239,0.15)] dark:bg-slate-800"><GIcon c="size-6" /></span>
+                    <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-white shadow-sm dark:bg-slate-800"><GIcon c="size-6" /></span>
                     <div>
                       <h3 className="text-base font-black text-slate-900 dark:text-white">One-Click Google Connect</h3>
                       <p className="mt-1 max-w-[520px] text-[13px] leading-relaxed text-slate-600 dark:text-slate-400">Connect all Google services at once with a single OAuth sign-in.</p>
@@ -698,7 +691,7 @@ function SettingsInner() {
                   </div>
                   {isSuper ? (
                     <div className="flex shrink-0 gap-2">
-                      <Button size="lg" className="h-12 gap-2.5 rounded-[14px] bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 px-6 text-sm font-bold text-white shadow-[0_12px_28px_rgba(217,70,239,0.25)]"
+                      <Button size="lg" className="h-12 gap-2.5 rounded-[14px] bg-blue-600 px-6 text-sm font-bold text-white shadow-sm"
                         onClick={handleConnectAll} disabled={connecting || connected}>
                         {connecting ? <><Loader2 className="size-4 animate-spin" /> Redirecting...</> : connected ? <><CheckCircle2 className="size-4" /> Connected</> : <><Zap className="size-4" /> Connect All</>}
                       </Button>
@@ -747,7 +740,7 @@ function SettingsInner() {
 
               <article className="rounded-2xl border border-slate-200/70 bg-slate-50/80 p-5 dark:border-white/5 dark:bg-slate-900/30">
                 <div className="flex items-start gap-3">
-                  <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"><Shield className="size-4" /></span>
+                  <Shield className="size-4 shrink-0 text-slate-500 dark:text-slate-400" />
                   <div><h4 className="text-[13px] font-bold text-slate-700 dark:text-slate-300">Data Privacy &amp; Security</h4><p className="mt-1 text-[12px] leading-relaxed text-slate-500 dark:text-slate-400">Read-only access for Search Console and Analytics. Sheets requires read/write for task sync. Tokens encrypted, never stored in plaintext. Revoke anytime.</p></div>
                 </div>
               </article>
@@ -774,7 +767,7 @@ function SettingsInner() {
                 {twoFAOn ? (
                   <div className="space-y-4 p-6">
                     <div className="flex items-center gap-3 rounded-2xl border border-blue-200/60 bg-blue-50/50 p-4 dark:border-blue-400/15 dark:bg-blue-400/5">
-                      <span className="grid size-9 place-items-center rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-400/15 dark:text-blue-400"><CheckCircle2 className="size-5" /></span>
+                      <CheckCircle2 className="size-5 shrink-0 text-slate-500 dark:text-slate-400" />
                       <div>
                         <h4 className="text-[14px] font-bold text-slate-900 dark:text-white">2FA is Active</h4>
                         <p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">Your account is protected with authenticator app verification.</p>
@@ -796,7 +789,7 @@ function SettingsInner() {
                 ) : (
                   <div className="p-6">
                     <div className="flex items-start gap-3 rounded-2xl border border-amber-200/60 bg-amber-50/40 p-4 dark:border-amber-400/15 dark:bg-amber-400/5">
-                      <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-400/15 dark:text-amber-400"><Shield className="size-4" /></span>
+                      <Shield className="size-4 shrink-0 text-slate-500 dark:text-slate-400" />
                       <div>
                         <h4 className="text-[13px] font-bold text-slate-700 dark:text-slate-300">2FA is Disabled</h4>
                         <p className="mt-1 text-[12px] leading-relaxed text-slate-500 dark:text-slate-400">Enable 2FA to require a verification code from your authenticator app in addition to your password. This protects your account even if your password is compromised.</p>
@@ -811,7 +804,7 @@ function SettingsInner() {
               <article className={card}>
                 <header className={hdr}>
                   <div className="flex gap-2.75">
-                    <span className="grid size-9 place-items-center rounded-[12px] bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400"><Monitor className="size-[18px]" /></span>
+                    <Monitor className="size-[18px] shrink-0 text-slate-500 dark:text-slate-400" />
                     <div>
                       <h3 className="m-0 text-base text-slate-900 dark:text-white">Active Device Sessions</h3>
                       <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{devices.length} device{devices.length !== 1 ? "s" : ""} currently logged in</p>
@@ -859,7 +852,7 @@ function SettingsInner() {
               <article className={card}>
                 <header className={hdr}>
                   <div className="flex gap-2.75">
-                    <span className="grid size-9 place-items-center rounded-[12px] bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400"><Settings className="size-[18px]" /></span>
+                    <Settings className="size-[18px] shrink-0 text-slate-500 dark:text-slate-400" />
                     <div><h3 className="m-0 text-base text-slate-900 dark:text-white">Workspace Settings</h3><p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">General preferences for your account</p></div>
                   </div>
                 </header>
@@ -910,7 +903,7 @@ function SettingsInner() {
               <article className={card}>
                 <header className={hdr}>
                   <div className="flex gap-2.75">
-                    <span className="grid size-9 place-items-center rounded-[12px] bg-red-50 text-red-600 dark:bg-red-400/10 dark:text-red-400"><Shield className="size-[18px]" /></span>
+                    <Shield className="size-[18px] shrink-0 text-slate-500 dark:text-slate-400" />
                     <div><h3 className="m-0 text-base text-slate-900 dark:text-white">Danger Zone</h3><p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Irreversible actions</p></div>
                   </div>
                 </header>
@@ -945,7 +938,7 @@ function SettingsInner() {
                 <article className={card}>
                   <header className={hdr}>
                     <div className="flex gap-2.75">
-                      <span className="grid size-9 place-items-center rounded-[12px] bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400"><Building2 className="size-[18px]" /></span>
+                      <Building2 className="size-[18px] shrink-0 text-slate-500 dark:text-slate-400" />
                       <div><h3 className="m-0 text-base text-slate-900 dark:text-white">{editingBranding ? "Edit Brand" : "New Brand"}</h3><p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Fill in your company details</p></div>
                     </div>
                     <Button size="sm" variant="outline" className="gap-1.5" onClick={resetBrandingForm}><X className="size-3.5" /> Cancel</Button>
@@ -956,7 +949,7 @@ function SettingsInner() {
                       <div>
                         <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Company Name *</label>
                         <input
-                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                           value={brandingForm.companyName}
                           onChange={(e) => setBrandingForm({ ...brandingForm, companyName: e.target.value })}
                           placeholder="Acme Inc."
@@ -965,7 +958,7 @@ function SettingsInner() {
                       <div>
                         <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Website *</label>
                         <input
-                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                           value={brandingForm.website}
                           onChange={(e) => setBrandingForm({ ...brandingForm, website: e.target.value })}
                           placeholder="https://example.com"
@@ -1032,7 +1025,7 @@ function SettingsInner() {
                               key={c}
                               type="button"
                               onClick={() => setBrandingForm({ ...brandingForm, defaultColor: c })}
-                              className={`size-8 rounded-full transition-all ${(brandingForm.defaultColor ?? "").toLowerCase() === c ? "ring-2 ring-offset-2 ring-fuchsia-500 scale-110 dark:ring-offset-slate-900" : "hover:scale-110"}`}
+                              className={`size-8 rounded-full transition-all ${(brandingForm.defaultColor ?? "").toLowerCase() === c ? "ring-2 ring-offset-2 ring-brand-500 scale-110 dark:ring-offset-slate-900" : "hover:scale-110"}`}
                               style={{ backgroundColor: c }}
                               aria-label={c}
                             />
@@ -1067,7 +1060,7 @@ function SettingsInner() {
                         <div>
                           <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Tagline</label>
                           <input
-                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                             value={brandingForm.tagline}
                             onChange={(e) => setBrandingForm({ ...brandingForm, tagline: e.target.value })}
                             placeholder={editingBranding ? "Enter tagline..." : "AI will fill this..."}
@@ -1079,7 +1072,7 @@ function SettingsInner() {
                       <div>
                         <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Description</label>
                         <textarea
-                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                           rows={2}
                           value={brandingForm.description}
                           onChange={(e) => setBrandingForm({ ...brandingForm, description: e.target.value })}
@@ -1092,7 +1085,7 @@ function SettingsInner() {
                         <div>
                           <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Email</label>
                           <input
-                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                             value={brandingForm.email}
                             onChange={(e) => setBrandingForm({ ...brandingForm, email: e.target.value })}
                             placeholder={editingBranding ? "contact@example.com" : "AI will fill this..."}
@@ -1102,7 +1095,7 @@ function SettingsInner() {
                         <div>
                           <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Phone</label>
                           <input
-                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                             value={brandingForm.phone}
                             onChange={(e) => setBrandingForm({ ...brandingForm, phone: e.target.value })}
                             placeholder={editingBranding ? "+1 234 567 890" : "AI will fill this..."}
@@ -1112,7 +1105,7 @@ function SettingsInner() {
                         <div>
                           <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Address</label>
                           <input
-                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                             value={brandingForm.address}
                             onChange={(e) => setBrandingForm({ ...brandingForm, address: e.target.value })}
                             placeholder={editingBranding ? "123 Main St, City, Country" : "AI will fill this..."}
@@ -1125,7 +1118,7 @@ function SettingsInner() {
                         <div>
                           <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Twitter / X</label>
                           <input
-                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                             value={brandingForm.socialLinks?.twitter ?? ""}
                             onChange={(e) => setBrandingForm({ ...brandingForm, socialLinks: { ...brandingForm.socialLinks, twitter: e.target.value } })}
                             placeholder={editingBranding ? "@username" : "AI will fill this..."}
@@ -1135,7 +1128,7 @@ function SettingsInner() {
                         <div>
                           <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">LinkedIn</label>
                           <input
-                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                             value={brandingForm.socialLinks?.linkedin ?? ""}
                             onChange={(e) => setBrandingForm({ ...brandingForm, socialLinks: { ...brandingForm.socialLinks, linkedin: e.target.value } })}
                             placeholder={editingBranding ? "company/link" : "AI will fill this..."}
@@ -1145,7 +1138,7 @@ function SettingsInner() {
                         <div>
                           <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">Facebook</label>
                           <input
-                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                             value={brandingForm.socialLinks?.facebook ?? ""}
                             onChange={(e) => setBrandingForm({ ...brandingForm, socialLinks: { ...brandingForm.socialLinks, facebook: e.target.value } })}
                             placeholder={editingBranding ? "page/name" : "AI will fill this..."}
@@ -1158,7 +1151,7 @@ function SettingsInner() {
                     <label className="flex items-center gap-2.5 cursor-pointer">
                       <input
                         type="checkbox"
-                        className="size-4 rounded border-slate-300 text-fuchsia-600 focus:ring-fuchsia-400/20"
+                        className="size-4 rounded border-slate-300 text-brand-600 focus:ring-brand-400/20"
                         checked={brandingForm.isDefault ?? false}
                         onChange={(e) => setBrandingForm({ ...brandingForm, isDefault: e.target.checked })}
                       />
@@ -1231,7 +1224,7 @@ function SettingsInner() {
                               <div className="flex items-center gap-2">
                                 <h4 className="text-[14px] font-bold text-slate-900 dark:text-white">{b.companyName}</h4>
                                 {b.isDefault && (
-                                  <Badge className="bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-400">
+                                  <Badge className="bg-brand-50 text-brand-700 dark:bg-brand-400/15 dark:text-brand-400">
                                     <Star className="size-3" /> Default
                                   </Badge>
                                 )}
@@ -1413,7 +1406,7 @@ function SettingsInner() {
               <article className="overflow-hidden rounded-3xl border border-slate-200/60 bg-white dark:border-slate-700/50 dark:bg-slate-800/50">
                 <div className="space-y-4 p-6">
                   <div className="flex items-center gap-3">
-                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 text-white text-[14px] font-black">OR</span>
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-700 text-white text-[14px] font-black">OR</span>
                     <div className="flex-1">
                       <p className="text-[14px] font-bold text-slate-900 dark:text-white">OpenRouter</p>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400">Claude, GLM-5.2, Gemini, DeepSeek, Llama, 70+ models</p>
@@ -1421,7 +1414,7 @@ function SettingsInner() {
                     {/* Active badge + switch button */}
                     {aiSettings?.openrouter.hasApiKey && (
                       aiSettings.activeProvider === "openrouter" ? (
-                        <span className="rounded-full bg-purple-100 px-3 py-1 text-[11px] font-bold text-purple-700 dark:bg-purple-400/15 dark:text-purple-400">
+                        <span className="rounded-full bg-brand-100 px-3 py-1 text-[11px] font-bold text-brand-700 dark:bg-brand-400/15 dark:text-brand-400">
                           ACTIVE
                         </span>
                       ) : (
@@ -1434,8 +1427,8 @@ function SettingsInner() {
 
                   {/* OpenRouter key status */}
                   {aiSettings?.openrouter.hasApiKey && (
-                    <div className="flex items-center justify-between rounded-xl bg-purple-50/50 px-3 py-2 dark:bg-purple-400/5">
-                      <p className="text-[11px] text-purple-700 dark:text-purple-400/80">
+                    <div className="flex items-center justify-between rounded-xl bg-brand-50/50 px-3 py-2 dark:bg-brand-400/5">
+                      <p className="text-[11px] text-brand-700 dark:text-brand-400/80">
                         Key saved: {aiSettings.openrouter.apiKeyPreview}
                       </p>
                       <button
@@ -1450,7 +1443,7 @@ function SettingsInner() {
                   {/* OpenRouter API Key input */}
                   <div>
                     <label className="mb-1.5 block text-[12px] font-bold uppercase text-slate-500 dark:text-slate-400">
-                      OpenRouter API Key {aiSettings?.openrouter.hasApiKey && <span className="text-purple-600">(enter new key to replace)</span>}
+                      OpenRouter API Key {aiSettings?.openrouter.hasApiKey && <span className="text-brand-600">(enter new key to replace)</span>}
                     </label>
                     <div className="relative">
                       <KeyRound className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
@@ -1530,7 +1523,7 @@ function SettingsInner() {
                 <div className="mb-4 flex items-center justify-between">
                   <div>
                     <h4 className="flex items-center gap-2 text-[15px] font-black text-slate-900 dark:text-white">
-                      <Sparkles className="size-4 text-fuchsia-500" />
+                      <Sparkles className="size-4 text-brand-500" />
                       Discovered Models
                     </h4>
                     <p className="mt-1 text-[12px] text-slate-500 dark:text-slate-400">
@@ -1551,21 +1544,21 @@ function SettingsInner() {
 
                 {/* Sync result */}
                 {syncResult && (
-                  <div className="mb-4 rounded-xl border border-fuchsia-200 bg-fuchsia-50/50 p-3 dark:border-fuchsia-400/20 dark:bg-fuchsia-400/5">
-                    <p className="text-[12px] font-bold text-fuchsia-800 dark:text-fuchsia-400">
+                  <div className="mb-4 rounded-xl border border-brand-200 bg-brand-50/50 p-3 dark:border-brand-400/20 dark:bg-brand-400/5">
+                    <p className="text-[12px] font-bold text-brand-800 dark:text-brand-400">
                       Last sync: OpenAI {syncResult.openai.total} models ({syncResult.openai.new} new) · OpenRouter {syncResult.openrouter.total} models ({syncResult.openrouter.new} new)
                     </p>
                     {syncResult.newModels.length > 0 && (
                       <div className="mt-2 space-y-1">
                         {syncResult.newModels.slice(0, 10).map((m, i) => (
-                          <div key={i} className="flex items-center gap-2 text-[11px] text-fuchsia-700 dark:text-fuchsia-400/80">
-                            <span className="rounded bg-fuchsia-100 px-1.5 py-0.5 font-bold uppercase dark:bg-fuchsia-400/15">{m.provider}</span>
+                          <div key={i} className="flex items-center gap-2 text-[11px] text-brand-700 dark:text-brand-400/80">
+                            <span className="rounded bg-brand-100 px-1.5 py-0.5 font-bold uppercase dark:bg-brand-400/15">{m.provider}</span>
                             <span className="font-mono font-semibold">{m.modelId}</span>
                             {m.isFree && <span className="rounded bg-emerald-100 px-1.5 py-0.5 font-bold text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400">FREE</span>}
                           </div>
                         ))}
                         {syncResult.newModels.length > 10 && (
-                          <p className="text-[10px] text-fuchsia-600 dark:text-fuchsia-400/60">...and {syncResult.newModels.length - 10} more</p>
+                          <p className="text-[10px] text-brand-600 dark:text-brand-400/60">...and {syncResult.newModels.length - 10} more</p>
                         )}
                       </div>
                     )}
@@ -1585,7 +1578,7 @@ function SettingsInner() {
                       onClick={() => setModelsFilter(f.id as "all" | "openai" | "openrouter" | "new")}
                       className={`rounded-lg px-3 py-1.5 text-[11px] font-bold transition-colors ${
                         modelsFilter === f.id
-                          ? "bg-fuchsia-600 text-white"
+                          ? "bg-brand-700 text-white"
                           : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
                       }`}
                     >
@@ -1599,7 +1592,7 @@ function SettingsInner() {
                       value={modelsSearch}
                       onChange={(e) => setModelsSearch(e.target.value)}
                       placeholder="Search models..."
-                      className="w-full rounded-lg border border-slate-200 bg-white py-1.5 pl-9 pr-3 text-[12px] text-slate-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-lg border border-slate-200 bg-white py-1.5 pl-9 pr-3 text-[12px] text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                     />
                     {modelsSearch && (
                       <button
@@ -1616,7 +1609,7 @@ function SettingsInner() {
                 <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10">
                   {modelsLoading ? (
                     <div className="flex h-32 items-center justify-center">
-                      <Loader2 className="size-5 animate-spin text-fuchsia-500" />
+                      <Loader2 className="size-5 animate-spin text-brand-500" />
                     </div>
                   ) : filteredModels.length === 0 ? (
                     <div className="flex h-32 items-center justify-center text-[12px] text-slate-400">
@@ -1641,12 +1634,12 @@ function SettingsInner() {
                           {filteredModels.map((m) => {
                             const isNew = Date.now() - new Date(m.discoveredAt).getTime() < 7 * 24 * 60 * 60 * 1000;
                             return (
-                              <tr key={m.id} className={`transition-colors hover:bg-slate-50 dark:hover:bg-white/5 ${isNew ? "bg-fuchsia-50/30 dark:bg-fuchsia-400/5" : ""}`}>
+                              <tr key={m.id} className={`transition-colors hover:bg-slate-50 dark:hover:bg-white/5 ${isNew ? "bg-brand-50/30 dark:bg-brand-400/5" : ""}`}>
                                 <td className="px-4 py-2.5">
                                   <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase ${
                                     m.provider === "openai"
                                       ? "bg-slate-900 text-white"
-                                      : "bg-gradient-to-br from-purple-600 to-pink-600 text-white"
+                                      : "bg-brand-700 text-white"
                                   }`}>
                                     {m.provider === "openai" ? "AI" : "OR"}
                                   </span>
@@ -1654,7 +1647,7 @@ function SettingsInner() {
                                 <td className="max-w-[280px] truncate px-4 py-2.5 font-mono text-[11px] font-semibold text-slate-900 dark:text-white">
                                   {m.modelId}
                                   {m.isFree && <span className="ml-1.5 rounded bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400">FREE</span>}
-                                  {isNew && <span className="ml-1.5 rounded bg-fuchsia-100 px-1.5 py-0.5 text-[9px] font-bold text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-400">NEW</span>}
+                                  {isNew && <span className="ml-1.5 rounded bg-brand-100 px-1.5 py-0.5 text-[9px] font-bold text-brand-700 dark:bg-brand-400/15 dark:text-brand-400">NEW</span>}
                                 </td>
                                 <td className="px-4 py-2.5 text-right text-[11px] text-slate-500 dark:text-slate-400">
                                   {m.contextLength ? `${(m.contextLength / 1000).toFixed(0)}K` : "—"}
@@ -1680,12 +1673,12 @@ function SettingsInner() {
                 {/* Stats summary */}
                 {filteredModels.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-slate-500 dark:text-slate-400">
-                    {modelsSearch && <span className="font-bold text-fuchsia-600 dark:text-fuchsia-400">Showing {filteredModels.length} of {discoveredModels.length}</span>}
+                    {modelsSearch && <span className="font-bold text-brand-600 dark:text-brand-400">Showing {filteredModels.length} of {discoveredModels.length}</span>}
                     {!modelsSearch && <span><strong className="text-slate-700 dark:text-slate-300">{discoveredModels.length}</strong> total models</span>}
                     <span><strong className="text-slate-700 dark:text-slate-300">{filteredModels.filter(m => m.isFree).length}</strong> free</span>
                     <span><strong className="text-slate-700 dark:text-slate-300">{filteredModels.filter(m => m.provider === "openai").length}</strong> OpenAI</span>
                     <span><strong className="text-slate-700 dark:text-slate-300">{filteredModels.filter(m => m.provider === "openrouter").length}</strong> OpenRouter</span>
-                    <span><strong className="text-fuchsia-600 dark:text-fuchsia-400">{filteredModels.filter(m => Date.now() - new Date(m.discoveredAt).getTime() < 7 * 24 * 60 * 60 * 1000).length}</strong> new this week</span>
+                    <span><strong className="text-brand-600 dark:text-brand-400">{filteredModels.filter(m => Date.now() - new Date(m.discoveredAt).getTime() < 7 * 24 * 60 * 60 * 1000).length}</strong> new this week</span>
                   </div>
                 )}
               </div>
