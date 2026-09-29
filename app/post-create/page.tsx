@@ -31,6 +31,7 @@ import {
   type GenerationJob,
   type GeneratedContent,
   type PermalinkCheck,
+  type SiteTerm,
   type GeneratedImage,
   type ContentFile,
   type SuggestedTopic,
@@ -170,6 +171,8 @@ function PostCreateContent() {
   const [publishError, setPublishError] = useState<string | null>(null);
   const [publishSuccess, setPublishSuccess] = useState<string | null>(null);
   const [postCategories, setPostCategories] = useState("");
+  const [taxonomy, setTaxonomy] = useState<{ categories: SiteTerm[]; tags: SiteTerm[] } | null>(null);
+  const [taxonomyLoading, setTaxonomyLoading] = useState(false);
   const [postTags, setPostTags] = useState("");
   const [wpPosts, setWpPosts] = useState<WordPressPost[]>([]);
 
@@ -212,6 +215,19 @@ function PostCreateContent() {
     setPublishSuccess(null);
     setPublishError(null);
   };
+
+  // Load the site's real categories and tags whenever the publish dialog opens or the site changes.
+  useEffect(() => {
+    if (!publishModalOpen || !selectedSiteId) return;
+    let cancelled = false;
+    setTaxonomy(null);
+    setTaxonomyLoading(true);
+    wordpressApi.getTaxonomy(selectedSiteId)
+      .then((t) => { if (!cancelled) setTaxonomy(t); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setTaxonomyLoading(false); });
+    return () => { cancelled = true; };
+  }, [publishModalOpen, selectedSiteId]);
 
   const closePublishModal = () => {
     setPublishModalOpen(false);
@@ -1997,6 +2013,8 @@ This post should support and link UP to the ${refTitle} reference page. It must 
         scheduledDate={scheduledDate}
         setScheduledDate={setScheduledDate}
         siteTimezone={siteData?.timezone || ""}
+        taxonomy={taxonomy}
+        taxonomyLoading={taxonomyLoading}
         postCategories={postCategories}
         setPostCategories={setPostCategories}
         postTags={postTags}
@@ -2013,6 +2031,38 @@ This post should support and link UP to the ${refTitle} reference page. It must 
   );
 }
 
+// Existing categories/tags of the site as toggle chips. The value stays a comma
+// list of names, so typing a brand-new one still works.
+function TermPicker({ label, terms, loading, value, onChange }: { label: string; terms: SiteTerm[] | null; loading: boolean; value: string; onChange: (v: string) => void }) {
+  const chosen = value.split(",").map((t) => t.trim()).filter(Boolean);
+  const isOn = (name: string) => chosen.some((c) => c.toLowerCase() === name.toLowerCase());
+  const toggle = (name: string) => {
+    const next = isOn(name) ? chosen.filter((c) => c.toLowerCase() !== name.toLowerCase()) : [...chosen, name];
+    onChange(next.join(", "));
+  };
+  if (loading) return <p className="-mt-2 flex items-center gap-2 text-xs text-slate-500"><Loader2 className="size-3 animate-spin" /> Loading {label.toLowerCase()}…</p>;
+  if (!terms) return <p className="-mt-2 text-xs text-slate-500">Could not load {label.toLowerCase()}. You can still type them above.</p>;
+  if (terms.length === 0) return <p className="-mt-2 text-xs text-slate-500">No {label.toLowerCase()} yet. Anything you type above will be created.</p>;
+  return (
+    <div className="-mt-2">
+      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
+      <div className="mt-1.5 flex max-h-28 flex-wrap gap-1.5 overflow-y-auto">
+        {terms.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => toggle(t.name)}
+            aria-pressed={isOn(t.name)}
+            className={`rounded-full border px-2.5 py-1 text-xs font-medium ${isOn(t.name) ? "border-brand-700 bg-brand-700 text-white" : "border-slate-300 text-slate-700 hover:border-brand-700 dark:border-white/15 dark:text-slate-200"}`}
+          >
+            {t.name}{t.count > 0 && <span className="ml-1 opacity-60">{t.count}</span>}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function PublishModal({
   open,
   onClose,
@@ -2025,6 +2075,8 @@ function PublishModal({
   scheduledDate,
   setScheduledDate,
   siteTimezone,
+  taxonomy,
+  taxonomyLoading,
   postCategories,
   setPostCategories,
   postTags,
@@ -2048,6 +2100,8 @@ function PublishModal({
   scheduledDate: string;
   setScheduledDate: (value: string) => void;
   siteTimezone: string;
+  taxonomy: { categories: SiteTerm[]; tags: SiteTerm[] } | null;
+  taxonomyLoading: boolean;
   postCategories: string;
   setPostCategories: (v: string) => void;
   postTags: string;
@@ -2141,13 +2195,27 @@ function PublishModal({
             </div>
             <div>
               <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Categories</label>
-              <Input className="mt-2" placeholder="e.g. SEO, Marketing" value={postCategories} onChange={(e) => setPostCategories(e.target.value)} />
+              <Input className="mt-2" placeholder="Pick below or type a new one" value={postCategories} onChange={(e) => setPostCategories(e.target.value)} />
             </div>
           </div>
+          <TermPicker
+            label="Categories on this site"
+            terms={taxonomy?.categories ?? null}
+            loading={taxonomyLoading}
+            value={postCategories}
+            onChange={setPostCategories}
+          />
           <div>
             <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Tags</label>
-            <Input className="mt-2" placeholder="e.g. ai, content, automation" value={postTags} onChange={(e) => setPostTags(e.target.value)} />
+            <Input className="mt-2" placeholder="Pick below or type a new one" value={postTags} onChange={(e) => setPostTags(e.target.value)} />
           </div>
+          <TermPicker
+            label="Tags on this site"
+            terms={taxonomy?.tags ?? null}
+            loading={taxonomyLoading}
+            value={postTags}
+            onChange={setPostTags}
+          />
           <div>
             <label htmlFor="publish-slug" className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Page link</label>
             <div className="mt-2 flex items-center overflow-hidden rounded-lg border border-slate-300 bg-white focus-within:ring-2 focus-within:ring-brand-500/40 dark:border-white/15 dark:bg-slate-800">

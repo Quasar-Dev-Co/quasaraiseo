@@ -221,6 +221,15 @@ export const wordpressApi = {
     return res.json();
   },
 
+  /** Live categories and tags from the WordPress site itself. */
+  async getTaxonomy(siteId: string): Promise<{ categories: SiteTerm[]; tags: SiteTerm[] } | null> {
+    const res = await fetch(`${BACKEND_URL}/api/wordpress/sites/${siteId}/taxonomy`, {
+      headers: { ...authHeaders() },
+    });
+    if (!res.ok) return null;
+    return res.json();
+  },
+
   async getSiteData(siteId: string): Promise<{ data: WordPressSiteData | null }> {
     const res = await fetch(`${BACKEND_URL}/api/wordpress/sites/${siteId}/data`, {
       headers: { ...authHeaders() },
@@ -463,3 +472,5 @@ export const wordpressApi = {
     return res.json();
   },
 };
+
+export type SiteTerm = { id: number; name: string; count: number; parent?: number };
