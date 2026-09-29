@@ -11,6 +11,7 @@ import {
   Plug,
   Server,
   Settings,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -29,6 +30,8 @@ export type NavItem = {
   alias?: string;
   icon: LucideIcon;
   beta?: boolean;
+  /** Only the super user sees this entry. */
+  superOnly?: boolean;
 };
 
 export type NavGroup = {
@@ -149,6 +152,14 @@ export const NAV_GROUPS: NavGroup[] = [
         hint: "Assign and track SEO work",
         description: "Plan SEO work as tasks, assign them to people and track them to done.",
         icon: ClipboardList,
+      },
+      {
+        href: "/tracking",
+        label: "Tracking",
+        hint: "Usage by person",
+        description: "See how much each person uses the AI, where their time goes and which tools they run.",
+        icon: Users,
+        superOnly: true,
       },
     ],
   },

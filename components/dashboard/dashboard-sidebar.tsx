@@ -84,7 +84,7 @@ export function DashboardSidebar({ mobileOpen = false, onMobileClose }: { mobile
 
       <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-4" aria-label="Main">
         {NAV_GROUPS.map((group) => {
-          const items = group.items.filter((item) => !item.beta || preferences.betaFeatures);
+          const items = group.items.filter((item) => (!item.beta || preferences.betaFeatures) && (!item.superOnly || user?.role === "super"));
           if (items.length === 0) return null;
           return (
             <div key={group.id} className={group.id === "home" ? "" : "mt-4"}>

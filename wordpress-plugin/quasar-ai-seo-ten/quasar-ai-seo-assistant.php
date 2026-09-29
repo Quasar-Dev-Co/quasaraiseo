@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Quasar AI SEO
  * Description: Connect your WordPress site with Quasar AI SEO to publish AI-generated content directly from your Quasar dashboard.
- * Version: 2.0.1
+ * Version: 2.0.2
  * Author: Quasar AI SEO
  * Author URI: https://seo.quasarasoft.com
  * License: GPL-2.0+
@@ -87,6 +87,27 @@ register_deactivation_hook(__FILE__, function () {
 });
 
 // REST API endpoints
+/**
+ * The address a post will have once published. Drafts don't have a real link
+ * yet (WordPress gives ?p=ID), so ask WordPress what the finished link will be.
+ */
+function quasar_final_permalink($post) {
+    if (!$post) {
+        return '';
+    }
+    if (!in_array($post->post_status, ['draft', 'pending', 'auto-draft'], true)) {
+        return get_permalink($post);
+    }
+    if (!function_exists('get_sample_permalink')) {
+        require_once ABSPATH . 'wp-admin/includes/post.php';
+    }
+    list($template, $name) = get_sample_permalink($post->ID);
+    if (strpos($template, '%postname%') === false && strpos($template, '%pagename%') === false) {
+        return get_permalink($post);
+    }
+    return str_replace(['%postname%', '%pagename%'], $name, $template);
+}
+
 add_action('rest_api_init', function () {
     $namespace = 'quasar-ai-seo/v1';
 
@@ -254,6 +275,13 @@ add_action('rest_api_init', function () {
                 'post_type'    => $post_type,
             ];
 
+            // Link: use the slug the app chose (clean, built from the title). WordPress
+            // still makes it unique (adds -2) if another page already uses it.
+            $slug = isset($params['slug']) ? sanitize_title($params['slug']) : '';
+            if (!empty($slug)) {
+                $post_data['post_name'] = $slug;
+            }
+
             if (!empty($scheduled) && $status === 'future') {
                 $post_data['post_date'] = $scheduled;
                 $post_data['post_date_gmt'] = get_gmt_from_date($scheduled);
@@ -319,6 +347,9 @@ add_action('rest_api_init', function () {
                     'status'    => $post->post_status,
                     'date'      => $post->post_date,
                     'permalink' => get_permalink($post_id),
+                    'slug'      => $post->post_name,
+                    'final_permalink' => quasar_final_permalink($post),
+                    'plain_permalinks' => !get_option('permalink_structure'),
                 ],
             ]);
         },
@@ -1254,6 +1285,8 @@ add_action('rest_api_init', function () {
                 'success' => true,
                 'id'      => $id,
                 'status'  => 'publish',
+                'title'   => get_the_title($id),
+                'slug'    => get_post_field('post_name', $id),
                 'url'     => get_permalink($id),
             ]);
         },

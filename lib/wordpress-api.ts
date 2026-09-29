@@ -34,6 +34,16 @@ export interface WordPressSite {
   }>;
 }
 
+export interface PermalinkCheck {
+  ok: boolean;
+  expectedSlug: string;
+  actualSlug: string;
+  url: string;
+  isFinal: boolean;
+  problems: string[];
+  notes: string[];
+}
+
 export interface WordPressPost {
   id: string;
   siteId: string;
@@ -413,8 +423,10 @@ export const wordpressApi = {
       tags?: string[];
       featuredImage?: string;
       scheduledDate?: string;
+      slug?: string;
+      postType?: "post" | "page";
     },
-  ): Promise<{ success: boolean; post: WordPressPost }> {
+  ): Promise<{ success: boolean; post: WordPressPost & { slug?: string; permalinkCheck?: PermalinkCheck } }> {
     const res = await fetch(`${BACKEND_URL}/api/wordpress/sites/${siteId}/posts`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders() },

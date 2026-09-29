@@ -30,6 +30,7 @@ import {
   type ModelRecord,
   type GenerationJob,
   type GeneratedContent,
+  type PermalinkCheck,
   type GeneratedImage,
   type ContentFile,
   type SuggestedTopic,
@@ -40,6 +41,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { keywordMcpApi } from "@/lib/keyword-mcp-api";
 import { useMinLoading } from "@/lib/use-min-loading";
 import { useAuth } from "@/hooks/use-auth";
+import { slugMatchesTitle, slugify, suggestSlug, trimSlug } from "@/lib/slug";
 import { ImageReorderLayer, stripImageEditorAttrs } from "@/components/post-editor/image-reorder-layer";
 import { insertImagesIntoBody as placeImagesInBody } from "@/lib/blog-images";
 
@@ -184,6 +186,8 @@ function PostCreateContent() {
   // Publish modal
   const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [publishModalContent, setPublishModalContent] = useState<GeneratedContent | null>(null);
+  const [publishSlug, setPublishSlug] = useState("");
+  const [publishCheck, setPublishCheck] = useState<PermalinkCheck | null>(null);
 
   const [editMode, setEditMode] = useState(false);
   const [editTitle, setEditTitle] = useState("");
@@ -202,6 +206,8 @@ function PostCreateContent() {
 
   const openPublishModal = (content: GeneratedContent) => {
     setPublishModalContent(content);
+    setPublishSlug(suggestSlug(content.title, content.slug));
+    setPublishCheck(null);
     setPublishModalOpen(true);
     setPublishSuccess(null);
     setPublishError(null);
@@ -619,6 +625,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
     setPublishing(true);
     setPublishError(null);
     setPublishSuccess(null);
+    setPublishCheck(null);
     try {
       // Server-side generation only writes images into the body, so fall back to the
       // figure marked as featured there.
@@ -633,7 +640,10 @@ This post should support and link UP to the ${refTitle} reference page. It must 
         tags: postTags ? postTags.split(",").map((t) => t.trim()).filter(Boolean) : [],
         featuredImage: featuredUrl ? wordpressApi.imageUrl(featuredUrl) : undefined,
         scheduledDate: publishStatus === "future" ? scheduledDate : undefined,
+        slug: publishSlug || undefined,
       });
+      setPublishCheck(result.post.permalinkCheck ?? null);
+      if (result.post.slug) setPublishSlug(result.post.slug);
       const link = result.post.permalink ? ` View at: ${result.post.permalink}` : "";
       if (publishStatus === "future") {
         setPublishSuccess(`Post scheduled for ${formatWallClock(scheduledDate)}.${link}`);
@@ -1171,7 +1181,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                     <Button size="sm" variant="outline" onClick={handleCopyContent}><Copy className="size-3.5" /> Copy</Button>
                     <Button type="button" size="sm" variant="outline" onClick={() => openPreview(generatedContent)}><Eye className="size-3.5" /> View Content</Button>
                     {wpSites.length > 0 && (
-                      <Button type="button" size="sm" className="bg-brand-600 hover:bg-brand-700" onClick={() => openPublishModal(generatedContent)}><Send className="size-3.5" /> Use for Publishing</Button>
+                      <Button type="button" size="sm" className="bg-brand-700 hover:bg-brand-hover" onClick={() => openPublishModal(generatedContent)}><Send className="size-3.5" /> Use for Publishing</Button>
                     )}
                   </div>
                 </header>
@@ -1338,7 +1348,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                                 <Button
                                   type="button"
                                   size="sm"
-                                  className="bg-brand-600 hover:bg-brand-700"
+                                  className="bg-brand-700 hover:bg-brand-hover"
                                   onClick={() => {
                                     if (job.result) openPublishModal(job.result);
                                   }}
@@ -1396,7 +1406,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                             {job.status === "completed" && job.result && wpSites.length > 0 && (
                               <Button
                                 size="xs"
-                                className="bg-brand-600 hover:bg-brand-700"
+                                className="bg-brand-700 hover:bg-brand-hover"
                                 onClick={() => openPublishModal(job.result as GeneratedContent)}
                               >
                                 <Send className="size-3" /> Use for Publishing
@@ -1760,7 +1770,7 @@ This post should support and link UP to the ${refTitle} reference page. It must 
                   <Button size="sm" variant="outline" className="border-slate-600 text-white hover:bg-slate-700 hover:text-white" onClick={() => navigator.clipboard.writeText(`${previewContent.title}\n\n${previewContent.metaDescription}\n\n${previewContent.body}`)}>
                     <Copy className="size-3.5" /> Copy
                   </Button>
-                  <Button type="button" size="sm" className="bg-brand-600 hover:bg-brand-700" onClick={() => { if (previewContent) openPublishModal(previewContent); setPreviewOpen(false); }}>
+                  <Button type="button" size="sm" className="bg-brand-700 hover:bg-brand-hover" onClick={() => { if (previewContent) openPublishModal(previewContent); setPreviewOpen(false); }}>
                     <Send className="size-3.5" /> Publish
                   </Button>
                 </>
@@ -1995,6 +2005,9 @@ This post should support and link UP to the ${refTitle} reference page. It must 
         publishing={publishing}
         publishSuccess={publishSuccess}
         publishError={publishError}
+        slug={publishSlug}
+        setSlug={setPublishSlug}
+        check={publishCheck}
       />
     </RequireAuth>
   );
@@ -2020,6 +2033,9 @@ function PublishModal({
   publishing,
   publishSuccess,
   publishError,
+  slug,
+  setSlug,
+  check,
 }: {
   open: boolean;
   onClose: () => void;
@@ -2040,8 +2056,14 @@ function PublishModal({
   publishing: boolean;
   publishSuccess: string | null;
   publishError: string | null;
+  slug: string;
+  setSlug: (v: string) => void;
+  check: PermalinkCheck | null;
 }) {
   if (!open || !content) return null;
+  const siteUrl = (wpSites.find((s) => s.id === selectedSiteId)?.siteUrl ?? "").replace(/\/+$/, "");
+  const fromTitle = trimSlug(slugify(content.title));
+  const slugOk = slug.length >= 3 && slugMatchesTitle(slug, content.title);
   return createPortal(
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div
@@ -2067,6 +2089,17 @@ function PublishModal({
           {publishSuccess && (
             <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-400">
               <CheckCircle2 className="size-4 shrink-0" /> {publishSuccess}
+            </div>
+          )}
+          {check && (
+            <div className={`rounded-xl border px-4 py-3 text-sm ${check.ok ? "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-200" : "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200"}`}>
+              <p className="flex items-center gap-2 font-semibold">
+                {check.ok ? <CheckCircle2 className="size-4 shrink-0" /> : <AlertCircle className="size-4 shrink-0" />}
+                {check.ok ? "Link checked: it matches the title" : "Link needs attention"}
+              </p>
+              <a href={check.url} target="_blank" rel="noreferrer" className="mt-1 block break-all font-mono text-xs underline">{check.url}</a>
+              {check.problems.map((p) => <p key={p} className="mt-1.5">{p}</p>)}
+              {check.notes.map((n) => <p key={n} className="mt-1.5 text-xs opacity-80">{n}</p>)}
             </div>
           )}
           {publishError && (
@@ -2115,6 +2148,28 @@ function PublishModal({
             <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Tags</label>
             <Input className="mt-2" placeholder="e.g. ai, content, automation" value={postTags} onChange={(e) => setPostTags(e.target.value)} />
           </div>
+          <div>
+            <label htmlFor="publish-slug" className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Page link</label>
+            <div className="mt-2 flex items-center overflow-hidden rounded-lg border border-slate-300 bg-white focus-within:ring-2 focus-within:ring-brand-500/40 dark:border-white/15 dark:bg-slate-800">
+              <span className="max-w-[45%] shrink-0 truncate bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:bg-white/5 dark:text-slate-400">{siteUrl ? `${siteUrl.replace(/^https?:\/\//, "")}/` : "yoursite.com/"}</span>
+              <input
+                id="publish-slug"
+                value={slug}
+                onChange={(e) => setSlug(slugify(e.target.value.replace(/\s+$/, "-")))}
+                onBlur={() => setSlug(trimSlug(slugify(slug)))}
+                spellCheck={false}
+                className="min-w-0 flex-1 bg-transparent px-2 py-2 font-mono text-sm text-slate-900 outline-none dark:text-white"
+              />
+            </div>
+            <p className={`mt-1.5 text-xs ${slugOk ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300"}`}>
+              {slugOk
+                ? "Matches the title. Short, lowercase words."
+                : "This link doesn't match the title, so search engines and readers get a weaker signal."}
+              {!slugOk && fromTitle && (
+                <button type="button" onClick={() => setSlug(fromTitle)} className="ml-1.5 font-semibold underline">Use “{fromTitle}”</button>
+              )}
+            </p>
+          </div>
           {publishStatus === "future" && (
             <div>
               <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Schedule date</label>
@@ -2136,7 +2191,7 @@ function PublishModal({
             <Button
               type="button"
               size="lg"
-              className="flex-1 bg-brand-600 hover:bg-brand-700"
+              className="flex-1 bg-brand-700 hover:bg-brand-hover"
               onClick={onPublish}
               disabled={publishing || !selectedSiteId || (publishStatus === "future" && !scheduledDate)}
             >

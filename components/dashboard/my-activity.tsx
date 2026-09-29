@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Clock, Globe2, Layers, Wrench } from "lucide-react";
 
-import { featureLabel, fetchMyInsights, type MyInsights } from "@/lib/insights-api";
+import { featureLabel, fetchMyInsights, fetchUserInsights, type MyInsights } from "@/lib/insights-api";
 
 // "Your activity": a plain summary of where the signed-in person's time and AI
 // usage went. It is personal for everyone, admins included.
@@ -85,7 +85,7 @@ function summarize(d: MyInsights): string {
   return sentences.join(" ");
 }
 
-export function MyActivity() {
+export function MyActivity({ userId, title = "Your activity", description = "Where your time and AI usage went. Only you see this." }: { userId?: string; title?: string; description?: string } = {}) {
   const [days, setDays] = useState<number>(30);
   const [data, setData] = useState<MyInsights | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,12 +93,12 @@ export function MyActivity() {
 
   useEffect(() => {
     let cancelled = false;
-    fetchMyInsights(days)
+    (userId ? fetchUserInsights(userId, days) : fetchMyInsights(days))
       .then((d) => { if (!cancelled) { setData(d); setFailed(false); } })
       .catch(() => { if (!cancelled) setFailed(true); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [days]);
+  }, [days, userId]);
 
   const pick = (r: number) => { if (r !== days) { setLoading(true); setDays(r); } };
   const summary = data ? summarize(data) : "";
@@ -108,8 +108,8 @@ export function MyActivity() {
     <section aria-labelledby="my-activity-title" className="space-y-3">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h2 id="my-activity-title" className="text-[15px] font-semibold text-slate-950 dark:text-white">Your activity</h2>
-          <p className="mt-0.5 text-[13px] text-slate-600 dark:text-slate-400">Where your time and AI usage went. Only you see this.</p>
+          <h2 id="my-activity-title" className="text-[15px] font-semibold text-slate-950 dark:text-white">{title}</h2>
+          <p className="mt-0.5 text-[13px] text-slate-600 dark:text-slate-400">{description}</p>
         </div>
         <div className="flex rounded-lg border border-slate-200 p-0.5 dark:border-white/10" role="group" aria-label="Time range">
           {RANGES.map((r) => (
