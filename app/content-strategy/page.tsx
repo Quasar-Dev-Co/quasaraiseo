@@ -74,6 +74,10 @@ const TOOL_ICONS: Record<string, typeof Search> = {
   get_content: Eye,
   publish_content: Send,
   schedule_content: Calendar,
+  generate_images: Image,
+  schedule_posts: Calendar,
+  list_scheduled_posts: Calendar,
+  cancel_scheduled_posts: Trash2,
   get_global_render: Layout,
   update_global_render: Layout,
   list_categories: FolderTree,
@@ -104,7 +108,7 @@ function getToolLabel(tool: string, args: Record<string, unknown>): string {
   if (tool === "generate_schema") return `Generating ${args.schemaType || ""} schema`;
   if (tool === "extract_design") return `Extracting design from ${String(args.url || "").slice(0, 50)}`;
   if (tool === "search_media") return `Searching media: "${args.search || ""}"`;
-  if (tool === "create_post" || tool === "create_content") return `Creating ${args.post_type === "page" ? "page" : "post"}: "${String(args.title || "").slice(0, 40)}"`;
+  if (tool === "create_post" || tool === "create_content") return `Creating ${args.post_type === "page" || args.postType === "page" ? "page" : "post"}: "${String(args.title || "").slice(0, 40)}"${Array.isArray(args.imagePrompts) && args.imagePrompts.length ? " + AI images" : ""}${args.scheduledAt ? " (scheduled)" : ""}`;
   if (tool === "update_post" || tool === "update_content") return `Updating post ${args.postId || args.id || ""}`;
   if (tool === "delete_post" || tool === "delete_content") return `Deleting post ${args.postId || args.id || ""}`;
   if (tool === "list_content") return `Listing ${args.post_type === "page" ? "pages" : "content"}`;
@@ -114,6 +118,13 @@ function getToolLabel(tool: string, args: Record<string, unknown>): string {
   if (tool === "get_site_info") return "Fetching site info";
   if (tool === "get_content") return `Fetching content: ${args.postId || args.id || args.slug || ""}`;
   if (tool === "publish_content") return `Publishing post ${args.postId || args.id || ""}`;
+  if (tool === "generate_images") return `Generating ${Array.isArray(args.imagePrompts) ? args.imagePrompts.length : ""} AI image${Array.isArray(args.imagePrompts) && args.imagePrompts.length === 1 ? "" : "s"}`;
+  if (tool === "schedule_posts") {
+    const n = Array.isArray(args.items) ? args.items.length : Array.isArray(args.topics) ? args.topics.length : 0;
+    return `Queueing ${n || ""} post${n === 1 ? "" : "s"} to write and schedule`;
+  }
+  if (tool === "list_scheduled_posts") return "Checking scheduled posts";
+  if (tool === "cancel_scheduled_posts") return "Cancelling waiting posts";
   if (tool === "schedule_content") return `Scheduling post ${args.postId || args.id || ""}`;
   if (tool === "get_global_render") return "Fetching global render settings";
   if (tool === "update_global_render") return "Updating global render settings";
