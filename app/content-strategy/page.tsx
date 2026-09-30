@@ -41,6 +41,7 @@ import { ModelSelector, usePersistentModel } from "@/components/ModelSelector";
 import { ThreadSkillsPicker } from "@/components/mcp/thread-skills-picker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WebsiteMediaGallery } from "@/components/mcp/website-media-gallery";
+import { ChangeHistory } from "@/components/mcp/change-history";
 
 // ─── Tool icons ───
 
@@ -1599,6 +1600,7 @@ function QuasarMcpContent() {
                     >
                       <Images className="size-3.5" />
                     </button>
+                    <ChangeHistory sessionId={session?.id ?? null} refreshKey={messages.length} />
                     <ThreadSkillsPicker
                       key={session?.id ?? "none"}
                       selectedIds={threadSkillIds}

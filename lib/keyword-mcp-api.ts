@@ -138,7 +138,48 @@ export function setStoredSessionMessages(sessionId: string, msgs: McpChatMessage
   } catch {}
 }
 
+export interface McpChange {
+  id: string;
+  sessionId: string | null;
+  kind: "post_update" | "post_create" | "post_trash" | "content_file";
+  tool: string;
+  label: string;
+  title: string | null;
+  postType: string | null;
+  siteName: string | null;
+  createdAt: string;
+  reverted: boolean;
+  isUndo: boolean;
+  canUndo: boolean;
+  url: string | null;
+}
+
+export interface McpRevertResult {
+  ok: boolean;
+  message: string;
+  needsConfirm?: boolean;
+}
+
 export const keywordMcpApi = {
+  /** What the chat changed on the website (and saved pages), newest first. */
+  async getChanges(sessionId?: string): Promise<McpChange[]> {
+    const qs = sessionId ? `?sessionId=${encodeURIComponent(sessionId)}` : "";
+    const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/changes${qs}`, { headers: { ...authHeaders() } });
+    if (!resp.ok) throw new Error("Could not load the history.");
+    return ((await resp.json()) as { changes: McpChange[] }).changes;
+  },
+
+  /** Put a changed page back how it was. `force` confirms overwriting newer edits. */
+  async revertChange(id: string, force = false): Promise<McpRevertResult> {
+    const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/changes/${encodeURIComponent(id)}/revert`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ force }),
+    });
+    const data = (await resp.json().catch(() => ({}))) as Partial<McpRevertResult>;
+    return { ok: !!data.ok, message: data.message || (resp.ok ? "Done." : "Could not undo this change."), needsConfirm: data.needsConfirm };
+  },
+
   async getSession(): Promise<{ session: McpSession }> {
     const resp = await fetch(`${BACKEND_URL}/api/keyword-mcp/session`, {
       headers: { ...authHeaders() },

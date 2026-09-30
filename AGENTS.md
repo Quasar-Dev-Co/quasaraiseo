@@ -22,6 +22,7 @@ Last updated: 2026-09-29
 | Permalink guard | Have | Publishing sends a clean slug that matches the title, then checks the link WordPress made (`lib/permalink.ts` on the backend; editable "Page link" in the publish dialog). Works with any plugin version: the link is set right after the post is created, no plugin update needed |
 | MCP Chat AI images | Have | `/content-strategy`: when a post/page/image is asked for and no gallery image is chosen, the chat uses the same AI image flow as `/post-create` (`lib/blog-images.ts`; `imagePrompts` on `create_post`, `generate_images` tool) |
 | MCP Chat bulk scheduling | Have | `/content-strategy`: "write N posts and publish them on these dates" → `schedule_posts` queues them (table `ScheduledPost`, runner in `mcp-publishing.ts`); each is written in the background with images and given to WordPress with a future date. `list_scheduled_posts` / `cancel_scheduled_posts` |
+| MCP Chat history & undo | Have | `/content-strategy` → History button: every post/page the chat creates or edits, and saved content pages, is listed with an Undo (`mcp-history.ts`, table `McpChange`). Undo is itself recorded, so it can be undone; new posts go to the WordPress trash. Works with any plugin version |
 | AI provider (OpenAI/OpenRouter) | Have | Settings — model selector works in MCP |
 | WordPress publishing | Have | `/post-create` |
 | Branding extraction | Have | Branding module |
