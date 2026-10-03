@@ -8,7 +8,7 @@ import {
   Shield, Mail, Download, RefreshCw, Plug, Zap,
   Monitor, Tablet, KeyRound, Clock, MapPin, Trash2, LogOut, AlertCircle,
   Building2, Plus, Pencil, Star, X, Link2, Phone, MapPin as MapPinIcon, Upload, ChevronDown, Search, Sparkles,
-  DollarSign,
+  DollarSign, Server,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -23,6 +23,8 @@ import { useWorkspace } from "@/hooks/use-workspace";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AccountSecurity } from "@/components/settings/account-security";
+import { GoogleAccounts } from "@/components/settings/google-accounts";
+import { McpAccessTab } from "@/components/settings/mcp-access-tab";
 import { googleApi, type GoogleStatus, type DeviceInfo } from "@/lib/google-api";
 import { brandingApi, type Branding, type BrandingInput } from "@/lib/branding-api";
 import { aiProviderApi, type AiProvider as ProviderType, type DiscoveredModel } from "@/lib/ai-provider-api";
@@ -141,9 +143,9 @@ function SettingsInner() {
   const { preferences, updatePreferences } = useWorkspace();
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
   const isSuper = user?.role === "super";
-  const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<GoogleStatus | null>(null);
+  const [googleReloadKey, setGoogleReloadKey] = useState(0);
   const [twoFAOn, setTwoFAOn] = useState(false);
   const [devices, setDevices] = useState<DeviceInfo[]>([]);
 
@@ -563,40 +565,19 @@ function SettingsInner() {
     const errorParam = searchParams.get("error");
     if (googleParam === "connected") {
       fetchStatus();
+      setGoogleReloadKey((k) => k + 1);
     }
     if (errorParam) {
       setError(`Google connection failed: ${errorParam}`);
     }
   }, [searchParams, fetchStatus]);
 
-  const handleConnectAll = async () => {
-    setConnecting(true);
-    setError(null);
-    try {
-      const authUrl = await googleApi.getAuthUrl();
-      window.location.href = authUrl;
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to connect");
-      setConnecting(false);
-    }
-  };
-
-  const handleConnectSingle = async () => {
-    setConnecting(true);
-    setError(null);
-    try {
-      const authUrl = await googleApi.getAuthUrl();
-      window.location.href = authUrl;
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to connect");
-      setConnecting(false);
-    }
-  };
-
   const handleDisconnect = async () => {
+    if (!confirm("Disconnect every Google account? Search Console, Analytics and Sheets stop working until one is connected again.")) return;
     try {
       await googleApi.disconnect();
       await fetchStatus();
+      setGoogleReloadKey((k) => k + 1);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to disconnect");
     }
@@ -635,8 +616,6 @@ function SettingsInner() {
     }
   };
 
-  const connected = status?.connected ?? false;
-  const connectedEmail = status?.email;
   const svcList = [
     { id: "gsc", name: "Google Search Console", desc: "Pull search performance data, indexing status, and URL inspection results into your audits.", icon: Globe2, scope: "webmasters.readonly", isOn: status?.services.searchConsole ?? false },
     { id: "ga4", name: "Google Analytics (GA4)", desc: "Import traffic data, audience insights, and content performance metrics for reporting.", icon: BarChart3, scope: "analytics.readonly", isOn: status?.services.analytics ?? false },
@@ -669,45 +648,19 @@ function SettingsInner() {
         </div>
 
         <Tabs defaultValue="google">
-          <TabsList className="mb-6 h-auto gap-1 rounded-[14px] bg-slate-100/80 p-1.5 dark:bg-slate-900/60">
+          <TabsList className="mb-6 h-auto max-w-full flex-wrap justify-start gap-1 rounded-[14px] bg-slate-100/80 p-1.5 dark:bg-slate-900/60">
             <TabsTrigger value="google" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><GIcon c="size-4" /> Google Connect</TabsTrigger>
             <TabsTrigger value="security" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Shield className="size-4" /> Security</TabsTrigger>
             <TabsTrigger value="workspace" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Settings className="size-4" /> Workspace</TabsTrigger>
             {isSuper && <TabsTrigger value="ai-provider" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Sparkles className="size-4" /> AI Provider</TabsTrigger>}
             {isSuper && <TabsTrigger value="costs" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><DollarSign className="size-4" /> Costs</TabsTrigger>}
+            {isSuper && <TabsTrigger value="mcp" className="rounded-[10px] px-4 py-2.5 text-[13px] font-bold data-active:bg-white data-active:text-slate-900 data-active:shadow-sm dark:data-active:bg-slate-800 dark:data-active:text-white"><Server className="size-4" /> MCP access</TabsTrigger>}
           </TabsList>
 
           {/* GOOGLE TAB */}
           <TabsContent value="google">
             <div className="space-y-5">
-              <article className="overflow-hidden rounded-3xl border border-blue-200/50 bg-blue-50/90 dark:border-blue-400/15 dark:bg-blue-400/5">
-                <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-start gap-4">
-                    <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-white shadow-sm dark:bg-slate-800"><GIcon c="size-6" /></span>
-                    <div>
-                      <h3 className="text-base font-black text-slate-900 dark:text-white">One-Click Google Connect</h3>
-                      <p className="mt-1 max-w-[520px] text-[13px] leading-relaxed text-slate-600 dark:text-slate-400">Connect all Google services at once with a single OAuth sign-in.</p>
-                    </div>
-                  </div>
-                  {isSuper ? (
-                    <div className="flex shrink-0 gap-2">
-                      <Button size="lg" className="h-12 gap-2.5 rounded-[14px] bg-blue-600 px-6 text-sm font-bold text-white shadow-sm"
-                        onClick={handleConnectAll} disabled={connecting || connected}>
-                        {connecting ? <><Loader2 className="size-4 animate-spin" /> Redirecting...</> : connected ? <><CheckCircle2 className="size-4" /> Connected</> : <><Zap className="size-4" /> Connect All</>}
-                      </Button>
-                      {connected && (
-                        <Button size="lg" variant="destructive" className="h-12 gap-2 rounded-[14px] px-5 text-sm font-bold" onClick={handleDisconnect} disabled={connecting}>
-                          <Trash2 className="size-4" /> Disconnect All
-                        </Button>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="shrink-0 rounded-[14px] border border-slate-200 bg-white px-4 py-3 text-[12px] font-semibold text-slate-500 dark:border-white/10 dark:bg-slate-800 dark:text-slate-400">
-                      Managed by the super user
-                    </div>
-                  )}
-                </div>
-              </article>
+              <GoogleAccounts isSuper={isSuper} reloadKey={googleReloadKey} onChange={fetchStatus} />
 
               {svcList.map((s) => {
                 const Icon = s.icon;
@@ -722,16 +675,8 @@ function SettingsInner() {
                             {s.isOn ? <Badge className="bg-blue-50 text-blue-700 dark:bg-blue-400/15 dark:text-blue-400"><CheckCircle2 className="size-3" /> Connected</Badge> : <Badge className="bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"><Circle className="size-3" /> Not Connected</Badge>}
                           </div>
                           <p className="mt-1.5 text-[13px] leading-relaxed text-slate-600 dark:text-slate-400">{s.desc}</p>
-                          {connected && connectedEmail && s.isOn && <div className="mt-2.5 flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400"><Mail className="size-3" /> {connectedEmail}</div>}
                           <div className="mt-2 flex flex-wrap gap-1.5"><span className="rounded-md bg-slate-50 px-2 py-0.5 font-mono text-[10px] text-slate-400 dark:bg-slate-800/50 dark:text-slate-500">{s.scope}</span></div>
                         </div>
-                      </div>
-                      <div className="shrink-0">
-                        {isSuper ? (
-                          !connected ? <Button size="lg" className="h-11 gap-2 rounded-[12px] border border-slate-200 bg-white px-5 text-[13px] font-bold text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200" onClick={handleConnectSingle} disabled={connecting}><GIcon c="size-4" /> {connecting ? "Connecting..." : "Connect"}</Button> : <div className="flex gap-2"><Button size="lg" variant="outline" className="h-11 gap-2 rounded-[12px] px-4 text-[13px] font-bold"><RefreshCw className="size-3.5" /> Sync</Button><Button size="lg" variant="destructive" className="h-11 gap-2 rounded-[12px] px-4 text-[13px] font-bold" onClick={handleDisconnect}>Disconnect</Button></div>
-                        ) : (
-                          <span className="text-[12px] font-semibold text-slate-400 dark:text-slate-500">Managed by the super user</span>
-                        )}
                       </div>
                     </div>
                   </article>
@@ -741,7 +686,7 @@ function SettingsInner() {
               <article className="rounded-2xl border border-slate-200/70 bg-slate-50/80 p-5 dark:border-white/5 dark:bg-slate-900/30">
                 <div className="flex items-start gap-3">
                   <Shield className="size-4 shrink-0 text-slate-500 dark:text-slate-400" />
-                  <div><h4 className="text-[13px] font-bold text-slate-700 dark:text-slate-300">Data Privacy &amp; Security</h4><p className="mt-1 text-[12px] leading-relaxed text-slate-500 dark:text-slate-400">Read-only access for Search Console and Analytics. Sheets requires read/write for task sync. Tokens encrypted, never stored in plaintext. Revoke anytime.</p></div>
+                  <div><h4 className="text-[13px] font-bold text-slate-700 dark:text-slate-300">Data Privacy &amp; Security</h4><p className="mt-1 text-[12px] leading-relaxed text-slate-500 dark:text-slate-400">Read-only access for Search Console and Analytics. Sheets requires read/write for task sync and uses the primary account. Each account&apos;s tokens are encrypted, never stored in plaintext. Revoke any account anytime.</p></div>
                 </div>
               </article>
             </div>
@@ -909,7 +854,7 @@ function SettingsInner() {
                 </header>
                 <div className="space-y-3 p-6">
                   <div className="flex items-center justify-between rounded-2xl border border-red-200/50 bg-red-50/40 p-4 dark:border-red-400/15 dark:bg-red-400/5">
-                    <div><h4 className="text-[14px] font-bold text-slate-900 dark:text-white">Revoke All Google Access</h4><p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">Disconnect all Google services and delete stored tokens</p></div>
+                    <div><h4 className="text-[14px] font-bold text-slate-900 dark:text-white">Revoke All Google Access</h4><p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">Disconnect every Google account and delete their stored tokens</p></div>
                     <Button size="sm" variant="destructive" className="gap-1.5" onClick={handleDisconnect}>Revoke All</Button>
                   </div>
                 </div>
@@ -1267,6 +1212,8 @@ function SettingsInner() {
 
           {/* AI PROVIDER TAB */}
           {isSuper && <TabsContent value="costs"><CostTab /></TabsContent>}
+
+          {isSuper && <TabsContent value="mcp"><McpAccessTab /></TabsContent>}
 
           {isSuper && <TabsContent value="ai-provider">
             <div className="space-y-5">

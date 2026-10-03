@@ -33,6 +33,7 @@ import {
 import {
   aggregateSearchConsole,
   analyticsSitesMissingFromSearchConsole,
+  groupByGoogleAccount,
 } from "@/lib/google-websites";
 
 /* ── helpers ────────────────────────────────────────────────────────────── */
@@ -315,6 +316,10 @@ export default function SearchConsolePage() {
     [sites, analyticsProperties],
   );
 
+  // Sites from every connected Google account, one group per account.
+  const siteGroups = useMemo(() => groupByGoogleAccount(sites), [sites]);
+  const multipleAccounts = siteGroups.length > 1;
+
   // Build overlay chart data — align both periods by day index (1, 2, 3...)
   // so they can be compared visually even if the actual dates differ
   const chartData = useMemo(() => {
@@ -578,11 +583,16 @@ export default function SearchConsolePage() {
                   onChange={(e) => setSelectedSite(e.target.value)}
                   className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
                 >
-                  <optgroup label="Search Console">
-                    {sites.map((s) => (
-                      <option key={s.siteUrl} value={s.siteUrl}>{s.siteUrl}</option>
-                    ))}
-                  </optgroup>
+                  {siteGroups.map((group) => (
+                    <optgroup
+                      key={group.key}
+                      label={multipleAccounts ? `Search Console · ${group.email ?? "Google account"}` : "Search Console"}
+                    >
+                      {group.items.map((s) => (
+                        <option key={s.siteUrl} value={s.siteUrl}>{s.siteUrl}</option>
+                      ))}
+                    </optgroup>
+                  ))}
                   {analyticsOnlySites.length > 0 && (
                     <optgroup label="Google Analytics">
                       {analyticsOnlySites.map((site) => (
@@ -591,9 +601,10 @@ export default function SearchConsolePage() {
                     </optgroup>
                   )}
                 </select>
-                {analyticsOnlySites.length > 0 && (
+                {(multipleAccounts || analyticsOnlySites.length > 0) && (
                   <p className="mt-1.5 max-w-md text-[11px] text-slate-500 dark:text-slate-400">
-                    Every Search Console property is listed, including www and https variants. Analytics-only websites are shown but have no Search Console data.
+                    {multipleAccounts && `Sites from ${siteGroups.length} connected Google accounts. `}
+                    {analyticsOnlySites.length > 0 && "Every Search Console property is listed, including www and https variants. Analytics-only websites are shown but have no Search Console data."}
                   </p>
                 )}
               </div>

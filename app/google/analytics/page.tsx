@@ -29,7 +29,7 @@ import {
   type GoogleStatus,
   type SearchConsoleSite,
 } from "@/lib/google-api";
-import { searchConsoleSitesMissingFromAnalytics } from "@/lib/google-websites";
+import { groupByGoogleAccount, searchConsoleSitesMissingFromAnalytics } from "@/lib/google-websites";
 
 /* ── helpers ────────────────────────────────────────────────────────────── */
 
@@ -320,6 +320,10 @@ export default function AnalyticsPage() {
     [searchConsoleSites, properties],
   );
 
+  // Properties from every connected Google account, one group per account.
+  const propertyGroups = useMemo(() => groupByGoogleAccount(properties), [properties]);
+  const multipleAccounts = propertyGroups.length > 1;
+
   // Build overlay chart data — align both periods by day index
   const chartData = useMemo(() => {
     const cur = data?.rows ?? [];
@@ -518,15 +522,18 @@ export default function AnalyticsPage() {
                 onChange={(e) => setSelectedProperty(e.target.value)}
                 className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
               >
-                {properties.length > 0 && (
-                  <optgroup label="Google Analytics">
-                    {properties.map(p => (
+                {propertyGroups.map(group => (
+                  <optgroup
+                    key={group.key}
+                    label={multipleAccounts ? `Google Analytics · ${group.email ?? "Google account"}` : "Google Analytics"}
+                  >
+                    {group.items.map(p => (
                       <option key={p.propertyId} value={p.propertyId}>
                         {p.displayName}{(p.websiteUrls ?? []).length > 0 ? ` — ${(p.websiteUrls ?? []).join(", ")}` : ""}
                       </option>
                     ))}
                   </optgroup>
-                )}
+                ))}
                 {searchConsoleOnlySites.length > 0 && (
                   <optgroup label="Search Console">
                     {searchConsoleOnlySites.map(site => (
@@ -537,9 +544,10 @@ export default function AnalyticsPage() {
                   </optgroup>
                 )}
               </select>
-              {searchConsoleOnlySites.length > 0 && (
+              {(multipleAccounts || searchConsoleOnlySites.length > 0) && (
                 <p className="mt-1.5 max-w-md text-[11px] text-slate-500 dark:text-slate-400">
-                  Every Analytics property is listed with its website URL. Search Console properties that are not in Analytics are shown too.
+                  {multipleAccounts && `Properties from ${propertyGroups.length} connected Google accounts. `}
+                  {searchConsoleOnlySites.length > 0 && "Every Analytics property is listed with its website URL. Search Console properties that are not in Analytics are shown too."}
                 </p>
               )}
             </div>

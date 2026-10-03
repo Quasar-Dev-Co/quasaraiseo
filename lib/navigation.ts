@@ -169,7 +169,7 @@ export const SETTINGS_ITEM: NavItem = {
   href: "/setting",
   label: "Settings",
   hint: "Account, integrations and AI",
-  description: "Your account, Google connection, security, workspace and (for admins) the AI provider and costs.",
+  description: "Your account, Google accounts, security, workspace and (for admins) the AI provider, costs and MCP access.",
   icon: Settings,
 };
 

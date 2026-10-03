@@ -6,13 +6,38 @@ const BACKEND_URL =
 export interface GoogleStatus {
   connected: boolean;
   email: string | null;
-  services: {
-    searchConsole: boolean;
-    analytics: boolean;
-    sheets: boolean;
-  };
+  services: GoogleServices;
   scopes: string[];
   connectedAt: string | null;
+}
+
+export interface GoogleServices {
+  searchConsole: boolean;
+  analytics: boolean;
+  sheets: boolean;
+}
+
+/** One connected Google login. The admin can connect several. */
+export interface GoogleAccount {
+  id: string;
+  email: string;
+  name: string | null;
+  services: GoogleServices;
+  scopes: string[];
+  connectedAt: string | null;
+  /** Sheets (and anything else that needs a single account) uses the primary one. */
+  isPrimary: boolean;
+  /** Set when Google stopped accepting the saved token; reconnect to fix it. */
+  error?: string | null;
+}
+
+export interface GoogleAccountsResult {
+  accounts: GoogleAccount[];
+  /**
+   * False while the backend can only keep one Google connection. Connecting
+   * again would then replace the current account, so "Add account" is hidden.
+   */
+  multiAccount: boolean;
 }
 
 export interface DeviceInfo {
@@ -34,9 +59,43 @@ function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+// Which Google account owns each Search Console site and Analytics property.
+// Filled from the site and property lists, so every data call below can tell
+// the backend whose token to use without each page passing it along. Backends
+// that know only one account ignore the extra field.
+const accountByResource = new Map<string, string>();
+
+const siteKey = (siteUrl: string) => `sc:${siteUrl}`;
+const propertyKey = (propertyId: string) => `ga:${propertyId}`;
+
+/** The same site or property can be shared with several accounts; keep the first. */
+function uniqueBy<T>(items: T[], key: (item: T) => string): T[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const k = key(item);
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
+function withAccount(params: URLSearchParams, resourceKey: string): URLSearchParams {
+  const accountId = accountByResource.get(resourceKey);
+  if (accountId) params.set("accountId", accountId);
+  return params;
+}
+
+function accountField(resourceKey: string): { accountId?: string } {
+  const accountId = accountByResource.get(resourceKey);
+  return accountId ? { accountId } : {};
+}
+
 export interface SearchConsoleSite {
   siteUrl: string;
   permissionLevel: string;
+  /** The Google account this site comes from (backends with several accounts). */
+  accountId?: string;
+  accountEmail?: string;
 }
 
 export interface SearchConsoleRow {
@@ -112,6 +171,9 @@ export interface AnalyticsProperty {
   propertyType: string;
   industryCategory: string | null;
   websiteUrls?: string[];
+  /** The Google account this property comes from (backends with several accounts). */
+  accountId?: string;
+  accountEmail?: string;
 }
 
 export interface AnalyticsDataRow {
@@ -166,8 +228,16 @@ export interface SheetCreateResult {
 }
 
 export const googleApi = {
-  async getAuthUrl(): Promise<string> {
-    const res = await fetch(`${BACKEND_URL}/api/google/connect`, {
+  /**
+   * `addAccount` asks Google to show the account picker and keeps the accounts
+   * already connected; `loginHint` preselects an account when reconnecting it.
+   */
+  async getAuthUrl(options?: { addAccount?: boolean; loginHint?: string }): Promise<string> {
+    const params = new URLSearchParams();
+    if (options?.addAccount) params.set("addAccount", "1");
+    if (options?.loginHint) params.set("loginHint", options.loginHint);
+    const query = params.toString() ? `?${params}` : "";
+    const res = await fetch(`${BACKEND_URL}/api/google/connect${query}`, {
       method: "GET",
       headers: { ...authHeaders() },
     });
@@ -190,6 +260,7 @@ export const googleApi = {
     return res.json() as Promise<GoogleStatus>;
   },
 
+  /** Disconnects every Google account. */
   async disconnect(): Promise<void> {
     const res = await fetch(`${BACKEND_URL}/api/google/disconnect`, {
       method: "POST",
@@ -198,6 +269,59 @@ export const googleApi = {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.message ?? "Failed to disconnect");
+    }
+  },
+
+  async getAccounts(): Promise<GoogleAccountsResult> {
+    const res = await fetch(`${BACKEND_URL}/api/google/accounts`, {
+      method: "GET",
+      headers: { ...authHeaders() },
+    });
+    if (res.status === 404) {
+      // Backend from before multi-account support: show its one connection.
+      const status = await googleApi.getStatus();
+      return {
+        multiAccount: false,
+        accounts: status.connected
+          ? [{
+            id: "default",
+            email: status.email ?? "Google account",
+            name: null,
+            services: status.services,
+            scopes: status.scopes,
+            connectedAt: status.connectedAt,
+            isPrimary: true,
+          }]
+          : [],
+      };
+    }
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message ?? "Failed to load Google accounts");
+    }
+    const data = (await res.json()) as { accounts: GoogleAccount[] };
+    return { multiAccount: true, accounts: data.accounts };
+  },
+
+  async disconnectAccount(accountId: string): Promise<void> {
+    const res = await fetch(`${BACKEND_URL}/api/google/accounts/${encodeURIComponent(accountId)}`, {
+      method: "DELETE",
+      headers: { ...authHeaders() },
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message ?? "Failed to disconnect this Google account");
+    }
+  },
+
+  async setPrimaryAccount(accountId: string): Promise<void> {
+    const res = await fetch(`${BACKEND_URL}/api/google/accounts/${encodeURIComponent(accountId)}/primary`, {
+      method: "POST",
+      headers: { ...authHeaders() },
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message ?? "Failed to make this the primary Google account");
     }
   },
 
@@ -262,7 +386,11 @@ export const googleApi = {
       throw new Error(data.message ?? "Failed to fetch Search Console sites");
     }
     const data = (await res.json()) as { sites: SearchConsoleSite[] };
-    return data.sites;
+    const sites = uniqueBy(data.sites, (site) => site.siteUrl);
+    for (const site of sites) {
+      if (site.accountId) accountByResource.set(siteKey(site.siteUrl), site.accountId);
+    }
+    return sites;
   },
 
   async getSearchConsoleAnalytics(
@@ -271,7 +399,7 @@ export const googleApi = {
     endDate: string,
     searchType?: string,
   ): Promise<SearchConsoleRow[]> {
-    const params = new URLSearchParams({ siteUrl, startDate, endDate });
+    const params = withAccount(new URLSearchParams({ siteUrl, startDate, endDate }), siteKey(siteUrl));
     if (searchType) params.set("searchType", searchType);
     const res = await fetch(
       `${BACKEND_URL}/api/google/search-console/analytics?${params}`,
@@ -291,7 +419,7 @@ export const googleApi = {
     endDate: string,
     searchType?: string,
   ): Promise<SearchConsoleDailyRow[]> {
-    const params = new URLSearchParams({ siteUrl, startDate, endDate });
+    const params = withAccount(new URLSearchParams({ siteUrl, startDate, endDate }), siteKey(siteUrl));
     if (searchType) params.set("searchType", searchType);
     const res = await fetch(
       `${BACKEND_URL}/api/google/search-console/daily?${params}`,
@@ -316,12 +444,12 @@ export const googleApi = {
       rowLimit?: number;
     },
   ): Promise<SearchConsoleDimensionRow[]> {
-    const params = new URLSearchParams({
+    const params = withAccount(new URLSearchParams({
       siteUrl,
       startDate,
       endDate,
       dimensions: options.dimensions.join(","),
-    });
+    }), siteKey(siteUrl));
     if (options.searchType) params.set("searchType", options.searchType);
     if (options.rowLimit) params.set("rowLimit", String(options.rowLimit));
     if (options.filters && options.filters.length > 0) {
@@ -343,7 +471,7 @@ export const googleApi = {
     siteUrl: string,
     inspectionUrl: string,
   ): Promise<UrlInspectionResult | null> {
-    const params = new URLSearchParams({ siteUrl, inspectionUrl });
+    const params = withAccount(new URLSearchParams({ siteUrl, inspectionUrl }), siteKey(siteUrl));
     const res = await fetch(
       `${BACKEND_URL}/api/google/search-console/inspect-url?${params}`,
       { method: "GET", headers: { ...authHeaders() } },
@@ -357,7 +485,7 @@ export const googleApi = {
   },
 
   async getSitemaps(siteUrl: string): Promise<SitemapInfo[]> {
-    const params = new URLSearchParams({ siteUrl });
+    const params = withAccount(new URLSearchParams({ siteUrl }), siteKey(siteUrl));
     const res = await fetch(
       `${BACKEND_URL}/api/google/search-console/sitemaps?${params}`,
       { method: "GET", headers: { ...authHeaders() } },
@@ -376,7 +504,7 @@ export const googleApi = {
       {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders() },
-        body: JSON.stringify({ siteUrl, feedpath }),
+        body: JSON.stringify({ siteUrl, feedpath, ...accountField(siteKey(siteUrl)) }),
       },
     );
     if (!res.ok) {
@@ -391,7 +519,7 @@ export const googleApi = {
       {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders() },
-        body: JSON.stringify({ siteUrl, feedpath }),
+        body: JSON.stringify({ siteUrl, feedpath, ...accountField(siteKey(siteUrl)) }),
       },
     );
     if (!res.ok) {
@@ -410,7 +538,11 @@ export const googleApi = {
       throw new Error(data.message ?? "Failed to fetch Analytics properties");
     }
     const data = (await res.json()) as { properties: AnalyticsProperty[] };
-    return data.properties;
+    const properties = uniqueBy(data.properties, (property) => property.propertyId);
+    for (const property of properties) {
+      if (property.accountId) accountByResource.set(propertyKey(property.propertyId), property.accountId);
+    }
+    return properties;
   },
 
   async getAnalyticsData(
@@ -418,7 +550,7 @@ export const googleApi = {
     startDate: string,
     endDate: string,
   ): Promise<AnalyticsData> {
-    const params = new URLSearchParams({ propertyId, startDate, endDate });
+    const params = withAccount(new URLSearchParams({ propertyId, startDate, endDate }), propertyKey(propertyId));
     const res = await fetch(
       `${BACKEND_URL}/api/google/analytics/data?${params}`,
       { method: "GET", headers: { ...authHeaders() } },
@@ -446,13 +578,13 @@ export const googleApi = {
       limit?: number;
     },
   ): Promise<AnalyticsReport> {
-    const params = new URLSearchParams({
+    const params = withAccount(new URLSearchParams({
       propertyId,
       startDate: options.startDate,
       endDate: options.endDate,
       dimensions: options.dimensions.join(","),
       metrics: options.metrics.join(","),
-    });
+    }), propertyKey(propertyId));
     if (options.prevStartDate) params.set("prevStartDate", options.prevStartDate);
     if (options.prevEndDate) params.set("prevEndDate", options.prevEndDate);
     if (options.filterField) params.set("filterField", options.filterField);
@@ -472,7 +604,7 @@ export const googleApi = {
   },
 
   async getRealtimeReport(propertyId: string): Promise<RealtimeReport> {
-    const params = new URLSearchParams({ propertyId });
+    const params = withAccount(new URLSearchParams({ propertyId }), propertyKey(propertyId));
     const res = await fetch(
       `${BACKEND_URL}/api/google/analytics/realtime?${params}`,
       { method: "GET", headers: { ...authHeaders() } },

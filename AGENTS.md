@@ -8,7 +8,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Quasar AI SEO — Feature Status
 
-Last updated: 2026-09-29
+Last updated: 2026-10-03
 
 | Feature | Status | Where |
 |---|---|---|
@@ -24,6 +24,8 @@ Last updated: 2026-09-29
 | MCP Chat bulk scheduling | Have | `/content-strategy`: "write N posts and publish them on these dates" → `schedule_posts` queues them (table `ScheduledPost`, runner in `mcp-publishing.ts`); each is written in the background with images and given to WordPress with a future date. `list_scheduled_posts` / `cancel_scheduled_posts` |
 | MCP Chat history & undo | Have | `/content-strategy` → History button: every post/page the chat creates or edits, and saved content pages, is listed with an Undo (`mcp-history.ts`, table `McpChange`). Undo is itself recorded, so it can be undone; new posts go to the WordPress trash. Works with any plugin version |
 | AI provider (OpenAI/OpenRouter) | Have | Settings — model selector works in MCP |
+| Multiple Google accounts | Frontend done, backend pending | Settings → Google Connect: the admin adds any number of Google accounts (`components/settings/google-accounts.tsx`); Search Console and Analytics list the websites from all of them, grouped by account, and each data call goes to the account that owns the site (`lib/google-api.ts`). Until the backend has `GET /api/google/accounts`, the single connection keeps working and "Add Google account" stays hidden. Spec: `docs/backend-google-accounts-and-mcp.md` |
+| Admin MCP server | Frontend done, backend pending | Settings → MCP access (super only, `components/settings/mcp-access-tab.tsx`): access keys, copy-paste setup for Claude Code, Cursor, Claude.ai/Claude Desktop and ChatGPT, and 13 read-only tools (analytics, team activity, scheduled posts, costs, tasks…). Shows "not deployed yet" until the backend has `GET /api/admin-mcp` and `POST /mcp`. Spec: `docs/backend-google-accounts-and-mcp.md` |
 | WordPress publishing | Have | `/post-create` |
 | Branding extraction | Have | Branding module |
 | PDF report generation | Have | Keyword MCP `/content-strategy` — 19 pages, 200+ keywords |

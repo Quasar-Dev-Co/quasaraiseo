@@ -56,3 +56,27 @@ export function aggregateSearchConsole(rows: SearchConsoleDailyRow[]) {
   const avgCtr = totalImpressions > 0 ? totalClicks / totalImpressions : 0;
   return { totalClicks, totalImpressions, avgPosition, avgCtr };
 }
+
+export interface GoogleAccountGroup<T> {
+  key: string;
+  /** Null when the backend did not say which account the items come from. */
+  email: string | null;
+  items: T[];
+}
+
+/** Split sites or properties by the Google account they come from, in first-seen order. */
+export function groupByGoogleAccount<T extends { accountId?: string; accountEmail?: string }>(
+  items: T[],
+): GoogleAccountGroup<T>[] {
+  const groups = new Map<string, GoogleAccountGroup<T>>();
+  for (const item of items) {
+    const key = item.accountId ?? item.accountEmail ?? "";
+    let group = groups.get(key);
+    if (!group) {
+      group = { key, email: item.accountEmail ?? null, items: [] };
+      groups.set(key, group);
+    }
+    group.items.push(item);
+  }
+  return [...groups.values()];
+}
