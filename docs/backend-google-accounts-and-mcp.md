@@ -1,9 +1,15 @@
-# Backend work: multiple Google accounts and the admin MCP server
+# Multiple Google accounts and the admin MCP server: API contract
 
-The frontend for both features is in this repo. It works with today's backend
-(it falls back to the single Google connection and shows the MCP server as "not
-deployed yet") and switches on by itself once `quasar-ai-seo-backend` has the
-endpoints below. Nothing here needs a frontend change.
+Both features are built: the frontend in this repo and the backend in
+`quasar-ai-seo-backend` (`src/modules/google/google-accounts.ts`,
+`src/modules/admin-mcp/`). This file is the contract between them. The
+frontend still falls back gracefully if it talks to a backend without these
+endpoints (single Google connection, MCP server shown as "not deployed yet").
+
+Backend notes: the `GoogleAccount` and `McpAccessKey` tables create
+themselves on startup (no migration), Google tokens are encrypted with a key
+derived from `JWT_SECRET`, and OAuth `state` is signed and expires after 30
+minutes.
 
 Frontend files: `lib/google-api.ts`, `components/settings/google-accounts.tsx`,
 `app/google/search-console/page.tsx`, `app/google/analytics/page.tsx`,
