@@ -1,0 +1,202 @@
+/* QuasarAISEO Schema admin styles */
+.quasar-wrap { max-width: 1100px; }
+.quasar-wrap h1 { display: flex; align-items: center; gap: 10px; }
+.quasar-version { font-size: 12px; color: #888; font-weight: normal; }
+
+.quasar-banner {
+	background: #fff3cd; color: #856404; border: 1px solid #ffeeba;
+	border-radius: 4px; padding: 10px 14px; margin: 12px 0 20px;
+}
+
+.quasar-tabs { margin-bottom: 16px; }
+
+.quasar-tab-content {
+	background: #fff; border: 1px solid #c3c4c7; border-top: none;
+	padding: 20px 24px; border-radius: 0 0 4px 4px;
+}
+
+.quasar-form-table th { width: 220px; vertical-align: top; padding: 14px 10px 14px 0; }
+.quasar-form-table td { padding: 10px 10px; }
+.quasar-form-table input[type="text"],
+.quasar-form-table input[type="email"],
+.quasar-form-table input[type="url"],
+.quasar-form-table input[type="password"],
+.quasar-form-table input[type="number"],
+.quasar-form-table textarea,
+.quasar-form-table select { width: 100%; max-width: 550px; box-sizing: border-box; }
+.quasar-form-table input[type="number"] { max-width: 120px; }
+.quasar-form-table textarea { min-height: 90px; resize: vertical; }
+.quasar-form-table .description { margin-top: 4px; color: #666; font-size: 12px; }
+.quasar-form-table p.description { margin-top: 6px; }
+
+.quasar-repeater { margin-bottom: 10px; }
+.quasar-repeater-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+.quasar-repeater-row input { flex: 1; }
+.quasar-repeater-remove { color: #a00; cursor: pointer; text-decoration: none; }
+.quasar-repeater-add { display: inline-block; margin-top: 4px; }
+
+/* Rating fields row */
+.quasar-rating-fields { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; align-items: center; }
+.quasar-rating-fields label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #555; }
+.quasar-rating-fields input { width: 90px !important; max-width: 90px; }
+
+/* Social platform quick-add chips */
+.quasar-social-presets { margin-top: 14px; padding-top: 12px; border-top: 1px dashed #d0d1d7; }
+.quasar-social-chips { display: flex; flex-wrap: wrap; gap: 6px; max-width: 600px; }
+.quasar-social-chip { margin: 0 !important; font-size: 12px; }
+.quasar-social-chip:hover { border-color: #6b46c1; color: #6b46c1; }
+
+/* Review repeater rows */
+.quasar-review-row { flex-wrap: wrap; align-items: flex-start; padding: 10px; background: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 4px; }
+.quasar-review-author { flex: 1 1 180px; min-width: 160px; }
+.quasar-review-rating { width: 70px !important; max-width: 70px; flex: 0 0 70px; }
+.quasar-review-date { width: 130px !important; max-width: 130px; flex: 0 0 130px; }
+.quasar-review-source { flex: 1 1 180px; min-width: 160px; }
+.quasar-review-body { flex: 1 1 100% !important; width: 100% !important; max-width: 100% !important; min-height: 60px; margin-top: 6px; resize: vertical; }
+.quasar-review-row .quasar-repeater-remove { margin-top: 6px; flex: 0 0 auto; }
+
+.quasar-logo-preview img { max-width: 200px; max-height: 60px; margin-top: 6px; }
+
+.quasar-status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 600px; }
+.quasar-status-item { background: #f9f9f9; padding: 12px 16px; border-radius: 4px; border: 1px solid #e0e0e0; }
+.quasar-status-item strong { display: block; color: #555; font-size: 12px; text-transform: uppercase; margin-bottom: 4px; }
+.quasar-status-item .value { font-size: 15px; }
+.quasar-status-yes { color: #2a7f2a; font-weight: bold; }
+.quasar-status-no { color: #c62828; font-weight: bold; }
+
+/* Bypass email verification section */
+.quasar-bypass-section {
+	margin-top: 24px; padding: 18px 20px;
+	border: 1px solid #cfc7e8; border-radius: 6px;
+	background: #faf8ff; max-width: 640px;
+}
+.quasar-bypass-section h3 { margin-top: 0; color: #5b4b8a; }
+.quasar-bypass-section .description { color: #666; margin-bottom: 12px; }
+.quasar-bypass-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.quasar-bypass-input {
+	flex: 1; min-width: 220px; padding: 8px 12px;
+	border: 1px solid #b3a6d9; border-radius: 4px; font-size: 14px;
+	background: #fff;
+}
+.quasar-bypass-input:focus { outline: none; border-color: #5b4b8a; box-shadow: 0 0 0 1px #5b4b8a; }
+.quasar-bypass-status { margin-left: 6px; font-weight: 600; }
+.quasar-bypass-done { opacity: 0.7; }
+.quasar-bypass-done h3 { color: #2a7f2a; }
+
+/* Meta box */
+.quasar-metabox-status { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.quasar-status-badge {
+	display: inline-block; padding: 2px 10px; border-radius: 12px;
+	font-size: 12px; font-weight: bold; text-transform: uppercase;
+}
+.quasar-status-auto { background: #d4edda; color: #155724; }
+.quasar-status-edited { background: #cce5ff; color: #004085; }
+.quasar-status-manual { background: #f8d7da; color: #721c24; }
+.quasar-status-empty { background: #e2e3e5; color: #383d41; }
+.quasar-updated { color: #666; font-size: 12px; }
+
+.quasar-json-editor {
+	width: 100%; box-sizing: border-box;
+	font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+	font-size: 12px; line-height: 1.5; background: #1e1e2e; color: #cdd6f4;
+	border: 1px solid #45475a; border-radius: 4px; padding: 12px;
+	resize: vertical;
+}
+.quasar-metabox-actions { margin-top: 10px; display: flex; gap: 8px; align-items: center; }
+.quasar-metabox-msg { font-style: italic; color: #555; min-height: 20px; }
+.quasar-metabox-msg.success { color: #2a7f2a; }
+.quasar-metabox-msg.error { color: #c62828; }
+.quasar-metabox-notice,
+.quasar-metabox-error {
+	background: #fff3cd; color: #856404; padding: 8px 12px; border-radius: 4px;
+	margin: 8px 0; border: 1px solid #ffeeba;
+}
+.quasar-metabox-error { background: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+
+.quasar-submit-row { margin-top: 16px; }
+.quasar-test-result { margin-left: 10px; font-style: italic; }
+.quasar-test-result.ok { color: #2a7f2a; }
+.quasar-test-result.fail { color: #c62828; }
+
+/* ---- Meta box: per-section card layout ---- */
+.quasar-metabox-toolbar {
+	display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+	margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e0e0e0;
+}
+.quasar-metabox-toolbar .quasar-metabox-msg { font-style: italic; min-height: 20px; }
+.quasar-metabox-toolbar .quasar-metabox-msg.success { color: #2a7f2a; }
+.quasar-metabox-toolbar .quasar-metabox-msg.error { color: #c62828; }
+
+.quasar-sections { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+
+.quasar-section-card {
+	border: 1px solid #d0d1d7; border-radius: 6px; background: #fff; overflow: hidden;
+}
+.quasar-section-card.quasar-combined-card { border-color: #6b46c1; }
+
+.quasar-section-header {
+	display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+	background: #f6f7f7; cursor: pointer; user-select: none;
+	border-bottom: 1px solid #d0d1d7; transition: background 0.15s;
+}
+.quasar-section-header:hover { background: #f0f0f1; }
+.quasar-combined-card .quasar-section-header { background: #f3eefb; }
+.quasar-combined-card .quasar-section-header:hover { background: #ece4f7; }
+
+.quasar-section-toggle {
+	font-size: 18px; width: 18px; height: 18px; color: #666;
+	transition: transform 0.2s; flex-shrink: 0;
+}
+.quasar-section-card.collapsed .quasar-section-toggle { transform: rotate(-90deg); }
+.quasar-section-card.collapsed .quasar-section-body { display: none; }
+
+.quasar-section-title { font-weight: 600; font-size: 14px; flex: 1; }
+
+.quasar-section-body { padding: 14px; }
+
+.quasar-section-actions {
+	display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap;
+}
+.quasar-section-msg { font-style: italic; color: #555; min-height: 20px; font-size: 12px; }
+.quasar-section-msg.success { color: #2a7f2a; }
+.quasar-section-msg.error { color: #c62828; }
+
+.quasar-combined-json { background: #181825; color: #a6e3a1; }
+
+/* Refresh models status */
+.quasar-refresh-models-status { font-size: 12px; }
+
+/* FAQ title override in meta box */
+.quasar-faq-title-override {
+	margin-bottom: 16px; padding: 12px 14px; background: #f9f8fc;
+	border: 1px solid #e0d8f0; border-radius: 4px;
+}
+.quasar-faq-title-override label { display: block; }
+.quasar-faq-title-override .quasar-faq-title-input {
+	width: 100%; max-width: 500px; margin-top: 6px;
+}
+.quasar-faq-title-override .description { margin-top: 6px; }
+
+/* Color picker inputs */
+input[type="color"].quasar-color-picker {
+	width: 50px; height: 32px; padding: 0; border: 1px solid #c3c4c7;
+	border-radius: 4px; cursor: pointer; vertical-align: middle;
+}
+
+/* FAQ Display tab — live preview */
+.quasar-faq-preview {
+	margin: 16px 0; padding: 20px; background: #f0f0f1;
+	border-radius: 6px; max-width: 700px;
+}
+.quasar-faq-preview .quasar-faq-section {
+	margin: 0; padding: 20px; font-size: 14px;
+}
+.quasar-faq-preview .quasar-faq-title {
+	font-size: 20px; margin-bottom: 12px;
+}
+.quasar-faq-preview .quasar-faq-question {
+	padding: 10px 14px; font-size: 14px;
+}
+.quasar-faq-preview .quasar-faq-answer {
+	padding: 0 14px 10px 14px; font-size: 13px;
+}
