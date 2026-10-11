@@ -542,7 +542,7 @@ Parameters:
 ### `wp_update_custom_render` — Set a custom page design
 **Changes the site — needs a manage key.**
 
-Replaces a page's theme layout with your own HTML and CSS (custom render, stored for the site's Custom Web Render). When enabled, visitors see this HTML instead of the post body — always send the complete page body in html (enabling a page that has no HTML is refused). Choose header_type/footer_type from wp_get_render_settings and tell the user what will show.
+Replaces a page's theme layout with your own HTML and CSS (custom render, stored for the site's Custom Web Render). When enabled, visitors see this HTML instead of the post body — always send the complete page body in html (enabling a page that has no HTML is refused). Choose header_type/footer_type from wp_get_render_settings ("global" = the site-wide setting); choosing one also switches the header/footer on (use_global_header / use_global_footer). The reply says whether a header and footer will show. Put styles in css, not in <style> tags inside html (WordPress removes those).
 Limits of the dashboard connection: the HTML goes through WordPress's post filter — the reply lists any tags it removed (for example svg, form, iframe); JavaScript is not accepted. Tell the user when the reply mentions either; those parts can be added in WordPress (Custom Web Render) or through the site's own Custom Web Render MCP connection. Needs plugin 2.2.1+ (older plugins are reported, nothing is claimed). Recorded in History with Undo.
 
 Parameters:
@@ -556,6 +556,8 @@ Parameters:
 - `footer_type` — one of `global`, `custom`, `elementor`, `theme`, `extracted`, `none`
 - `header_elementor_id`
 - `footer_elementor_id`
+- `use_global_header` — Show a header on this page. The page renderer shows NO header unless this is on, whatever header_type says. Defaults to true when you pass a header_type other than "none" (and false for "none"); pass it to change only this switch.
+- `use_global_footer` — Show a footer on this page. The page renderer shows NO footer unless this is on, whatever footer_type says. Defaults to true when you pass a footer_type other than "none" (and false for "none"); pass it to change only this switch.
 
 ### `wp_update_global_render` — Set site-wide header/footer for custom designs
 **Changes the site — needs a manage key.**
