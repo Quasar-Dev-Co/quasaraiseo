@@ -2,7 +2,8 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 // The Quasar MCP server: lets the admin connect Claude, ChatGPT, Cursor or any
 // other MCP client to this system and ask it about analytics, team activity,
-// schedules and the rest. This is the opposite direction from "Connected
+// schedules and the rest, and (with a "manage" key) work on the connected
+// WordPress sites. This is the opposite direction from "Connected
 // tools" (mcp-connections-api.ts), where MCP Chat calls outside servers.
 
 function authHeaders(): Record<string, string> {
@@ -33,11 +34,18 @@ export interface McpAccessKey {
   lastUsedAt: string | null;
   /** Null means the key never expires. */
   expiresAt: string | null;
+  /** "read": read-only tools. "manage": may also change WordPress sites. Older backends send nothing (read). */
+  access?: McpKeyAccess;
 }
+
+export type McpKeyAccess = "read" | "manage";
 
 export interface McpServerTool {
   name: string;
+  title?: string;
   description: string;
+  /** "manage" tools change WordPress sites and need a manage key. */
+  access?: McpKeyAccess;
 }
 
 export interface AdminMcpOverview {
@@ -76,7 +84,7 @@ export const adminMcpApi = {
   },
 
   /** The full key is returned only here, once. */
-  async createKey(input: { name: string; expiresInDays: number | null }): Promise<{ key: McpAccessKey; secret: string }> {
+  async createKey(input: { name: string; expiresInDays: number | null; access: McpKeyAccess }): Promise<{ key: McpAccessKey; secret: string }> {
     return parse(await send("/api/admin-mcp/keys", { method: "POST", body: JSON.stringify(input) }));
   },
 

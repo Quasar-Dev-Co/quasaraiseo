@@ -9,10 +9,13 @@ import {
   PLANNED_MCP_TOOLS,
   type AdminMcpOverview,
   type McpAccessKey,
+  type McpKeyAccess,
+  type McpServerTool,
 } from "@/lib/admin-mcp-api";
 
 // Admin-only: connect an outside AI app (Claude, ChatGPT, Cursor…) to Quasar
-// over MCP, so it can read analytics, team activity, schedules and the rest.
+// over MCP, so it can read analytics, team activity, schedules and the rest, and
+// with a "manage" key work on the connected WordPress sites.
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.seo.quasarasoft.com";
 const KEY_PLACEHOLDER = "<your-access-key>";
@@ -115,6 +118,7 @@ export function McpAccessTab() {
 
   const [name, setName] = useState("");
   const [expiresInDays, setExpiresInDays] = useState<number | null>(365);
+  const [access, setAccess] = useState<McpKeyAccess>("read");
   const [creating, setCreating] = useState(false);
   const [revoking, setRevoking] = useState<string | null>(null);
   /** The full key, shown once right after it is created. */
@@ -144,7 +148,7 @@ export function McpAccessTab() {
     setCreating(true);
     setError(null);
     try {
-      const created = await adminMcpApi.createKey({ name: trimmed, expiresInDays });
+      const created = await adminMcpApi.createKey({ name: trimmed, expiresInDays, access });
       setNewSecret(created);
       setName("");
       await load();
@@ -172,6 +176,8 @@ export function McpAccessTab() {
 
   const serverUrl = overview?.serverUrl ?? `${BACKEND_URL.replace(/\/+$/, "")}/mcp`;
   const tools = overview?.tools.length ? overview.tools : PLANNED_MCP_TOOLS;
+  const readTools = tools.filter((t) => t.access !== "manage");
+  const manageTools = tools.filter((t) => t.access === "manage");
   const keys = overview?.keys ?? [];
   const activeClient = CLIENTS.find((c) => c.id === client) ?? CLIENTS[0];
   const shownSnippet = snippet(client, serverUrl, newSecret?.secret ?? KEY_PLACEHOLDER);
@@ -195,7 +201,7 @@ export function McpAccessTab() {
       <Section
         icon={Server}
         title="Quasar MCP server"
-        hint="Connect Claude, ChatGPT, Cursor or any other MCP app to this system. The app can then answer questions about every website's analytics, who on the team works the most, what is scheduled, costs and more. It can read, not change."
+        hint="Connect Claude, ChatGPT, Cursor or any other MCP app to this system. The app can then answer questions about every website's analytics, who on the team works the most, what is scheduled and costs, read the connected WordPress sites, and — with a manage key — edit posts, SEO fields, menus, media and settings and start backups."
       >
         <div className="space-y-3 p-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -234,6 +240,18 @@ export function McpAccessTab() {
               />
             </label>
             <label>
+              <span className="mb-1.5 block text-[12px] font-bold text-slate-600 dark:text-slate-400">Access</span>
+              <select
+                value={access}
+                onChange={(e) => setAccess(e.target.value === "manage" ? "manage" : "read")}
+                disabled={!deployed}
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none disabled:opacity-60 sm:w-56 dark:border-white/10 dark:bg-slate-800 dark:text-white"
+              >
+                <option value="read">Read only</option>
+                <option value="manage">Read + change WordPress sites</option>
+              </select>
+            </label>
+            <label>
               <span className="mb-1.5 block text-[12px] font-bold text-slate-600 dark:text-slate-400">Expires</span>
               <select
                 value={expiresInDays ?? "never"}
@@ -250,6 +268,12 @@ export function McpAccessTab() {
               {creating ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />} Create key
             </Button>
           </div>
+
+          {access === "manage" && (
+            <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[12px] leading-relaxed text-amber-900 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-200">
+              A manage key lets the app edit posts, SEO fields, menus, media and settings on every connected WordPress site. Give it only to apps and people you trust, and revoke it when it is no longer needed. Post edits can be undone in MCP Chat → History.
+            </p>
+          )}
 
           {newSecret && (
             <div className="space-y-2 rounded-2xl border border-brand-200 bg-brand-50/60 p-4 dark:border-brand-400/20 dark:bg-brand-400/10">
@@ -278,6 +302,9 @@ export function McpAccessTab() {
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-[14px] font-bold text-slate-900 dark:text-white">{key.name}</span>
                         <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600 dark:bg-white/10 dark:text-slate-300">{key.prefix}…</code>
+                        <span className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${key.access === "manage" ? "bg-amber-50 text-amber-800 dark:bg-amber-400/10 dark:text-amber-200" : "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300"}`}>
+                          {key.access === "manage" ? "Read + change sites" : "Read only"}
+                        </span>
                         {expired && <span className="rounded bg-red-50 px-1.5 py-0.5 text-[11px] font-semibold text-red-700 dark:bg-red-400/10 dark:text-red-300">Expired</span>}
                       </div>
                       <p className="mt-1 text-[12px] text-slate-500 dark:text-slate-400">
@@ -297,7 +324,7 @@ export function McpAccessTab() {
         </div>
       </Section>
 
-      <Section icon={Plug} title="Connect your app" hint="Pick the app, copy the setup, and ask it something like “Which website got the most clicks this month?” or “Who used Quasar the most this week?”">
+      <Section icon={Plug} title="Connect your app" hint="Pick the app, copy the setup, and ask it something like “Which website got the most clicks this month?”, “Who used Quasar the most this week?” or, with a manage key, “Add an internal link to our pricing guide in post 4769 on quasarliving.com”.">
         <div className="space-y-3 p-6">
           <div className="flex flex-wrap gap-1 rounded-[12px] bg-slate-100 p-1 dark:bg-slate-800" role="group" aria-label="App">
             {CLIENTS.map((c) => (
@@ -327,16 +354,31 @@ export function McpAccessTab() {
         </div>
       </Section>
 
-      <Section icon={Wrench} title="What the app can read" hint={deployed ? `${tools.length} read-only tools.` : `${tools.length} read-only tools, available once the backend update is deployed.`}>
-        <ul className="divide-y divide-slate-100 dark:divide-white/5">
-          {tools.map((tool) => (
-            <li key={tool.name} className="flex flex-col gap-0.5 px-6 py-3 sm:flex-row sm:gap-4">
-              <code className="shrink-0 font-mono text-[12px] font-semibold text-slate-900 sm:w-56 dark:text-white">{tool.name}</code>
-              <span className="text-[13px] text-slate-600 dark:text-slate-400">{tool.description}</span>
-            </li>
-          ))}
-        </ul>
+      <Section icon={Wrench} title="What the app can read" hint={deployed ? `${readTools.length} read-only tools. Every key can use these.` : `${readTools.length} read-only tools, available once the backend update is deployed.`}>
+        <ToolList tools={readTools} />
       </Section>
+
+      {manageTools.length > 0 && (
+        <Section icon={Wrench} title="What a manage key can change" hint={`${manageTools.length} tools that change WordPress sites. Only keys with “Read + change WordPress sites” can use them; deletes and other risky changes ask the user first.`}>
+          <ToolList tools={manageTools} />
+        </Section>
+      )}
     </div>
+  );
+}
+
+function ToolList({ tools }: { tools: McpServerTool[] }) {
+  return (
+    <ul className="divide-y divide-slate-100 dark:divide-white/5">
+      {tools.map((tool) => (
+        <li key={tool.name} className="flex flex-col gap-0.5 px-6 py-3 sm:flex-row sm:gap-4">
+          <code className="shrink-0 font-mono text-[12px] font-semibold text-slate-900 sm:w-56 dark:text-white">{tool.name}</code>
+          <span className="text-[13px] text-slate-600 dark:text-slate-400">
+            {tool.title && <span className="font-semibold text-slate-800 dark:text-slate-200">{tool.title}. </span>}
+            <span className="line-clamp-2" title={tool.description}>{tool.description}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
   );
 }
