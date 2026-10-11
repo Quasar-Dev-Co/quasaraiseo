@@ -8,7 +8,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Quasar AI SEO — Feature Status
 
-Last updated: 2026-10-03
+Last updated: 2026-10-11
 
 | Feature | Status | Where |
 |---|---|---|
@@ -22,6 +22,7 @@ Last updated: 2026-10-03
 | Permalink guard | Have | Publishing sends a clean slug that matches the title, then checks the link WordPress made (`lib/permalink.ts` on the backend; editable "Page link" in the publish dialog). Works with any plugin version: the link is set right after the post is created, no plugin update needed |
 | MCP Chat AI images | Have | `/content-strategy`: when a post/page/image is asked for and no gallery image is chosen, the chat uses the same AI image flow as `/post-create` (`lib/blog-images.ts`; `imagePrompts` on `create_post`, `generate_images` tool) |
 | MCP Chat bulk scheduling | Have | `/content-strategy`: "write N posts and publish them on these dates" → `schedule_posts` queues them (table `ScheduledPost`, runner in `mcp-publishing.ts`); each is written in the background with images and given to WordPress with a future date. `list_scheduled_posts` / `cancel_scheduled_posts` |
+| MCP Chat partial post edits | Have | `/content-strategy`: `patch_post_content` adds a sentence or paragraph before/after existing text, or links existing anchor text, and changes nothing else (`mcp-patch-content.ts`, matching in `lib/html-patch.ts` on the backend). Saves only the body through core WordPress (`lib/wp-core.ts`, the site's application password) so the plugin's filtering can't strip other markup; refuses Elementor and custom-render pages; `dry_run` previews; recorded in History with Undo |
 | MCP Chat history & undo | Have | `/content-strategy` → History button: every post/page the chat creates or edits, and saved content pages, is listed with an Undo (`mcp-history.ts`, table `McpChange`). Undo is itself recorded, so it can be undone; new posts go to the WordPress trash. Works with any plugin version |
 | AI provider (OpenAI/OpenRouter) | Have | Settings — model selector works in MCP |
 | Multiple Google accounts | Have | Settings → Google Connect: the admin adds any number of Google accounts (`components/settings/google-accounts.tsx`); Search Console and Analytics list the websites from all of them, grouped by account, and each data call goes to the account that owns the site (`lib/google-api.ts`). Backend: table `GoogleAccount` (`google-accounts.ts`, tokens encrypted, the old connection is copied in on first start). Contract: `docs/backend-google-accounts-and-mcp.md` |

@@ -63,6 +63,7 @@ const TOOL_ICONS: Record<string, typeof Search> = {
   search_media: Image,
   create_post: FilePlus,
   update_post: Edit3,
+  patch_post_content: Edit3,
   delete_post: Trash2,
   create_content: FilePlus,
   update_content: Edit3,
@@ -111,6 +112,11 @@ function getToolLabel(tool: string, args: Record<string, unknown>): string {
   if (tool === "search_media") return `Searching media: "${args.search || ""}"`;
   if (tool === "create_post" || tool === "create_content") return `Creating ${args.post_type === "page" || args.postType === "page" ? "page" : "post"}: "${String(args.title || "").slice(0, 40)}"${Array.isArray(args.imagePrompts) && args.imagePrompts.length ? " + AI images" : ""}${args.scheduledAt ? " (scheduled)" : ""}`;
   if (tool === "update_post" || tool === "update_content") return `Updating post ${args.postId || args.id || ""}`;
+  if (tool === "patch_post_content") {
+    const id = args.post_id || args.postId || "";
+    if (!args.find_text && !args.link_text) return `Reading paragraphs of post ${id}`;
+    return `${args.dry_run ? "Previewing an edit to" : "Editing part of"} post ${id}${args.link_text ? " (adding a link)" : ""}`;
+  }
   if (tool === "delete_post" || tool === "delete_content") return `Deleting post ${args.postId || args.id || ""}`;
   if (tool === "list_content") return `Listing ${args.post_type === "page" ? "pages" : "content"}`;
   if (tool === "update_seo") return `Updating SEO on post ${args.id || args.postId || ""}`;
