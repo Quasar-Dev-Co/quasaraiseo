@@ -37,6 +37,7 @@ Every WordPress tool takes "site" (the site's address). Start with wp_list_sites
 ## Limits
 - Plugins can be listed (wp_list_plugins) but not installed, updated or switched on/off — the user does that in WordPress → Plugins.
 - Pages built with Elementor or with a Quasar custom page design can't be edited with wp_patch_post_content (it explains why).
+- Custom page designs (wp_update_custom_render) accept HTML and CSS; WordPress filters the HTML (removed tags are reported) and JavaScript / <head> code are not accepted through this connection — say so when a reply mentions it. Needs plugin 2.2.1+.
 - Tools marked as changing the site need an access key with "manage" access.
 - The site needs the Quasar AI SEO plugin 2.2.0 or newer for paragraph edits, menus, setup, media editing, plugins and backups; tools say so when a site is older.
 
@@ -179,7 +180,7 @@ Parameters:
 ### `wp_list_sites` — List connected WordPress sites
 Read-only.
 
-All WordPress sites connected to Quasar (address, name, last sync). Every other wp_ tool needs one of these addresses as "site". Use this first when the user names a site, to check it is connected.
+All WordPress sites connected to Quasar (address, name, who connected it). Every other wp_ tool needs one of these addresses as "site". Use this first when the user names a site, to check it is connected. lastPostListSync is only when Quasar last copied the site's post list for its own pages — the wp_ tools always talk to the live site, so an old date does not matter for them.
 
 Parameters:
 - none
@@ -357,7 +358,7 @@ Parameters:
 ### `wp_delete_post` — Move a post to the trash
 **Changes the site — needs a manage key.** Destructive: asks for `confirm: true` after the user agreed.
 
-Moves a post or page to the WordPress trash (it can be restored in WordPress → Trash). Needs confirm: true after the user agreed — say first which post (ID and title) will be removed. Permanent deletion is not offered here.
+Moves a post or page to the WordPress trash (it can be restored in WordPress → Trash, or with Undo in Quasar's History). Needs confirm: true after the user agreed — say first which post (ID and title) will be removed. Permanent deletion is not offered here.
 
 Parameters:
 - `site` (required) — WordPress site address, e.g. "https://quasarliving.com" or just "quasarliving.com". Use one of the wordpressSites from list_websites or wp_list_sites.
@@ -541,14 +542,15 @@ Parameters:
 ### `wp_update_custom_render` — Set a custom page design
 **Changes the site — needs a manage key.**
 
-Replaces a page's theme layout with your own HTML/CSS/JS (custom render). When enabled, visitors see this HTML instead of the post body — always send the complete page body in html; enabling without html gives a blank page. Choose header_type/footer_type from wp_get_render_settings and tell the user what will show. Recorded in History with Undo.
+Replaces a page's theme layout with your own HTML and CSS (custom render, stored for the site's Custom Web Render). When enabled, visitors see this HTML instead of the post body — always send the complete page body in html (enabling a page that has no HTML is refused). Choose header_type/footer_type from wp_get_render_settings and tell the user what will show.
+Limits of the dashboard connection: the HTML goes through WordPress's post filter — the reply lists any tags it removed (for example svg, form, iframe); JavaScript is not accepted. Tell the user when the reply mentions either; those parts can be added in WordPress (Custom Web Render) or through the site's own Custom Web Render MCP connection. Needs plugin 2.2.1+ (older plugins are reported, nothing is claimed). Recorded in History with Undo.
 
 Parameters:
 - `site` (required) — WordPress site address, e.g. "https://quasarliving.com" or just "quasarliving.com". Use one of the wordpressSites from list_websites or wp_list_sites.
 - `post_id` (required) — WordPress post or page ID (from wp_list_posts / wp_list_pages).
 - `html` — Complete page body HTML.
 - `css`
-- `js`
+- `js` — Not accepted through the dashboard connection; the reply says it was ignored.
 - `enabled` — Default true; false switches custom design off (the normal post body shows again).
 - `header_type` — one of `global`, `custom`, `elementor`, `theme`, `extracted`, `none`
 - `footer_type` — one of `global`, `custom`, `elementor`, `theme`, `extracted`, `none`
@@ -558,13 +560,13 @@ Parameters:
 ### `wp_update_global_render` — Set site-wide header/footer for custom designs
 **Changes the site — needs a manage key.**
 
-Sets the site-wide header, footer and head code (or their source) used by every custom-designed page. Affects many pages at once — read wp_get_render_settings first and confirm the plan with the user.
+Sets the site-wide header and footer (or their source: custom, elementor, theme, extracted) used by every custom-designed page. Affects many pages at once — read wp_get_render_settings first and confirm the plan with the user. Header/footer HTML goes through WordPress's post filter (removed tags are reported); <head> code is not accepted through the dashboard connection. Needs plugin 2.2.1+.
 
 Parameters:
 - `site` (required) — WordPress site address, e.g. "https://quasarliving.com" or just "quasarliving.com". Use one of the wordpressSites from list_websites or wp_list_sites.
 - `header`
 - `footer`
-- `head` — Code for <head> (meta tags, styles).
+- `head` — Not accepted through the dashboard connection; the reply says it was ignored.
 - `header_type` — one of `custom`, `elementor`, `theme`, `extracted`
 - `footer_type` — one of `custom`, `elementor`, `theme`, `extracted`
 - `header_elementor_id`

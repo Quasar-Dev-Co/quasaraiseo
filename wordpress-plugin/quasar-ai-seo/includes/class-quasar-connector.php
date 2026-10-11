@@ -1371,94 +1371,139 @@ add_action('rest_api_init', function () {
     ]);
 
     // ─── Custom render ───
+    // Stored in the same post meta and options that the Custom Web Render part of
+    // this plugin reads (Custom_Web_Render::META_* / OPTION_*), so a design saved from
+    // the dashboard is what visitors see. Through the dashboard token, HTML goes
+    // through WordPress's post filter (wp_kses_post) and anything it removed is
+    // reported; JavaScript and <head> code are not accepted here, because with them a
+    // leaked token could put scripts on the site. They can be set in WordPress
+    // (Custom Web Render) or through the site's own Custom Web Render MCP connection.
     register_rest_route($namespace, '/posts/(?P<id>\d+)/custom-render', [
-        'methods'  => 'GET',
-        'callback' => function ($request) {
-            $id = (int) $request->get_param('id');
-            return rest_ensure_response([
-                'html'    => get_post_meta($id, '_quasar_custom_html', true),
-                'css'     => get_post_meta($id, '_quasar_custom_css', true),
-                'js'      => get_post_meta($id, '_quasar_custom_js', true),
-                'enabled' => get_post_meta($id, '_quasar_custom_render_enabled', true) === '1',
-            ]);
-        },
-        'permission_callback' => function ($request) {
-            return quasar_check_token($request);
-        },
-    ]);
+        [
+            'methods'  => 'GET',
+            'callback' => function ($request) {
+                $id = (int) $request->get_param('id');
+                if (!get_post($id)) {
+                    return new WP_Error('not_found', 'Post not found', ['status' => 404]);
+                }
+                return rest_ensure_response(quasar_custom_render_payload($id));
+            },
+            'permission_callback' => function ($request) {
+                return quasar_check_token($request);
+            },
+        ],
+        [
+            'methods'  => 'POST',
+            'callback' => function ($request) {
+                $id = (int) $request->get_param('id');
+                $params = json_decode($request->get_body(), true);
+                $params = is_array($params) ? $params : [];
+                if (!get_post($id)) {
+                    return new WP_Error('not_found', 'Post not found', ['status' => 404]);
+                }
 
-    register_rest_route($namespace, '/posts/(?P<id>\d+)/custom-render', [
-        'methods'  => 'POST',
-        'callback' => function ($request) {
-            $id = (int) $request->get_param('id');
-            $params = json_decode($request->get_body(), true);
+                $ignored = [];
+                $removed = [];
+                $html = null;
+                if (array_key_exists('html', $params)) {
+                    $html = wp_kses_post((string) $params['html']);
+                    $removed = quasar_removed_tags((string) $params['html'], $html);
+                }
+                $enable = array_key_exists('enabled', $params) ? (bool) $params['enabled'] : null;
+                $stored_html = $html !== null ? $html : (string) get_post_meta($id, Custom_Web_Render::META_HTML, true);
+                if ($enable === true && trim($stored_html) === '') {
+                    return new WP_Error('no_html', 'Custom render was not switched on: there is no HTML for this page yet, so it would show a blank page. Send the page body in html.', ['status' => 400]);
+                }
 
-            $post = get_post($id);
-            if (!$post) {
-                return new WP_Error('not_found', 'Post not found', ['status' => 404]);
-            }
+                if ($html !== null) {
+                    update_post_meta($id, Custom_Web_Render::META_HTML, $html);
+                }
+                if (array_key_exists('css', $params)) {
+                    // CSS can't run scripts; only stop it from closing the <style> tag.
+                    update_post_meta($id, Custom_Web_Render::META_CSS, str_ireplace('</style', '', (string) $params['css']));
+                }
+                if (array_key_exists('js', $params) && trim((string) $params['js']) !== '') {
+                    $ignored[] = 'js';
+                }
+                if ($enable !== null) {
+                    update_post_meta($id, Custom_Web_Render::META_ENABLED, $enable ? '1' : '0');
+                }
+                foreach (['use_global_header' => Custom_Web_Render::META_USE_HEADER, 'use_global_footer' => Custom_Web_Render::META_USE_FOOTER] as $arg => $meta) {
+                    if (array_key_exists($arg, $params)) {
+                        update_post_meta($id, $meta, $params[$arg] ? '1' : '0');
+                    }
+                }
+                $types = ['global', 'custom', 'elementor', 'theme', 'extracted', 'none'];
+                foreach (['header' => [Custom_Web_Render::META_HEADER_TYPE, Custom_Web_Render::META_HEADER_ELEMENTOR_ID], 'footer' => [Custom_Web_Render::META_FOOTER_TYPE, Custom_Web_Render::META_FOOTER_ELEMENTOR_ID]] as $part => $metas) {
+                    if (isset($params[$part . '_type']) && in_array(sanitize_key($params[$part . '_type']), $types, true)) {
+                        update_post_meta($id, $metas[0], sanitize_key($params[$part . '_type']));
+                    }
+                    if (isset($params[$part . '_elementor_id'])) {
+                        update_post_meta($id, $metas[1], absint($params[$part . '_elementor_id']));
+                    }
+                }
 
-            if (isset($params['html'])) {
-                update_post_meta($id, '_quasar_custom_html', wp_kses_post($params['html']));
-            }
-            if (isset($params['css'])) {
-                update_post_meta($id, '_quasar_custom_css', $params['css']);
-            }
-            if (isset($params['js'])) {
-                update_post_meta($id, '_quasar_custom_js', $params['js']);
-            }
-            if (isset($params['enabled'])) {
-                update_post_meta($id, '_quasar_custom_render_enabled', $params['enabled'] ? '1' : '0');
-            }
-
-            return rest_ensure_response([
-                'success' => true,
-                'message'  => 'Custom render updated',
-            ]);
-        },
-        'permission_callback' => function ($request) {
-            return quasar_check_token($request);
-        },
+                return rest_ensure_response(array_merge(quasar_custom_render_payload($id), [
+                    'success'       => true,
+                    'html_filtered' => !empty($removed),
+                    'removed_tags'  => $removed,
+                    'ignored'       => $ignored,
+                ]));
+            },
+            'permission_callback' => function ($request) {
+                return quasar_check_token($request);
+            },
+        ],
     ]);
 
     // ─── Global render ───
     register_rest_route($namespace, '/global-render', [
-        'methods'  => 'GET',
-        'callback' => function ($request) {
-            return rest_ensure_response([
-                'header' => get_option('quasar_global_header', ''),
-                'footer' => get_option('quasar_global_footer', ''),
-                'head'   => get_option('quasar_global_head', ''),
-            ]);
-        },
-        'permission_callback' => function ($request) {
-            return quasar_check_token($request);
-        },
-    ]);
-
-    register_rest_route($namespace, '/global-render', [
-        'methods'  => 'POST',
-        'callback' => function ($request) {
-            $params = json_decode($request->get_body(), true);
-
-            if (isset($params['header'])) {
-                update_option('quasar_global_header', wp_kses_post($params['header']));
-            }
-            if (isset($params['footer'])) {
-                update_option('quasar_global_footer', wp_kses_post($params['footer']));
-            }
-            if (isset($params['head'])) {
-                update_option('quasar_global_head', $params['head']);
-            }
-
-            return rest_ensure_response([
-                'success' => true,
-                'message' => 'Global render updated',
-            ]);
-        },
-        'permission_callback' => function ($request) {
-            return quasar_check_token($request);
-        },
+        [
+            'methods'  => 'GET',
+            'callback' => function ($request) {
+                return rest_ensure_response(quasar_global_render_payload());
+            },
+            'permission_callback' => function ($request) {
+                return quasar_check_token($request);
+            },
+        ],
+        [
+            'methods'  => 'POST',
+            'callback' => function ($request) {
+                $params = json_decode($request->get_body(), true);
+                $params = is_array($params) ? $params : [];
+                $removed = [];
+                $ignored = [];
+                foreach (['header' => Custom_Web_Render::OPTION_HEADER, 'footer' => Custom_Web_Render::OPTION_FOOTER] as $part => $option) {
+                    if (array_key_exists($part, $params)) {
+                        $clean = wp_kses_post((string) $params[$part]);
+                        $removed = array_merge($removed, quasar_removed_tags((string) $params[$part], $clean));
+                        update_option($option, $clean);
+                    }
+                }
+                if (array_key_exists('head', $params) && trim((string) $params['head']) !== '') {
+                    $ignored[] = 'head';
+                }
+                $types = ['custom', 'elementor', 'theme', 'extracted'];
+                foreach (['header' => [Custom_Web_Render::OPTION_HEADER_TYPE, Custom_Web_Render::OPTION_HEADER_ELEMENTOR_ID], 'footer' => [Custom_Web_Render::OPTION_FOOTER_TYPE, Custom_Web_Render::OPTION_FOOTER_ELEMENTOR_ID]] as $part => $options) {
+                    if (isset($params[$part . '_type']) && in_array(sanitize_key($params[$part . '_type']), $types, true)) {
+                        update_option($options[0], sanitize_key($params[$part . '_type']));
+                    }
+                    if (isset($params[$part . '_elementor_id'])) {
+                        update_option($options[1], absint($params[$part . '_elementor_id']));
+                    }
+                }
+                return rest_ensure_response(array_merge(quasar_global_render_payload(), [
+                    'success'       => true,
+                    'html_filtered' => !empty($removed),
+                    'removed_tags'  => array_values(array_unique($removed)),
+                    'ignored'       => $ignored,
+                ]));
+            },
+            'permission_callback' => function ($request) {
+                return quasar_check_token($request);
+            },
+        ],
     ]);
 });
 add_action('admin_menu', function () {
@@ -1685,6 +1730,52 @@ function quasar_check_token($request) {
     }
     $stored = get_option('quasar_connection_token', '');
     return !empty($stored) && !empty($token) && hash_equals($stored, $token);
+}
+
+/** A page's Custom Web Render settings, as the renderer reads them. */
+function quasar_custom_render_payload($id) {
+    return [
+        'html'              => (string) get_post_meta($id, Custom_Web_Render::META_HTML, true),
+        'css'               => (string) get_post_meta($id, Custom_Web_Render::META_CSS, true),
+        'js'                => (string) get_post_meta($id, Custom_Web_Render::META_JS, true),
+        'enabled'           => get_post_meta($id, Custom_Web_Render::META_ENABLED, true) === '1',
+        'header_type'       => (string) get_post_meta($id, Custom_Web_Render::META_HEADER_TYPE, true),
+        'footer_type'       => (string) get_post_meta($id, Custom_Web_Render::META_FOOTER_TYPE, true),
+        'use_global_header' => get_post_meta($id, Custom_Web_Render::META_USE_HEADER, true) === '1',
+        'use_global_footer' => get_post_meta($id, Custom_Web_Render::META_USE_FOOTER, true) === '1',
+        'storage'           => 'custom-web-render',
+    ];
+}
+
+/** The site-wide header/footer settings used by custom-rendered pages. */
+function quasar_global_render_payload() {
+    return [
+        'header'              => (string) get_option(Custom_Web_Render::OPTION_HEADER, ''),
+        'footer'              => (string) get_option(Custom_Web_Render::OPTION_FOOTER, ''),
+        'head'                => (string) get_option(Custom_Web_Render::OPTION_HEAD, ''),
+        'header_type'         => (string) get_option(Custom_Web_Render::OPTION_HEADER_TYPE, 'custom'),
+        'footer_type'         => (string) get_option(Custom_Web_Render::OPTION_FOOTER_TYPE, 'custom'),
+        'header_elementor_id' => (int) get_option(Custom_Web_Render::OPTION_HEADER_ELEMENTOR_ID, 0),
+        'footer_elementor_id' => (int) get_option(Custom_Web_Render::OPTION_FOOTER_ELEMENTOR_ID, 0),
+        'storage'             => 'custom-web-render',
+    ];
+}
+
+/** Tag names that appear in $before but not (or less often) in $after. */
+function quasar_removed_tags($before, $after) {
+    $count = function ($html) {
+        preg_match_all('/<([a-zA-Z][a-zA-Z0-9-]*)/', $html, $m);
+        return array_count_values(array_map('strtolower', $m[1]));
+    };
+    $a = $count($before);
+    $b = $count($after);
+    $removed = [];
+    foreach ($a as $tag => $n) {
+        if (($b[$tag] ?? 0) < $n) {
+            $removed[] = $tag;
+        }
+    }
+    return $removed;
 }
 
 function quasar_get_site_info() {

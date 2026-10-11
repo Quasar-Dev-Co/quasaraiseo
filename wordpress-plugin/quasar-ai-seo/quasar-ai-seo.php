@@ -3,7 +3,7 @@
  * Plugin Name: Quasar AI SEO
  * Plugin URI:  https://seo.quasarasoft.com
  * Description: One plugin for the Quasar dashboard connection, custom page rendering, the MCP server, and AI JSON-LD schema.
- * Version:     2.2.0
+ * Version:     2.2.1
  * Author:      Quasar AI SEO
  * Author URI:  https://seo.quasarasoft.com
  * License:     GPL-2.0-or-later
@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 /**
  * Combined plugin version.
  */
-define('QUASAR_ADDONS_VERSION', '2.2.0');
+define('QUASAR_ADDONS_VERSION', '2.2.1');
 define('QUASAR_ADDONS_PATH', plugin_dir_path(__FILE__));
 define('QUASAR_ADDONS_URL', plugin_dir_url(__FILE__));
 define('QUASAR_ADDONS_BASENAME', plugin_basename(__FILE__));
@@ -29,7 +29,7 @@ define('QUASAR_ADDONS_BASENAME', plugin_basename(__FILE__));
 // languages path matches this plugin folder, and so the connector does not
 // redefine QUASAR_VERSION.
 if (!defined('QUASAR_VERSION')) {
-    define('QUASAR_VERSION', '2.2.0');
+    define('QUASAR_VERSION', '2.2.1');
 }
 if (!defined('QUASAR_BASENAME')) {
     define('QUASAR_BASENAME', 'quasar-ai-seo/quasar/quasar-ai-seo-schema.php');

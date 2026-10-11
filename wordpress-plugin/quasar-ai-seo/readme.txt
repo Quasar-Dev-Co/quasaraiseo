@@ -4,7 +4,7 @@ Tags: schema, structured data, json-ld, seo, ai, openai, faq, rich snippets, cus
 Requires at least: 5.8
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.2.0
+Stable tag: 2.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -59,6 +59,11 @@ All plugin data is preserved when the plugin is deleted so a delete and reinstal
 6. Open QuasarAISEO for schema settings, company profile, reviews, tone, and FAQ display.
 
 == Changelog ==
+
+= 2.2.1 =
+* Fix: custom page designs and the site-wide header/footer set from the Quasar dashboard are now saved where the page renderer reads them (Custom Web Render), so they actually show. Before, they were stored in old fields nothing read.
+* Through the dashboard connection, page HTML goes through WordPress's post filter and anything removed is reported; JavaScript and <head> code are not accepted there (set them in WordPress or through the site's Custom Web Render MCP).
+* Turning custom render on without any HTML is refused, so a page can't go blank by accident.
 
 = 2.2.0 =
 * MCP Chat small edits: new route to read a post's exact body and save small edits (add a sentence, add a link). It only saves when WordPress's HTML filter would not remove anything from the post (at most it tidies markup formatting), so nothing else in the post can be stripped.
