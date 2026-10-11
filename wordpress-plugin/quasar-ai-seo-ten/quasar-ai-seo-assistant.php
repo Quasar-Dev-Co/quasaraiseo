@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Quasar AI SEO
  * Description: Connect your WordPress site with Quasar AI SEO to publish AI-generated content directly from your Quasar dashboard.
- * Version: 2.0.3
+ * Version: 2.1.0
  * Author: Quasar AI SEO
  * Author URI: https://seo.quasarasoft.com
  * License: GPL-2.0+
@@ -13,11 +13,14 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('QUASAR_VERSION', '2.0.3');
+define('QUASAR_VERSION', '2.1.0');
 define('QUASAR_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('QUASAR_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('QUASAR_API_URL', 'https://seo.teamcmp.cloud');
 define('QUASAR_FRONTEND_URL', 'https://seo.quasarasoft.com');
+
+// Menus, site setup, media editing, plugin list and backups for MCP Chat.
+require_once QUASAR_PLUGIN_DIR . 'includes/site-tools.php';
 
 // Force-enable Application Passwords (some hosts disable them by default)
 add_filter('wp_is_application_passwords_available', '__return_true');

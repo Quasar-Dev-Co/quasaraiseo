@@ -64,6 +64,11 @@ const TOOL_ICONS: Record<string, typeof Search> = {
   create_post: FilePlus,
   update_post: Edit3,
   patch_post_content: Edit3,
+  manage_menus: Layers,
+  manage_site_setup: Settings,
+  manage_media: Images,
+  list_plugins: Plug,
+  manage_backups: ShieldCheck,
   delete_post: Trash2,
   create_content: FilePlus,
   update_content: Edit3,
@@ -112,6 +117,11 @@ function getToolLabel(tool: string, args: Record<string, unknown>): string {
   if (tool === "search_media") return `Searching media: "${args.search || ""}"`;
   if (tool === "create_post" || tool === "create_content") return `Creating ${args.post_type === "page" || args.postType === "page" ? "page" : "post"}: "${String(args.title || "").slice(0, 40)}"${Array.isArray(args.imagePrompts) && args.imagePrompts.length ? " + AI images" : ""}${args.scheduledAt ? " (scheduled)" : ""}`;
   if (tool === "update_post" || tool === "update_content") return `Updating post ${args.postId || args.id || ""}`;
+  if (tool === "manage_menus") return args.action === "list" ? "Reading menus" : `Menus: ${String(args.action || "").replace(/_/g, " ")}`;
+  if (tool === "manage_site_setup") return args.action === "update" ? "Changing site setup" : "Reading site setup";
+  if (tool === "manage_media") return `Media: ${String(args.action || "").replace(/_/g, " ")}${args.media_id ? ` ${args.media_id}` : ""}`;
+  if (tool === "list_plugins") return "Listing plugins";
+  if (tool === "manage_backups") return args.action === "run" ? "Starting a backup" : args.action === "restore" ? "Finding backups to restore" : "Checking backups";
   if (tool === "patch_post_content") {
     const id = args.post_id || args.postId || "";
     if (!args.find_text && !args.link_text) return `Reading paragraphs of post ${id}`;

@@ -4,7 +4,7 @@ Tags: seo, ai, content, blog, publishing
 Requires at least: 5.6
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 2.0.3
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -37,6 +37,10 @@ Quasar AI SEO Assistant connects your WordPress site with the Quasar AI SEO plat
 * A Quasar AI SEO account (sign up at https://seo.quasarasoft.com)
 
 == Changelog ==
+
+= 2.1.0 =
+* Site tools for MCP Chat: menus (list, create, edit, delete, assign to theme locations), site setup (title, tagline, homepage, posts page, permalinks, time zone, search engine visibility and more), media (edit title/alt/caption, upload from a link, delete unused files), the plugin list (read-only) and UpdraftPlus backups (status, list, start a backup)
+* Site owners can switch the site tools off with the quasar_ai_seo_site_tools_enabled filter
 
 = 2.0.3 =
 * New route to read a post's exact body and save small edits from MCP Chat (add a sentence, add a link). It only saves when WordPress's HTML filter would not remove anything from the post (at most it tidies markup formatting), so nothing else in the post can be stripped
