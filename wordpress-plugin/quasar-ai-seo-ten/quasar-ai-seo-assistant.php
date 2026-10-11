@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Quasar AI SEO
  * Description: Connect your WordPress site with Quasar AI SEO to publish AI-generated content directly from your Quasar dashboard.
- * Version: 2.0.2
+ * Version: 2.0.3
  * Author: Quasar AI SEO
  * Author URI: https://seo.quasarasoft.com
  * License: GPL-2.0+
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('QUASAR_VERSION', '2.0.1');
+define('QUASAR_VERSION', '2.0.3');
 define('QUASAR_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('QUASAR_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('QUASAR_API_URL', 'https://seo.teamcmp.cloud');
@@ -616,6 +616,70 @@ add_action('rest_api_init', function () {
         'permission_callback' => function ($request) {
             return quasar_check_token($request);
         },
+    ]);
+
+    // ─── Exact post body (small edits from MCP Chat) ───
+    // Reads and saves post_content for any post type. A save goes through the same
+    // HTML filter as every other route (wp_kses_post), and is only made when that
+    // filter would not remove or change anything real: at most it rewrites markup
+    // formatting (" />" spacing, quote style, how entities are written). If it would
+    // drop an element, attribute, style, link, block comment or text, nothing is saved,
+    // so a small edit can never strip other parts of the post.
+    register_rest_route($namespace, '/posts/(?P<id>\d+)/content', [
+        [
+            'methods'  => 'GET',
+            'callback' => function ($request) {
+                $post = get_post((int) $request['id']);
+                if (!$post) {
+                    return new WP_Error('not_found', 'Post not found.', ['status' => 404]);
+                }
+                return rest_ensure_response(quasar_content_payload($post));
+            },
+            'permission_callback' => function ($request) {
+                return quasar_check_token($request);
+            },
+        ],
+        [
+            'methods'  => 'POST',
+            'callback' => function ($request) {
+                $post_id = (int) $request['id'];
+                $post = get_post($post_id);
+                if (!$post) {
+                    return new WP_Error('not_found', 'Post not found.', ['status' => 404]);
+                }
+                $params = json_decode($request->get_body(), true);
+                if (!is_array($params) || !isset($params['content']) || !is_string($params['content'])) {
+                    return new WP_Error('bad_request', 'content (string) is required.', ['status' => 400]);
+                }
+                // Never overwrite an edit made after the caller read the post.
+                if (!empty($params['expected_hash']) && !hash_equals(md5($post->post_content), (string) $params['expected_hash'])) {
+                    return new WP_Error('changed', 'The post was changed after it was read.', ['status' => 409]);
+                }
+                $content = $params['content'];
+                $filtered = wp_kses_post($content);
+                if ($filtered !== $content && quasar_markup_canon($filtered) !== quasar_markup_canon($content)) {
+                    return new WP_Error(
+                        'would_be_filtered',
+                        'WordPress would filter parts of this post (for example embeds, scripts or forms) when saving it, so it was not saved.',
+                        ['status' => 422]
+                    );
+                }
+
+                // wp_update_post expects slashed data; without wp_slash backslashes in
+                // block attributes (\u003c and similar) would be lost.
+                $result = wp_update_post(wp_slash(['ID' => $post_id, 'post_content' => $filtered]), true);
+                if (is_wp_error($result)) {
+                    return new WP_Error('update_failed', $result->get_error_message(), ['status' => 500]);
+                }
+                clean_post_cache($post_id);
+                $payload = quasar_content_payload(get_post($post_id));
+                $payload['reformatted'] = $filtered !== $content;
+                return rest_ensure_response($payload);
+            },
+            'permission_callback' => function ($request) {
+                return quasar_check_token($request);
+            },
+        ],
     ]);
 
     // ─── Web Builder: Pages endpoints (post_type = 'page') ───
@@ -1650,6 +1714,43 @@ function quasar_check_token($request) {
     }
     $stored = get_option('quasar_connection_token', '');
     return !empty($stored) && !empty($token) && hash_equals($stored, $token);
+}
+
+/**
+ * HTML reduced to what matters for comparing it before and after wp_kses_post:
+ * markup formatting is ignored (" />" vs "/>", quote style, entity spelling,
+ * whitespace runs), while HTML comments - which hold Gutenberg block settings -
+ * must match exactly.
+ */
+function quasar_markup_canon($html) {
+    $parts = preg_split('/(<!--.*?-->)/s', $html, -1, PREG_SPLIT_DELIM_CAPTURE);
+    $out = '';
+    foreach ($parts as $i => $part) {
+        if ($i % 2 === 1) {
+            $out .= $part;
+            continue;
+        }
+        $part = preg_replace('/\s*\/\s*>/', '>', $part);
+        $part = html_entity_decode($part, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $part = str_replace(['"', "'"], '', $part);
+        $out .= preg_replace('/\s+/', ' ', $part);
+    }
+    return $out;
+}
+
+/** What the /posts/{id}/content route returns: the exact stored body and how it is shown. */
+function quasar_content_payload($post) {
+    return [
+        'success'   => true,
+        'id'        => $post->ID,
+        'post_type' => $post->post_type,
+        'status'    => $post->post_status,
+        'title'     => $post->post_title,
+        'link'      => quasar_final_permalink($post),
+        'content'   => $post->post_content,
+        'hash'      => md5($post->post_content),
+        'builder'   => get_post_meta($post->ID, '_elementor_edit_mode', true) === 'builder' ? 'elementor' : '',
+    ];
 }
 
 function quasar_get_site_info() {
