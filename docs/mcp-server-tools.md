@@ -4,7 +4,7 @@ Generated from `quasar-ai-seo-backend/src/modules/admin-mcp/` (mcp-tools.ts, mcp
 
 - Endpoint: `POST https://api.seo.quasarasoft.com/mcp` (Streamable HTTP, JSON-RPC). Key in `Authorization: Bearer qmcp_…` or `?key=`.
 - Keys are created by an admin in Quasar → Settings → MCP access. **Read only** keys see the read tools; **Read + change WordPress sites** keys see all tools.
-- WordPress tools need the Quasar AI SEO plugin on the site (2.2.0+ for paragraph edits, menus, setup, media editing, plugins and backups).
+- WordPress tools need the Quasar AI SEO plugin on the site (2.2.0+ for paragraph edits, menus, setup, media editing, plugins and backups; 2.2.2+ so SEO fields reach custom-designed pages and edits work in posts with embeds, styles or scripts).
 - Changes to posts made through these tools appear in Quasar → MCP Chat → History, with Undo.
 
 ## Agent guide (returned by `quasar_guide`): Quasar AI SEO — how to work on WordPress sites
@@ -18,13 +18,13 @@ Every WordPress tool takes "site" (the site's address). Start with wp_list_sites
 4. Changes that remove things or can hurt search visibility need confirm: true, which you may only send after the user agreed in their own words: deleting posts, menus, menu items or media; hiding the site from search engines; changing the permalink structure.
 5. Suggest a backup (wp_run_backup) before big or risky changes.
 6. Write content in the site's own language. Keep the site's tone.
-7. Report exactly what a tool returned. If it failed or said "Not done yet", say so — never claim a change that did not happen.
+7. Report exactly what a tool returned. If it failed or said "Not done yet" or "NOT live", say so and give the user its Reason and What to do — never claim a change that did not happen, and never summarize a precise reason into a vague one.
 8. Post edits made here appear in Quasar → MCP Chat → History, where they can be undone. WordPress also keeps revisions (wp_list_revisions).
 
 ## Common tasks
 - Add a sentence after a paragraph: wp_read_paragraphs(site, post_id) → copy the exact paragraph text → wp_patch_post_content(site, post_id, find_text, insert_after, dry_run: true) → show the preview → same call without dry_run.
 - Add an internal link to existing words: wp_patch_post_content(site, post_id, link_text: "exact words", link_url: "https://…"). Add find_text to pick the right paragraph when the words appear more than once.
-- Improve SEO title / meta description / focus keyword: wp_get_post (see current values and SEO plugin) → wp_update_seo.
+- Improve SEO title / meta description / focus keyword: wp_get_post (see current values and what the page uses) → wp_update_seo. It works with any SEO plugin, none, and Quasar custom page designs, and checks the live page: report "live" only when it says live = "visible"; otherwise pass on its Reason and What to do.
 - Write a new post: wp_create_post (status "draft" unless the user asked to publish; add image_prompts for AI images). Then wp_publish_post or wp_schedule_post.
 - Many posts on a schedule: wp_schedule_many_posts, then wp_post_queue to follow progress.
 - Put a page in the main menu: wp_list_menus (find the menu shown in the main location) → wp_list_pages (page ID) → wp_manage_menus(action "add_item", menu_id, object_id).
@@ -40,6 +40,7 @@ Every WordPress tool takes "site" (the site's address). Start with wp_list_sites
 - Custom page designs (wp_update_custom_render) accept HTML and CSS; WordPress filters the HTML (removed tags are reported) and JavaScript / <head> code are not accepted through this connection — say so when a reply mentions it. Needs plugin 2.2.1+.
 - Tools marked as changing the site need an access key with "manage" access.
 - The site needs the Quasar AI SEO plugin 2.2.0 or newer for paragraph edits, menus, setup, media editing, plugins and backups; tools say so when a site is older.
+- Plugin 2.2.2 or newer: SEO fields reach custom-designed pages, title/slug/publish changes no longer strip embeds or <style> blocks from the body, and paragraph edits work in posts that contain embeds, styles or scripts (that markup is kept exactly as it is). With an older plugin the tools say what is missing.
 
 ## Data tools (read-only)
 
@@ -216,7 +217,7 @@ Parameters:
 ### `wp_get_post` — Get a post with its SEO fields
 Read-only.
 
-One post or page in full: title, content (HTML), excerpt, slug, link, categories, tags, and the SEO fields of the site's SEO plugin (Yoast or Rank Math: SEO title, meta description, focus keyword). Use before changing SEO fields or when you need the whole content.
+One post or page in full: title, content (HTML), excerpt, slug, link, categories, tags, the SEO fields of the site's SEO plugin (Yoast or Rank Math), and (plugin 2.2.2+) the SEO title, meta description and focus keyword in effect on the page — also for Quasar custom page designs. Use before changing SEO fields or when you need the whole content.
 
 Parameters:
 - `site` (required) — WordPress site address, e.g. "https://quasarliving.com" or just "quasarliving.com". Use one of the wordpressSites from list_websites or wp_list_sites.
@@ -261,7 +262,7 @@ Parameters:
 
 The safe way to change part of an existing post or page: insert a sentence or paragraph before/after existing text, and/or turn existing words into a link. Everything else (blocks, images, tables, links, SEO fields, design) stays byte-for-byte the same, and only the body is saved.
 How: 1) wp_read_paragraphs to see the text. 2) Copy an exact sentence or whole paragraph into find_text (must be unique, or pass occurrence). 3) insert_after or insert_before with the new text (simple HTML allowed, e.g. a link <a href="https://…">anchor</a>), and/or link_text + link_url. 4) Use dry_run: true to preview, then call again without it.
-placement: auto (default) adds a new paragraph when find_text is a whole paragraph or heading, otherwise inserts in the same paragraph. The tool refuses instead of guessing: text not found (it suggests close matches), found more than once, Elementor or custom-design pages, or text already present. Recorded in Quasar History with Undo.
+placement: auto (default) adds a new paragraph when find_text is a whole paragraph or heading, otherwise inserts in the same paragraph. The tool refuses instead of guessing: text not found (it suggests close matches), found more than once, Elementor or custom-design pages, or text already present. Posts with embeds, <style> blocks, scripts or forms: with plugin 2.2.2+ that markup is kept exactly as it is around the edit; an edit that would change it, or new text containing such markup, is refused with a Reason naming the markup and What to do — pass both on to the user. Recorded in Quasar History with Undo.
 
 Parameters:
 - `site` (required) — WordPress site address, e.g. "https://quasarliving.com" or just "quasarliving.com". Use one of the wordpressSites from list_websites or wp_list_sites.
@@ -282,7 +283,7 @@ Parameters:
 ### `wp_update_seo` — Update SEO fields of a post
 **Changes the site — needs a manage key.**
 
-Change a post's title, slug, excerpt and SEO plugin fields: SEO title, meta description, focus keyword. The tool detects whether the site uses Yoast or Rank Math and writes those fields; with neither installed, SEO fields can't be stored (it says so). Read the current values with wp_get_post first and tell the user old → new. Changing the slug changes the post's address: only do it when asked. Recorded in History with Undo.
+Change a post's or page's SEO title, meta description and focus keyword (and optionally its title, slug, excerpt). Works with Yoast, Rank Math, SEOPress, no SEO plugin, and Quasar custom page designs: the values are written wherever the page reads them, page caches are cleared, and the live page is checked. live = "visible" only when the page shows the new values; otherwise result explains the Reason and What to do — tell the user both, never say it is live. Read the current values with wp_get_post first and tell the user old → new. Changing the slug changes the post's address: only do it when asked. Recorded in History with Undo.
 
 Parameters:
 - `site` (required) — WordPress site address, e.g. "https://quasarliving.com" or just "quasarliving.com". Use one of the wordpressSites from list_websites or wp_list_sites.

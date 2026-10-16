@@ -4,7 +4,7 @@ Tags: schema, structured data, json-ld, seo, ai, openai, faq, rich snippets, cus
 Requires at least: 5.8
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.2.1
+Stable tag: 2.2.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -59,6 +59,14 @@ All plugin data is preserved when the plugin is deleted so a delete and reinstal
 6. Open QuasarAISEO for schema settings, company profile, reviews, tone, and FAQ display.
 
 == Changelog ==
+
+= 2.2.2 =
+* Fix: changing a post's title, excerpt or slug, publishing or scheduling it, or undoing a change from the Quasar dashboard no longer runs the stored body through WordPress's HTML filter again. Before, it silently deleted embeds (iframes), <style> blocks, forms and scripts from the post.
+* Fix: SEO title, meta description and focus keyword sent from the dashboard are written to every place a page reads them from (Custom Web Render, Yoast, Rank Math, SEOPress, The SEO Framework), so custom-designed pages show the new values too. Page caches (LiteSpeed, WP Rocket, W3 Total Cache, WP Super Cache, WP Fastest Cache, SiteGround, Nginx Helper, Breeze) are cleared for the post.
+* Fix: on normal pages with an SEO plugin, that plugin's title is no longer overridden by an older Custom Web Render title. Custom-rendered pages use the SEO plugin's own field first and fill in its variables (%%title%%) where possible.
+* Small edits from MCP Chat now work in posts that contain markup WordPress's filter removes (embeds, <style> blocks, scripts, forms): that markup is kept byte for byte, and only the new text is filtered. An edit that would change that markup, or new text with such markup, is refused with the exact markup named.
+* The post meta route reports the SEO values in effect on the page, the SEO plugin in use and whether the page is custom-rendered.
+* Fix: the hourly schema event no longer causes a PHP error (it ran without a post ID).
 
 = 2.2.1 =
 * Fix: custom page designs and the site-wide header/footer set from the Quasar dashboard are now saved where the page renderer reads them (Custom Web Render), so they actually show. Before, they were stored in old fields nothing read.

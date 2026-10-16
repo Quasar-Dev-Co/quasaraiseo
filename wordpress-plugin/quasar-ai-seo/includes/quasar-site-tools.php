@@ -113,9 +113,12 @@ add_action('rest_api_init', function () {
     // Reads and saves post_content for any post type. A save goes through the same
     // HTML filter as every other route (wp_kses_post), and is only made when that
     // filter would not remove or change anything real: at most it rewrites markup
-    // formatting (" />" spacing, quote style, how entities are written). If it would
-    // drop an element, attribute, style, link, block comment or text, nothing is saved,
-    // so a small edit can never strip other parts of the post.
+    // formatting (" />" spacing, quote style, how entities are written).
+    // When the post already has markup the filter removes (embeds, <style> blocks,
+    // scripts, forms, special attributes), that markup is kept byte for byte and only
+    // the rest is filtered (quasar_safe_body_save, 2.2.2). If the edit itself touches
+    // that markup or adds markup the filter removes, nothing is saved and the reply
+    // says exactly which markup it is.
     register_rest_route($ns, '/posts/(?P<id>\d+)/content', [
         [
             'methods'  => 'GET',
@@ -148,23 +151,28 @@ add_action('rest_api_init', function () {
                 }
                 $content = $params['content'];
                 $filtered = wp_kses_post($content);
+                $kept = [];
                 if ($filtered !== $content && quasar_markup_canon($filtered) !== quasar_markup_canon($content)) {
-                    return new WP_Error(
-                        'would_be_filtered',
-                        'WordPress would filter parts of this post (for example embeds, scripts or forms) when saving it, so it was not saved.',
-                        ['status' => 422]
-                    );
+                    $safe = quasar_safe_body_save($post->post_content, $content);
+                    if (!$safe['ok']) {
+                        return quasar_would_be_filtered_error($content, $safe);
+                    }
+                    $filtered = $safe['content'];
+                    $kept = $safe['kept'];
+                    $result = quasar_update_post_body_checked($post_id, $filtered);
+                } else {
+                    // wp_update_post expects slashed data; without wp_slash backslashes in
+                    // block attributes (\u003c and similar) would be lost.
+                    $result = wp_update_post(wp_slash(['ID' => $post_id, 'post_content' => $filtered]), true);
                 }
-
-                // wp_update_post expects slashed data; without wp_slash backslashes in
-                // block attributes (\u003c and similar) would be lost.
-                $result = wp_update_post(wp_slash(['ID' => $post_id, 'post_content' => $filtered]), true);
                 if (is_wp_error($result)) {
-                    return new WP_Error('update_failed', $result->get_error_message(), ['status' => 500]);
+                    return new WP_Error('update_failed', 'WordPress did not save the post: ' . $result->get_error_message(), ['status' => 500]);
                 }
-                clean_post_cache($post_id);
+                $purged = quasar_purge_page_cache($post_id);
                 $payload = quasar_content_payload(get_post($post_id));
                 $payload['reformatted'] = $filtered !== $content;
+                $payload['kept_protected'] = $kept;
+                $payload['cache_purged'] = $purged;
                 return rest_ensure_response($payload);
             },
             'permission_callback' => function ($request) {
@@ -769,6 +777,7 @@ function quasar_markup_canon($html) {
 
 /** What the /posts/{id}/content route returns: the exact stored body and how it is shown. */
 function quasar_content_payload($post) {
+    $protected = quasar_filtered_pieces($post->post_content);
     return [
         'success'   => true,
         'id'        => $post->ID,
@@ -779,5 +788,34 @@ function quasar_content_payload($post) {
         'content'   => $post->post_content,
         'hash'      => md5($post->post_content),
         'builder'   => get_post_meta($post->ID, '_elementor_edit_mode', true) === 'builder' ? 'elementor' : '',
+        // Markup WordPress's filter would remove (kept as is by small edits), or null when
+        // the body can't be read with certainty.
+        'protected_markup' => $protected === null ? null : quasar_summarize_pieces($protected),
+        'plugin_version'   => QUASAR_ADDONS_VERSION,
     ];
+}
+
+/** The 422 reply for a body the filter would change: what, why, and what can be done. */
+function quasar_would_be_filtered_error($content, array $safe) {
+    $pieces = quasar_filtered_pieces($content);
+    $filtered_markup = $pieces === null ? [] : quasar_summarize_pieces($pieces);
+    $reason = $safe['code'] === 'nothing_protected' ? 'rest_would_be_filtered' : $safe['code'];
+    $text = $safe['code'] === 'nothing_protected'
+        ? 'WordPress would change the text or block settings of this post when saving it.'
+        : $safe['message'];
+    if (!empty($safe['details'])) {
+        $text .= ' (' . implode(', ', $safe['details']) . ')';
+    }
+    return new WP_Error(
+        'would_be_filtered',
+        'Not saved: ' . $text,
+        [
+            'status'          => 422,
+            'reason'          => $reason,
+            'reason_text'     => $text,
+            'details'         => $safe['details'],
+            'filtered_markup' => $filtered_markup,
+            'plugin_version'  => QUASAR_ADDONS_VERSION,
+        ]
+    );
 }

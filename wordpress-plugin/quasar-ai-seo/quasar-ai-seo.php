@@ -3,7 +3,7 @@
  * Plugin Name: Quasar AI SEO
  * Plugin URI:  https://seo.quasarasoft.com
  * Description: One plugin for the Quasar dashboard connection, custom page rendering, the MCP server, and AI JSON-LD schema.
- * Version:     2.2.1
+ * Version:     2.2.2
  * Author:      Quasar AI SEO
  * Author URI:  https://seo.quasarasoft.com
  * License:     GPL-2.0-or-later
@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 /**
  * Combined plugin version.
  */
-define('QUASAR_ADDONS_VERSION', '2.2.1');
+define('QUASAR_ADDONS_VERSION', '2.2.2');
 define('QUASAR_ADDONS_PATH', plugin_dir_path(__FILE__));
 define('QUASAR_ADDONS_URL', plugin_dir_url(__FILE__));
 define('QUASAR_ADDONS_BASENAME', plugin_basename(__FILE__));
@@ -29,7 +29,7 @@ define('QUASAR_ADDONS_BASENAME', plugin_basename(__FILE__));
 // languages path matches this plugin folder, and so the connector does not
 // redefine QUASAR_VERSION.
 if (!defined('QUASAR_VERSION')) {
-    define('QUASAR_VERSION', '2.2.1');
+    define('QUASAR_VERSION', '2.2.2');
 }
 if (!defined('QUASAR_BASENAME')) {
     define('QUASAR_BASENAME', 'quasar-ai-seo/quasar/quasar-ai-seo-schema.php');
@@ -4078,7 +4078,13 @@ final class Custom_Web_Render {
             return $title;
         }
 
-        $meta_title = self::get_meta_title(get_queried_object_id());
+        // On normal pages an SEO plugin writes the title itself; overriding it here would
+        // show a stale Custom Web Render title instead of what was saved in that plugin.
+        $post_id = get_queried_object_id();
+        if (self::has_known_seo_plugin() && get_post_meta($post_id, self::META_ENABLED, true) !== '1') {
+            return $title;
+        }
+        $meta_title = self::get_meta_title($post_id);
         return trim($meta_title) !== '' ? $meta_title : $title;
     }
 
@@ -4173,21 +4179,67 @@ final class Custom_Web_Render {
     private static function has_known_seo_plugin() {
         return defined('WPSEO_VERSION')
             || defined('RANK_MATH_VERSION')
-            || defined('SEOPRESS_VERSION');
+            || defined('SEOPRESS_VERSION')
+            || defined('AIOSEO_VERSION')
+            || defined('THE_SEO_FRAMEWORK_VERSION');
     }
 
     public static function get_meta_title($post_id) {
-        return self::first_meta_value(
-            $post_id,
-            array(self::META_TITLE, '_yoast_wpseo_title', 'rank_math_title', '_seopress_titles_title')
-        );
+        return self::first_seo_value($post_id, 'title');
     }
 
     public static function get_meta_description($post_id) {
-        return self::first_meta_value(
-            $post_id,
-            array(self::META_DESCRIPTION, '_yoast_wpseo_metadesc', 'rank_math_description', '_seopress_titles_desc')
+        return self::first_seo_value($post_id, 'description');
+    }
+
+    public static function get_focus_keyword($post_id) {
+        return self::first_seo_value($post_id, 'keyword');
+    }
+
+    /**
+     * The SEO title/description/keyword a page shows: the active SEO plugin's own field
+     * first (its editor box only changes that one), then Custom Web Render's, then the
+     * other plugins' fields. Variables such as %%title%% are filled in where the plugin
+     * allows it; a value whose variables can't be filled in is skipped.
+     */
+    private static function first_seo_value($post_id, $field) {
+        $stores = function_exists('quasar_seo_store_keys') ? quasar_seo_store_keys() : array(
+            'cwr' => array('title' => self::META_TITLE, 'description' => self::META_DESCRIPTION, 'keyword' => self::META_FOCUS_KEYWORD),
         );
+        $active = function_exists('quasar_seo_plugin') ? quasar_seo_plugin() : 'none';
+        $order = array_unique(array_merge(isset($stores[$active]) ? array($active) : array(), array('cwr', 'yoast', 'rankmath', 'seopress')));
+        foreach ($order as $store) {
+            $key = isset($stores[$store][$field]) ? $stores[$store][$field] : '';
+            if ($key === '') {
+                continue;
+            }
+            $value = trim((string) get_post_meta($post_id, $key, true));
+            if ($value !== '' && $field !== 'keyword') {
+                $value = self::fill_seo_variables($value, $post_id, $store);
+            }
+            if ($value !== '') {
+                return $value;
+            }
+        }
+        return '';
+    }
+
+    private static function fill_seo_variables($value, $post_id, $store) {
+        if (strpos($value, '%') === false) {
+            return $value;
+        }
+        $post = get_post($post_id);
+        try {
+            if ($store === 'yoast' && function_exists('wpseo_replace_vars')) {
+                $value = wpseo_replace_vars($value, $post);
+            } elseif ($store === 'rankmath' && is_callable(array('\RankMath\Helper', 'replace_vars'))) {
+                $value = call_user_func(array('\RankMath\Helper', 'replace_vars'), $value, $post);
+            }
+        } catch (\Throwable $error) {
+            return '';
+        }
+        // Variables left in place would show as "%%title%%" in the browser tab.
+        return preg_match('/%%[a-z_]+%%|%[a-z_]+%/i', (string) $value) ? '' : trim((string) $value);
     }
 
     private static function first_meta_value($post_id, $keys) {
@@ -4247,6 +4299,7 @@ final class Custom_Web_Render {
 require_once plugin_dir_path(__FILE__) . 'includes/class-cwr-mcp-server.php';
 require_once plugin_dir_path(__FILE__) . 'includes/class-quasar-connector.php';
 require_once plugin_dir_path(__FILE__) . 'includes/quasar-site-tools.php';
+require_once plugin_dir_path(__FILE__) . 'includes/quasar-safe-writes.php';
 
 /**
  * Combined activation — runs both the Custom Web Render and the Quasar

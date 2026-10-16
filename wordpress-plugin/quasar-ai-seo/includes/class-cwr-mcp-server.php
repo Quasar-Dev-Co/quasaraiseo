@@ -2327,22 +2327,6 @@ PWSH;
         update_post_meta($post_id, $meta_key, $value);
     }
 
-    private static function update_seo_plugin_meta($post_id, $title, $description, $focus_keyword, $canonical, $noindex, $nofollow) {
-        update_post_meta($post_id, '_yoast_wpseo_title', $title);
-        update_post_meta($post_id, 'rank_math_title', $title);
-        update_post_meta($post_id, '_seopress_titles_title', $title);
-        update_post_meta($post_id, '_yoast_wpseo_metadesc', $description);
-        update_post_meta($post_id, 'rank_math_description', $description);
-        update_post_meta($post_id, '_seopress_titles_desc', $description);
-        update_post_meta($post_id, '_yoast_wpseo_focuskw', $focus_keyword);
-        update_post_meta($post_id, 'rank_math_focus_keyword', $focus_keyword);
-        update_post_meta($post_id, '_yoast_wpseo_canonical', $canonical);
-        update_post_meta($post_id, 'rank_math_canonical_url', $canonical);
-        update_post_meta($post_id, '_yoast_wpseo_meta-robots-noindex', $noindex ? '1' : '0');
-        update_post_meta($post_id, '_yoast_wpseo_meta-robots-nofollow', $nofollow ? '1' : '0');
-        update_post_meta($post_id, 'rank_math_robots', array($noindex ? 'noindex' : 'index', $nofollow ? 'nofollow' : 'follow'));
-    }
-
     private static function apply_seo_fields($post_id, $args) {
         if (array_key_exists('meta_title', $args)) {
             self::update_seo_meta_pair($post_id, Custom_Web_Render::META_TITLE, sanitize_text_field((string) $args['meta_title']));
@@ -2375,15 +2359,34 @@ PWSH;
             self::update_seo_meta_pair($post_id, Custom_Web_Render::META_SOCIAL_IMAGE, esc_url_raw((string) $args['social_image']));
         }
 
-        self::update_seo_plugin_meta(
-            $post_id,
-            (string) get_post_meta($post_id, Custom_Web_Render::META_TITLE, true),
-            (string) get_post_meta($post_id, Custom_Web_Render::META_DESCRIPTION, true),
-            (string) get_post_meta($post_id, Custom_Web_Render::META_FOCUS_KEYWORD, true),
-            (string) get_post_meta($post_id, Custom_Web_Render::META_CANONICAL, true),
-            get_post_meta($post_id, Custom_Web_Render::META_ROBOTS_NOINDEX, true) === '1',
-            get_post_meta($post_id, Custom_Web_Render::META_ROBOTS_NOFOLLOW, true) === '1'
-        );
+        // Copy only the fields given here to the SEO plugins, so a call that sets the title
+        // does not clear a description that exists only in Yoast or Rank Math.
+        $pick = function ($field, $meta_key) use ($args, $post_id) {
+            return array_key_exists($field, $args) ? (string) get_post_meta($post_id, $meta_key, true) : null;
+        };
+        if (function_exists('quasar_write_seo_fields')) {
+            quasar_write_seo_fields(
+                $post_id,
+                $pick('meta_title', Custom_Web_Render::META_TITLE),
+                $pick('meta_description', Custom_Web_Render::META_DESCRIPTION),
+                $pick('focus_keyword', Custom_Web_Render::META_FOCUS_KEYWORD)
+            );
+        }
+        if (array_key_exists('canonical_url', $args)) {
+            $canonical = (string) get_post_meta($post_id, Custom_Web_Render::META_CANONICAL, true);
+            update_post_meta($post_id, '_yoast_wpseo_canonical', $canonical);
+            update_post_meta($post_id, 'rank_math_canonical_url', $canonical);
+        }
+        if (array_key_exists('robots_noindex', $args) || array_key_exists('robots_nofollow', $args)) {
+            $noindex = get_post_meta($post_id, Custom_Web_Render::META_ROBOTS_NOINDEX, true) === '1';
+            $nofollow = get_post_meta($post_id, Custom_Web_Render::META_ROBOTS_NOFOLLOW, true) === '1';
+            update_post_meta($post_id, '_yoast_wpseo_meta-robots-noindex', $noindex ? '1' : '0');
+            update_post_meta($post_id, '_yoast_wpseo_meta-robots-nofollow', $nofollow ? '1' : '0');
+            update_post_meta($post_id, 'rank_math_robots', array($noindex ? 'noindex' : 'index', $nofollow ? 'nofollow' : 'follow'));
+        }
+        if (function_exists('quasar_purge_page_cache')) {
+            quasar_purge_page_cache($post_id);
+        }
     }
 
     private static function apply_optional_render($post_id, $args) {

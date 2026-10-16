@@ -402,8 +402,12 @@ add_action('rest_api_init', function () {
             if (isset($params['excerpt'])) {
                 $post_data['post_excerpt'] = sanitize_text_field($params['excerpt']);
             }
+            if (isset($params['slug']) && $params['slug'] !== '') {
+                $post_data['post_name'] = sanitize_title($params['slug']);
+            }
 
-            $result = wp_update_post($post_data, true);
+            // Without new content, the stored body is saved back as it is (not filtered again).
+            $result = isset($post_data['post_content']) ? wp_update_post($post_data, true) : quasar_update_post_keep_body($post_data);
 
             if (is_wp_error($result)) {
                 return new WP_Error('update_failed', $result->get_error_message(), ['status' => 500]);
@@ -422,8 +426,10 @@ add_action('rest_api_init', function () {
                     'title'     => $post->post_title,
                     'status'    => $post->post_status,
                     'date'      => $post->post_date,
+                    'slug'      => $post->post_name,
                     'permalink' => get_permalink($post_id),
                 ],
+                'cache_purged' => quasar_purge_page_cache($post_id),
             ]);
         },
         'permission_callback' => function ($request) {
@@ -483,13 +489,17 @@ add_action('rest_api_init', function () {
             $meta['rankmath_description'] = get_post_meta($post_id, 'rank_math_description', true);
             $meta['rankmath_focus_keyword'] = get_post_meta($post_id, 'rank_math_focus_keyword', true);
 
-            // Detect SEO plugin
-            $meta['seo_plugin'] = 'none';
-            if (is_plugin_active('wordpress-seo/wp-seo.php') || is_plugin_active('yoast-seo/yoast-seo.php')) {
-                $meta['seo_plugin'] = 'yoast';
-            } elseif (is_plugin_active('seo-by-rank-math/rank-math.php')) {
-                $meta['seo_plugin'] = 'rankmath';
-            }
+            // Detect SEO plugin ("seo_plugin" keeps the values older dashboards know).
+            $plugin = quasar_seo_plugin();
+            $meta['seo_plugin'] = in_array($plugin, ['yoast', 'rankmath'], true) ? $plugin : 'none';
+
+            // What the live page uses (2.2.2+): the SEO plugin, whether the page is shown
+            // through Custom Web Render, the SEO values in effect and every stored copy.
+            $meta['seo'] = quasar_effective_seo($post_id);
+            $meta['cwr_title'] = (string) get_post_meta($post_id, Custom_Web_Render::META_TITLE, true);
+            $meta['cwr_description'] = (string) get_post_meta($post_id, Custom_Web_Render::META_DESCRIPTION, true);
+            $meta['cwr_focus_keyword'] = (string) get_post_meta($post_id, Custom_Web_Render::META_FOCUS_KEYWORD, true);
+            $meta['plugin_version'] = QUASAR_ADDONS_VERSION;
 
             // Categories and tags
             $meta['categories'] = wp_get_post_categories($post_id, ['fields' => 'names']);
@@ -515,79 +525,95 @@ add_action('rest_api_init', function () {
             }
 
             $params = json_decode($request->get_body(), true);
+            $params = is_array($params) ? $params : [];
             $updated = [];
+            $postarr = ['ID' => $post_id];
 
-            // Update post title
-            if (isset($params['title']) && !empty($params['title'])) {
-                $old_title = $post->post_title;
-                wp_update_post(['ID' => $post_id, 'post_title' => sanitize_text_field($params['title'])]);
-                $updated['title'] = ['old' => $old_title, 'new' => $params['title']];
+            if (isset($params['title']) && $params['title'] !== '') {
+                $postarr['post_title'] = sanitize_text_field($params['title']);
+                $updated['title'] = ['old' => $post->post_title, 'new' => $postarr['post_title']];
             }
-
-            // Update post excerpt
             if (isset($params['excerpt'])) {
-                $old_excerpt = $post->post_excerpt;
-                wp_update_post(['ID' => $post_id, 'post_excerpt' => sanitize_text_field($params['excerpt'])]);
-                $updated['excerpt'] = ['old' => $old_excerpt, 'new' => $params['excerpt']];
+                $postarr['post_excerpt'] = sanitize_text_field($params['excerpt']);
+                $updated['excerpt'] = ['old' => $post->post_excerpt, 'new' => $postarr['post_excerpt']];
+            }
+            if (isset($params['slug']) && $params['slug'] !== '') {
+                $postarr['post_name'] = sanitize_title($params['slug']);
+                $updated['slug'] = ['old' => $post->post_name, 'new' => $postarr['post_name']];
             }
 
-            // Update slug
-            if (isset($params['slug']) && !empty($params['slug'])) {
-                $old_slug = $post->post_name;
-                wp_update_post(['ID' => $post_id, 'post_name' => sanitize_title($params['slug'])]);
-                $updated['slug'] = ['old' => $old_slug, 'new' => sanitize_title($params['slug'])];
+            // SEO title, description and focus keyword go to every place a page reads them
+            // from (Custom Web Render, Yoast, Rank Math, SEOPress...). The Yoast/Rank Math
+            // names older dashboards send do the same, so a custom-rendered page or an
+            // older Custom Web Render value can't keep showing the old text; an empty one
+            // only clears that plugin's own field.
+            $before = quasar_effective_seo($post_id);
+            $fields = ['title' => ['seo_title', 'yoast_title', 'rankmath_title'], 'description' => ['seo_description', 'meta_description', 'yoast_description', 'rankmath_description'], 'keyword' => ['focus_keyword', 'yoast_focus_keyword', 'rankmath_focus_keyword']];
+            $legacy_keys = quasar_seo_store_keys();
+            $values = ['title' => null, 'description' => null, 'keyword' => null];
+            $asked = [];
+            foreach ($fields as $field => $names) {
+                foreach ($names as $name) {
+                    if (!isset($params[$name]) || !is_scalar($params[$name])) {
+                        continue;
+                    }
+                    $asked[$field] = true;
+                    $value = (string) $params[$name];
+                    $generic = $name === $names[0] || $name === 'meta_description';
+                    if ($generic || trim($value) !== '') {
+                        $values[$field] = $value;
+                        break;
+                    }
+                    // An empty Yoast/Rank Math value clears only that plugin's field.
+                    $store = strpos($name, 'yoast') === 0 ? 'yoast' : 'rankmath';
+                    update_post_meta($post_id, $legacy_keys[$store][$field], '');
+                }
+            }
+            $written = quasar_write_seo_fields($post_id, $values['title'], $values['description'], $values['keyword']);
+
+            // Exact values per store (Undo restores them this way).
+            if (isset($params['seo_stores']) && is_array($params['seo_stores'])) {
+                $allowed = array_keys(quasar_seo_stores($post_id));
+                foreach ($params['seo_stores'] as $key => $value) {
+                    if (!in_array($key, $allowed, true) || !is_scalar($value)) {
+                        continue;
+                    }
+                    $clean = strpos($key, 'desc') !== false ? sanitize_textarea_field((string) $value) : sanitize_text_field((string) $value);
+                    update_post_meta($post_id, $key, wp_slash($clean));
+                    $asked['stores'] = true;
+                }
             }
 
-            // Update Yoast title
-            if (isset($params['yoast_title'])) {
-                $old = get_post_meta($post_id, '_yoast_wpseo_title', true);
-                update_post_meta($post_id, '_yoast_wpseo_title', sanitize_text_field($params['yoast_title']));
-                $updated['yoast_title'] = ['old' => $old, 'new' => $params['yoast_title']];
-            }
-
-            // Update Yoast description
-            if (isset($params['yoast_description'])) {
-                $old = get_post_meta($post_id, '_yoast_wpseo_metadesc', true);
-                update_post_meta($post_id, '_yoast_wpseo_metadesc', sanitize_textarea_field($params['yoast_description']));
-                $updated['yoast_description'] = ['old' => $old, 'new' => $params['yoast_description']];
-            }
-
-            // Update Yoast focus keyword
-            if (isset($params['yoast_focus_keyword'])) {
-                $old = get_post_meta($post_id, '_yoast_wpseo_focuskw', true);
-                update_post_meta($post_id, '_yoast_wpseo_focuskw', sanitize_text_field($params['yoast_focus_keyword']));
-                $updated['yoast_focus_keyword'] = ['old' => $old, 'new' => $params['yoast_focus_keyword']];
-            }
-
-            // Update RankMath title
-            if (isset($params['rankmath_title'])) {
-                $old = get_post_meta($post_id, 'rank_math_title', true);
-                update_post_meta($post_id, 'rank_math_title', sanitize_text_field($params['rankmath_title']));
-                $updated['rankmath_title'] = ['old' => $old, 'new' => $params['rankmath_title']];
-            }
-
-            // Update RankMath description
-            if (isset($params['rankmath_description'])) {
-                $old = get_post_meta($post_id, 'rank_math_description', true);
-                update_post_meta($post_id, 'rank_math_description', sanitize_textarea_field($params['rankmath_description']));
-                $updated['rankmath_description'] = ['old' => $old, 'new' => $params['rankmath_description']];
-            }
-
-            // Update RankMath focus keyword
-            if (isset($params['rankmath_focus_keyword'])) {
-                $old = get_post_meta($post_id, 'rank_math_focus_keyword', true);
-                update_post_meta($post_id, 'rank_math_focus_keyword', sanitize_text_field($params['rankmath_focus_keyword']));
-                $updated['rankmath_focus_keyword'] = ['old' => $old, 'new' => $params['rankmath_focus_keyword']];
-            }
-
-            if (empty($updated)) {
+            if (count($postarr) === 1 && empty($asked)) {
                 return new WP_Error('no_changes', 'No metadata fields were provided to update.', ['status' => 400]);
             }
 
+            // One save for the title/excerpt/slug, without filtering the body again. It also
+            // lets SEO plugins (Yoast rebuilds its stored copy on save) and page caches see
+            // the new SEO fields.
+            $result = quasar_update_post_keep_body($postarr);
+            if (is_wp_error($result)) {
+                return new WP_Error('update_failed', 'WordPress did not save the post: ' . $result->get_error_message(), ['status' => 500]);
+            }
+
+            $after = quasar_effective_seo($post_id);
+            $labels = ['title' => 'seo_title', 'description' => 'seo_description', 'keyword' => 'focus_keyword'];
+            $effective = ['title' => 'title', 'description' => 'description', 'keyword' => 'focus_keyword'];
+            foreach ($labels as $field => $label) {
+                if (!empty($asked[$field])) {
+                    $updated[$label] = ['old' => $before[$effective[$field]], 'new' => $after[$effective[$field]]];
+                }
+            }
+
             return rest_ensure_response([
-                'success' => true,
-                'updated' => $updated,
-                'permalink' => get_permalink($post_id),
+                'success'        => true,
+                'updated'        => $updated,
+                'permalink'      => get_permalink($post_id),
+                'post_status'    => get_post_status($post_id),
+                'seo'            => $after,
+                'seo_written_to' => $written,
+                'cache_purged'   => quasar_purge_page_cache($post_id),
+                'plugin_version' => QUASAR_ADDONS_VERSION,
             ]);
         },
         'permission_callback' => function ($request) {
@@ -820,7 +846,7 @@ add_action('rest_api_init', function () {
                 $page_data['post_status'] = sanitize_text_field($params['status']);
             }
 
-            $result = wp_update_post($page_data, true);
+            $result = isset($page_data['post_content']) ? wp_update_post($page_data, true) : quasar_update_post_keep_body($page_data);
 
             if (is_wp_error($result)) {
                 return new WP_Error('update_failed', $result->get_error_message(), ['status' => 500]);
@@ -978,12 +1004,8 @@ add_action('rest_api_init', function () {
             }
 
             // Detect which SEO plugin is active
-            $settings['seo_plugin'] = 'none';
-            if (is_plugin_active('wordpress-seo/wp-seo.php') || is_plugin_active('yoast-seo/yoast-seo.php')) {
-                $settings['seo_plugin'] = 'yoast';
-            } elseif (is_plugin_active('seo-by-rank-math/rank-math.php')) {
-                $settings['seo_plugin'] = 'rankmath';
-            }
+            $plugin = quasar_seo_plugin();
+            $settings['seo_plugin'] = in_array($plugin, ['yoast', 'rankmath'], true) ? $plugin : 'none';
 
             $response = rest_ensure_response([
                 'success'  => true,
@@ -1311,12 +1333,15 @@ add_action('rest_api_init', function () {
                 return new WP_Error('not_found', 'Post not found', ['status' => 404]);
             }
 
-            wp_update_post([
+            $result = quasar_update_post_keep_body([
                 'ID'          => $id,
                 'post_status' => 'publish',
                 'post_date'   => current_time('mysql'),
                 'post_date_gmt' => current_time('mysql', 1),
             ]);
+            if (is_wp_error($result)) {
+                return new WP_Error('publish_failed', 'WordPress did not publish the post: ' . $result->get_error_message(), ['status' => 500]);
+            }
 
             return rest_ensure_response([
                 'success' => true,
@@ -1350,12 +1375,15 @@ add_action('rest_api_init', function () {
                 return new WP_Error('invalid_date', 'Invalid date format', ['status' => 400]);
             }
 
-            wp_update_post([
+            $result = quasar_update_post_keep_body([
                 'ID'            => $id,
                 'post_status'   => 'future',
                 'post_date'     => date('Y-m-d H:i:s', $timestamp),
                 'post_date_gmt' => gmdate('Y-m-d H:i:s', $timestamp),
             ]);
+            if (is_wp_error($result)) {
+                return new WP_Error('schedule_failed', 'WordPress did not schedule the post: ' . $result->get_error_message(), ['status' => 500]);
+            }
 
             return rest_ensure_response([
                 'success'      => true,

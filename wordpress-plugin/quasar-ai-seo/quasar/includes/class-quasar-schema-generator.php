@@ -34,7 +34,11 @@ class Quasar_Schema_Generator {
 	 * @param int $post_id Post ID.
 	 * @return array|WP_Error The combined @graph, or WP_Error.
 	 */
-	public static function generate_for_post( $post_id ) {
+	public static function generate_for_post( $post_id = 0 ) {
+		// The hourly event registered on activation passes no post ID.
+		if ( ! $post_id ) {
+			return new WP_Error( 'quasar_skip_post', 'No post given.' );
+		}
 		if ( ! quasar_is_approved() ) {
 			return new WP_Error( 'quasar_not_approved', 'Site is not approved yet.' );
 		}
