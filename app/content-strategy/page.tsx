@@ -9,7 +9,7 @@ import {
   Plus, MessageSquare, Paperclip, ArrowUp, X, BarChart3,
   ShieldCheck, Wand2, Code2, Image, FilePlus, Edit3, Layout,
   Info, Eye, Calendar, Layers, FolderTree, GitBranch, Settings,
-  Plug, Building2, Upload, ChevronDown, Check, ShieldAlert, Images,
+  Plug, Building2, Upload, ChevronDown, Check, ShieldAlert, Images, Bookmark,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -97,6 +97,8 @@ const TOOL_ICONS: Record<string, typeof Search> = {
   delete_schema_type: Trash2,
   get_schema_settings: Settings,
   update_schema_settings: Settings,
+  read_uploaded_file: FileSpreadsheet,
+  remember: Bookmark,
 };
 
 function getToolLabel(tool: string, args: Record<string, unknown>): string {
@@ -141,6 +143,12 @@ function getToolLabel(tool: string, args: Record<string, unknown>): string {
     return `Queueing ${n || ""} post${n === 1 ? "" : "s"} to write and schedule`;
   }
   if (tool === "list_scheduled_posts") return "Checking scheduled posts";
+  if (tool === "read_uploaded_file") {
+    const name = String(args.file_name || "").slice(0, 40) || "uploaded file";
+    if (args.search) return `Searching ${name} for "${String(args.search).slice(0, 30)}"`;
+    return `Reading ${name}${args.sheet ? ` (${args.sheet})` : ""}${args.start_row ? ` from row ${args.start_row}` : ""}`;
+  }
+  if (tool === "remember") return args.action === "list" ? "Checking thread notes" : args.action === "remove" || args.action === "clear" ? "Updating thread notes" : "Saving a note for this thread";
   if (tool === "cancel_scheduled_posts") return "Cancelling waiting posts";
   if (tool === "schedule_content") return `Scheduling post ${args.postId || args.id || ""}`;
   if (tool === "get_global_render") return "Fetching global render settings";
