@@ -12,6 +12,7 @@ import {
   Plug, Building2, Upload, ChevronDown, Check, ShieldAlert, Images, Bookmark,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
+import { SiteTrafficGlance } from "@/components/mcp/site-traffic-glance";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -1224,6 +1225,8 @@ function QuasarMcpContent() {
                 </Button>
               </div>
             </div>
+
+            {siteUrl && <SiteTrafficGlance siteUrl={siteUrl} />}
 
             {/* Expandable Configuration Drawer */}
             {contextDrawerOpen && (
